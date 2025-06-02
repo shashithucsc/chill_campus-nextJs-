@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
-import { signIn } from "next-auth/react";
 
 export default function Signup() {
   const router = useRouter();
@@ -24,11 +23,13 @@ export default function Signup() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/register", {
+      const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
+
+      console.log(res)
 
       const data = await res.json();
 
@@ -36,18 +37,8 @@ export default function Signup() {
         throw new Error(data.message || "Something went wrong");
       }
 
-      // Sign in the user after successful registration
-      const result = await signIn("credentials", {
-        email: form.email,
-        password: form.password,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        throw new Error(result.error);
-      }
-
-      router.push("/dashboard"); // Redirect to dashboard after successful signup
+      alert("Registration successful!");
+      router.push("/auth/signin");
     } catch (err: any) {
       setError(err.message);
     } finally {
