@@ -10,7 +10,7 @@ const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
   console.error('MONGODB_URI is not defined in environment variables');
-  throw new Error('Please define MONGODB_URI in .env.local');
+  throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
 }
 
 interface Cached {
@@ -24,7 +24,7 @@ if (!cached) {
   cached = global.mongoose = { conn: null, promise: null };
 }
 
-async function connectDB() {
+export async function connectToDatabase() {
   if (cached.conn) {
     console.log('Using cached database connection');
     return cached.conn;
@@ -34,26 +34,33 @@ async function connectDB() {
     console.log('Creating new database connection');
     const opts = {
       bufferCommands: false,
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
-      console.log('Database connected successfully');
-      return mongoose;
-    }).catch((error) => {
-      console.error('Database connection error:', error);
-      throw error;
-    });
+    console.log('Attempting to connect to MongoDB...');
+    cached.promise = mongoose.connect(MONGODB_URI!, opts)
+      .then((mongoose) => {
+        console.log('MongoDB connected successfully');
+        console.log('Connection state:', mongoose.connection.readyState);
+        console.log('Database name:', mongoose.connection.name);
+        console.log('Host:', mongoose.connection.host);
+        return mongoose;
+      })
+      .catch((error) => {
+        console.error('MongoDB connection error:', error);
+        throw error;
+      });
   }
 
   try {
     cached.conn = await cached.promise;
+    console.log('Database connection established and cached');
+    return cached.conn;
   } catch (e) {
     console.error('Error in database connection:', e);
     cached.promise = null;
     throw e;
   }
-
-  return cached.conn;
 }
-
-export default connectDB;

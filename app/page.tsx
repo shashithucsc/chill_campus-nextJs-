@@ -1,16 +1,9 @@
-import Head from "next/head";
-import Image from "next/image";
 import Link from "next/link";
 import Layout from "@/components/layout/Layout";
 
 export default function Home() {
   return (
     <Layout>
-      <Head>
-        <title>ChillCampus - Connect with University Students</title>
-        <meta name="description" content="Connect with students from different universities, join communities, and collaborate on projects." />
-      </Head>
-
       {/* Hero Section */}
       <div className="relative bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto">
@@ -113,25 +106,10 @@ export default function Home() {
                   </p>
                 </div>
               </div>
-
-              {/* //extra */}
-              <div className="relative">
-                <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white">
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                  </svg>
-                </div>
-                <div className="ml-16">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900">AI Integration</h3>
-                  <p className="mt-2 text-base text-gray-500">
-                    Smart content moderation and personalized recommendations.
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
       </div>
     </Layout>
   );
-}
+} 
