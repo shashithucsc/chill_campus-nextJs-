@@ -49,7 +49,7 @@ export default function LoginPage() {
       setUserSession(data.user);
       
       // Redirect to dashboard
-      router.push('/dashboard');
+      router.push('/');
     } catch (err: any) {
       console.error('Login error:', err);
       setError(err.message || 'An error occurred during login');
