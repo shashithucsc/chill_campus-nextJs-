@@ -14,7 +14,7 @@ const mockPosts = [
       profilePicture: '/default-avatar.png',
     },
     content: 'Just finished an amazing hackathon! 🚀 #TechLife #Hackathon2024',
-    image: '/mock/post1.jpg',
+    image: '/post1.jpg',
     likes: 42,
     comments: 12,
     shares: 5,
