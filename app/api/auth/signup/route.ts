@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
 import User from '@/models/User';
+import bcrypt from 'bcryptjs';
 
 export async function POST(req: Request) {
   try {
+    await connectToDatabase();
+
     const { name, email, password, university } = await req.json();
 
     // Debug: Log environment variables (without sensitive data)
@@ -25,19 +28,6 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { message: 'Password must be at least 6 characters long' },
         { status: 400 }
-      );
-    }
-
-    // Connect to database
-    try {
-      console.log('Attempting to connect to database...');
-      await connectToDatabase();
-      console.log('Database connection successful');
-    } catch (error: any) {
-      console.error('Database connection error:', error);
-      return NextResponse.json(
-        { message: 'Database connection error' },
-        { status: 500 }
       );
     }
 

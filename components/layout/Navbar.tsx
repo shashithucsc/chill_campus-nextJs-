@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAuth } from '@/context/AuthContext';
+import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Bell, Search, Menu } from 'lucide-react';
 
 const Navbar = () => {
-  const { user, logout } = useAuth();
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -72,20 +74,20 @@ const Navbar = () => {
                 <span className="sr-only">Open user menu</span>
                 <Image
                   className="h-8 w-8 rounded-full"
-                  src={user?.profilePicture || '/default-avatar.png'}
+                  src={session?.user?.image || '/default-avatar.png'}
                   alt=""
                   width={32}
                   height={32}
                 />
-                {user && (
+                {session?.user && (
                   <span className="ml-2 text-sm font-medium text-gray-700 hidden md:block">
-                    {user.name}
+                    {session.user.name}
                   </span>
                 )}
               </button>
 
               {/* Dropdown menu */}
-              {isMenuOpen && (
+              {isMenuOpen && session?.user && (
                 <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
                   <Link
                     href="/profile"
@@ -100,7 +102,10 @@ const Navbar = () => {
                     Settings
                   </Link>
                   <button
-                    onClick={logout}
+                    onClick={async () => {
+                      await signOut({ redirect: false });
+                      router.push('/auth/login');
+                    }}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     Sign out

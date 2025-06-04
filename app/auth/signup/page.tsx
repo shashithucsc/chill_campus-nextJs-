@@ -115,8 +115,12 @@ export default function Signup() {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  placeholder="e.g., student@uom.lk"
                 />
               </div>
+              <p className="mt-1 text-sm text-gray-500">
+                Please use your university email address
+              </p>
             </div>
 
             <div>
@@ -124,15 +128,21 @@ export default function Signup() {
                 University
               </label>
               <div className="mt-1">
-                <input
+                <select
                   id="university"
                   name="university"
-                  type="text"
                   required
                   value={formData.university}
                   onChange={(e) => setFormData({ ...formData, university: e.target.value })}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
+                >
+                  <option value="">Select your university</option>
+                  {UNIVERSITIES.map((university) => (
+                    <option key={university.id} value={university.name}>
+                      {university.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

@@ -1,112 +1,145 @@
 'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
-import { Heart, MessageCircle, Share2, MoreHorizontal } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { Heart, MessageCircle, Share2 } from 'lucide-react';
 
-// Temporary mock data
-const mockPosts = [
-  {
-    id: 1,
+interface Post {
+  _id: string;
+  content: string;
+  author: {
+    _id: string;
+    name: string;
+    email: string;
+    university: string;
+  };
+  likes: string[];
+  comments: Array<{
+    _id: string;
+    content: string;
     author: {
-      name: 'John Doe',
-      university: 'University of Moratuwa',
-      profilePicture: '/default-avatar.png',
-    },
-    content: 'Just finished an amazing hackathon! 🚀 #TechLife #Hackathon2024',
-    image: '/post1.jpg',
-    likes: 42,
-    comments: 12,
-    shares: 5,
-    timestamp: '2 hours ago',
-  },
-  {
-    id: 2,
-    author: {
-      name: 'Jane Smith',
-      university: 'University of Colombo',
-      profilePicture: '/default-avatar.png',
-    },
-    content: 'Looking for team members for the upcoming inter-university debate competition. DM if interested! #Debate #TeamUp',
-    likes: 28,
-    comments: 8,
-    shares: 3,
-    timestamp: '4 hours ago',
-  },
-];
+      _id: string;
+      name: string;
+      email: string;
+      university: string;
+    };
+    createdAt: string;
+  }>;
+  tags: string[];
+  createdAt: string;
+}
 
-const Feed = () => {
-  const [posts, setPosts] = useState(mockPosts);
+export default function Feed() {
+  const { user } = useAuth();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const handleLike = (postId: number) => {
-    setPosts(posts.map(post => 
-      post.id === postId 
-        ? { ...post, likes: post.likes + 1 }
-        : post
-    ));
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  const fetchPosts = async () => {
+    try {
+      const response = await fetch('/api/posts');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error fetching posts');
+      }
+
+      setPosts(data.posts);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  if (loading) {
+    return (
+      <div className="p-4 text-center text-gray-500">
+        Loading posts...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 text-center text-red-500">
+        {error}
+      </div>
+    );
+  }
+
+  if (posts.length === 0) {
+    return (
+      <div className="p-4 text-center text-gray-500">
+        No posts yet. Be the first to post!
+      </div>
+    );
+  }
+
   return (
-    <div className="divide-y divide-gray-200">
+    <div className="divide-y">
       {posts.map((post) => (
-        <article key={post.id} className="p-4">
-          <div className="flex space-x-3">
-            <Image
-              src={post.author.profilePicture}
-              alt={post.author.name}
-              width={40}
-              height={40}
-              className="h-10 w-10 rounded-full"
-            />
-            <div className="flex-1">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-medium text-gray-900">
-                    {post.author.name}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    {post.author.university} • {post.timestamp}
-                  </p>
-                </div>
-                <button className="p-1 rounded-full hover:bg-gray-100">
-                  <MoreHorizontal className="h-5 w-5 text-gray-500" />
-                </button>
+        <div key={post._id} className="p-4">
+          <div className="flex items-start space-x-4">
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                <span className="text-indigo-600 font-medium">
+                  {post.author.name.charAt(0).toUpperCase()}
+                </span>
               </div>
-              <p className="mt-2 text-gray-900">{post.content}</p>
-              {post.image && (
-                <div className="mt-3">
-                  <Image
-                    src={post.image}
-                    alt="Post image"
-                    width={600}
-                    height={400}
-                    className="rounded-lg"
-                  />
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center space-x-2">
+                <p className="text-sm font-medium text-gray-900">
+                  {post.author.name}
+                </p>
+                <span className="text-sm text-gray-500">•</span>
+                <p className="text-sm text-gray-500">
+                  {post.author.university}
+                </p>
+              </div>
+              
+              <p className="mt-1 text-gray-900 whitespace-pre-wrap">
+                {post.content}
+              </p>
+              
+              {post.tags.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {post.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
+                    >
+                      {tag}
+                    </span>
+                  ))}
                 </div>
               )}
-              <div className="mt-3 flex items-center space-x-4">
-                <button
-                  onClick={() => handleLike(post.id)}
-                  className="flex items-center space-x-1 text-gray-500 hover:text-red-500"
-                >
-                  <Heart className="h-5 w-5" />
-                  <span>{post.likes}</span>
+              
+              <div className="mt-4 flex items-center space-x-6">
+                <button className="flex items-center space-x-2 text-gray-500 hover:text-gray-700">
+                  <Heart className="w-5 h-5" />
+                  <span className="text-sm">{post.likes.length}</span>
                 </button>
-                <button className="flex items-center space-x-1 text-gray-500 hover:text-blue-500">
-                  <MessageCircle className="h-5 w-5" />
-                  <span>{post.comments}</span>
+                
+                <button className="flex items-center space-x-2 text-gray-500 hover:text-gray-700">
+                  <MessageCircle className="w-5 h-5" />
+                  <span className="text-sm">{post.comments.length}</span>
                 </button>
-                <button className="flex items-center space-x-1 text-gray-500 hover:text-green-500">
-                  <Share2 className="h-5 w-5" />
-                  <span>{post.shares}</span>
+                
+                <button className="flex items-center space-x-2 text-gray-500 hover:text-gray-700">
+                  <Share2 className="w-5 h-5" />
                 </button>
               </div>
             </div>
           </div>
-        </article>
+        </div>
       ))}
     </div>
   );
-};
-
-export default Feed; 
+} 

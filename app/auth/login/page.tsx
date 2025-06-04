@@ -3,11 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/context/AuthContext';
+import { signIn } from 'next-auth/react';
 
 export default function Login() {
   const router = useRouter();
-  const { setUser } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -21,24 +20,16 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+      const result = await signIn('credentials', {
+        redirect: false,
+        email: formData.email,
+        password: formData.password,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Error processing login request');
+      if (result?.error) {
+        throw new Error(result.error);
       }
 
-      // Update auth context and localStorage
-      setUser(data.user);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      
       // Redirect to home page
       router.push('/home');
     } catch (err: any) {

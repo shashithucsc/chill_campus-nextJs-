@@ -2,86 +2,129 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { Image, Video, Link as LinkIcon, Smile } from 'lucide-react';
+import { Image, Send } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 
-const CreatePost = () => {
+export default function CreatePost() {
   const { user } = useAuth();
   const [content, setContent] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const { data: session, status } = useSession();
+
+  console.log('CreatePost Component - Session Status:', status);
+  console.log('CreatePost Component - Session Data:', session);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) return;
 
-    setIsSubmitting(true);
+    console.log('Attempting to create post. Session available:', !!session);
+
+    setLoading(true);
+    setError('');
+
     try {
-      // TODO: Implement post creation
-      console.log('Creating post:', content);
+      const response = await fetch('/api/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: content.trim(),
+          tags: extractTags(content)
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error creating post');
+      }
+
+      // Clear the form
       setContent('');
-    } catch (error) {
-      console.error('Error creating post:', error);
+      
+      // Refresh the feed (you can implement this later)
+      // window.location.reload();
+    } catch (err: any) {
+      setError(err.message);
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
+  // Helper function to extract hashtags from content
+  const extractTags = (text: string) => {
+    const hashtagRegex = /#[\w\u0590-\u05ff]+/g;
+    return text.match(hashtagRegex) || [];
+  };
+
+  if (!user) {
+    return null;
+  }
+
   return (
-    <div className="p-4 border-b border-gray-200">
-      <form onSubmit={handleSubmit}>
-        <div className="flex space-x-4">
-          <img
-            src={user?.profilePicture || '/default-avatar.png'}
-            alt="Profile"
-            className="h-10 w-10 rounded-full"
-          />
+    <div className="p-4 border-b">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
+            {error}
+          </div>
+        )}
+        
+        <div className="flex items-start space-x-4">
+          <div className="flex-shrink-0">
+            <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
+              <span className="text-indigo-600 font-medium">
+                {user.name.charAt(0).toUpperCase()}
+              </span>
+            </div>
+          </div>
+          
           <div className="flex-1">
             <textarea
-              className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:border-blue-500"
-              placeholder="What's on your mind?"
-              rows={3}
               value={content}
               onChange={(e) => setContent(e.target.value)}
+              placeholder="What's on your mind?"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+              rows={3}
+              maxLength={1000}
             />
-            <div className="flex items-center justify-between mt-2">
-              <div className="flex space-x-2">
+            
+            <div className="mt-2 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
                 <button
                   type="button"
                   className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100"
                 >
-                  <Image className="h-5 w-5" />
-                </button>
-                <button
-                  type="button"
-                  className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100"
-                >
-                  <Video className="h-5 w-5" />
-                </button>
-                <button
-                  type="button"
-                  className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100"
-                >
-                  <LinkIcon className="h-5 w-5" />
-                </button>
-                <button
-                  type="button"
-                  className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100"
-                >
-                  <Smile className="h-5 w-5" />
+                  <Image className="w-5 h-5" />
                 </button>
               </div>
-              <button
-                type="submit"
-                disabled={isSubmitting || !content.trim()}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? 'Posting...' : 'Post'}
-              </button>
+              
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-500">
+                  {content.length}/1000
+                </span>
+                <button
+                  type="submit"
+                  disabled={loading || !content.trim()}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? (
+                    'Posting...'
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 mr-2" />
+                      Post
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </form>
     </div>
   );
-};
-
-export default CreatePost; 
+} 
