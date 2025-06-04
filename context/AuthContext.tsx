@@ -7,51 +7,45 @@ interface User {
   name: string;
   email: string;
   university: string;
-  profilePicture?: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (user: User) => void;
-  logout: () => void;
+  setUser: (user: User | null) => void;
+  loading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  setUser: () => {},
+  loading: true,
+});
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-
-  const login = (user: User) => {
-    setUser(user);
-    localStorage.setItem('user', JSON.stringify(user));
-  };
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-  };
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if we're in the browser
-    if (typeof window !== 'undefined') {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
+    // Check if user data exists in localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
         setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
+        localStorage.removeItem('user');
       }
     }
+    setLoading(false);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, setUser, loading }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return useContext(AuthContext);
 } 

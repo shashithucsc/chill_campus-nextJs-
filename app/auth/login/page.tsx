@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
 
 export default function Login() {
   const router = useRouter();
+  const { setUser } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -33,7 +35,8 @@ export default function Login() {
         throw new Error(data.message || 'Error processing login request');
       }
 
-      // Store user data in localStorage
+      // Update auth context and localStorage
+      setUser(data.user);
       localStorage.setItem('user', JSON.stringify(data.user));
       
       // Redirect to home page
