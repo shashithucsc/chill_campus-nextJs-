@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 const navigation = [
-  { name: 'Home', href: '/', icon: Home },
+  { name: 'Home', href: '/home', icon: Home },
   { name: 'Communities', href: '/communities', icon: Users },
   { name: 'Events', href: '/events', icon: Calendar },
   { name: 'Chat', href: '/chat', icon: MessageSquare },
@@ -66,12 +66,13 @@ const Sidebar = () => {
             <div className="flex-shrink-0 w-full group block">
               <div className="flex items-center">
                 <div>
-                  <button
+                  <Link
+                    href="/home#create-post-section"
                     className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full"
                   >
                     <PlusCircle className="mr-2 h-5 w-5" />
                     Create Post
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>

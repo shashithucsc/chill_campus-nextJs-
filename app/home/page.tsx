@@ -2,7 +2,6 @@ import { Suspense } from 'react';
 import Feed from '@/components/feed/Feed';
 import TrendingTopics from '@/components/feed/TrendingTopics';
 import UpcomingEvents from '@/components/feed/UpcomingEvents';
-import CreatePost from '@/components/feed/CreatePost';
 
 export default function HomePage() {
   return (
@@ -13,7 +12,6 @@ export default function HomePage() {
           {/* Main Feed */}
           <div className="lg:col-span-8">
             <div className="bg-white rounded-lg shadow">
-              <CreatePost />
               <Suspense fallback={<div>Loading feed...</div>}>
                 <Feed />
               </Suspense>

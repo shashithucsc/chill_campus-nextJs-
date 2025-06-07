@@ -1,130 +1,60 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
-import { Image, Send } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 
-export default function CreatePost() {
-  const { user } = useAuth();
-  const [content, setContent] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const { data: session, status } = useSession();
+interface CreatePostProps {
+  onCreatePost: (content: string) => Promise<boolean>;
+}
 
-  console.log('CreatePost Component - Session Status:', status);
-  console.log('CreatePost Component - Session Data:', session);
+export default function CreatePost({ onCreatePost }: CreatePostProps) {
+  const [content, setContent] = useState('');
+  const { data: session } = useSession();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!content.trim()) return;
 
-    console.log('Attempting to create post. Session available:', !!session);
-
-    setLoading(true);
-    setError('');
-
-    try {
-      const response = await fetch('/api/posts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          content: content.trim(),
-          tags: extractTags(content)
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Error creating post');
-      }
-
-      // Clear the form
+    const success = await onCreatePost(content);
+    if (success) {
       setContent('');
-      
-      // Refresh the feed (you can implement this later)
-      // window.location.reload();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Helper function to extract hashtags from content
-  const extractTags = (text: string) => {
-    const hashtagRegex = /#[\w\u0590-\u05ff]+/g;
-    return text.match(hashtagRegex) || [];
-  };
-
-  if (!user) {
+  if (!session) {
     return null;
   }
 
   return (
-    <div className="p-4 border-b">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
-            {error}
-          </div>
-        )}
-        
-        <div className="flex items-start space-x-4">
-          <div className="flex-shrink-0">
-            <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-              <span className="text-indigo-600 font-medium">
-                {user.name.charAt(0).toUpperCase()}
-              </span>
-            </div>
-          </div>
-          
-          <div className="flex-1">
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="What's on your mind?"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
-              rows={3}
-              maxLength={1000}
-            />
-            
-            <div className="mt-2 flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <button
-                  type="button"
-                  className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100"
-                >
-                  <Image className="w-5 h-5" />
-                </button>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-500">
-                  {content.length}/1000
-                </span>
-                <button
-                  type="submit"
-                  disabled={loading || !content.trim()}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? (
-                    'Posting...'
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4 mr-2" />
-                      Post
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
+    <form id="create-post-section" onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-4">
+      <div className="flex space-x-4">
+        <div className="flex-shrink-0">
+          <img
+            src={session.user?.image || '/default-avatar.png'}
+            alt={session.user?.name || 'User'}
+            className="w-10 h-10 rounded-full"
+          />
+        </div>
+        <div className="flex-1">
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="What's on your mind?"
+            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            rows={3}
+          />
+          <div className="mt-2 flex justify-end">
+            <button
+              type="submit"
+              disabled={!content.trim()}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Post
+            </button>
           </div>
         </div>
-      </form>
-    </div>
+      </div>
+    </form>
   );
 } 
