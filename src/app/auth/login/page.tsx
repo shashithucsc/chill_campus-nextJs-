@@ -12,11 +12,28 @@ export default function LoginPage() {
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: Implement actual login logic
-    // For now, we'll just redirect to home
+  e.preventDefault();
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.message || 'Login failed');
+      return;
+    }
+
     router.push('/home/home');
-  };
+  } catch (error) {
+    alert('Something went wrong. Please try again.');
+    console.error(error);
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -41,15 +58,15 @@ export default function LoginPage() {
               </label>
               <div className="mt-1">
                 <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
+  id="email"
+  name="email"
+  type="email"
+  autoComplete="email"
+  required
+  className="text-black appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+  value={formData.email}
+  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+/>
               </div>
             </div>
 
@@ -59,15 +76,15 @@ export default function LoginPage() {
               </label>
               <div className="mt-1">
                 <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                />
+  id="password"
+  name="password"
+  type="password"
+  autoComplete="current-password"
+  required
+  className="text-black appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+  value={formData.password}
+  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+/>
               </div>
             </div>
 
