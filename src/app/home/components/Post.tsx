@@ -12,7 +12,9 @@ interface PostProps {
     role: string;
   };
   content: string;
-  image?: string;
+  image?: string | File;
+  media?: string[];
+  mediaType?: 'image' | 'video' | null;
   likes: number;
   comments: number;
   timestamp: string;
@@ -27,6 +29,8 @@ export default function Post({
   author,
   content,
   image,
+  media,
+  mediaType,
   likes,
   comments,
   timestamp,
@@ -85,13 +89,25 @@ export default function Post({
       {/* Post Content */}
       <div className="px-4 pb-4">
         <p className="text-gray-900 whitespace-pre-wrap">{content}</p>
-        {image && (
+        {/* Show all images if mediaType is image and media array exists */}
+        {mediaType === 'image' && media && media.length > 0 && media.map((img, idx) =>
+          (typeof img === 'string' && (img.startsWith('/') || img.startsWith('http')) ? (
+            <div key={idx} className="mt-4 rounded-lg overflow-hidden">
+              <Image
+                src={img}
+                alt={`Post image ${idx+1}`}
+                width={600}
+                height={400}
+                className="w-full h-auto object-cover"
+              />
+            </div>
+          ) : null)
+        )}
+        {image && typeof image !== 'string' && (
           <div className="mt-4 rounded-lg overflow-hidden">
-            <Image
-              src={image}
+            <img
+              src={URL.createObjectURL(image)}
               alt="Post image"
-              width={600}
-              height={400}
               className="w-full h-auto object-cover"
             />
           </div>
@@ -148,4 +164,4 @@ export default function Post({
       </div>
     </div>
   );
-} 
+}

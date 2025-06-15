@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
-export default function Navbar() {
+export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) {
   const router = useRouter();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -82,7 +82,10 @@ export default function Navbar() {
           {/* Right side - Navigation Items */}
           <div className="flex items-center space-x-4">
             {/* Create Post Button */}
-            <button className="hidden md:flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+            <button
+              className="hidden md:flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+              onClick={onCreatePost}
+            >
               <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
@@ -168,4 +171,4 @@ export default function Navbar() {
       </div>
     </nav>
   );
-} 
+}
