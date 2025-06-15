@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
 interface PostProps {
   id: string;
   author: {
+    id: string; // <-- add id here
     name: string;
     avatar: string;
     role: string;
@@ -38,10 +39,45 @@ export default function Post({
 }: PostProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(likes);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(content);
+  const [showMenu, setShowMenu] = useState(false);
+  const [contentState, setContentState] = useState(content);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  useEffect(() => {
+    // Fetch current user id from /api/user
+    fetch('/api/user')
+      .then(res => res.json())
+      .then(data => setCurrentUserId(data.user?.id || null));
+  }, []);
 
   const handleLike = () => {
     setIsLiked(!isLiked);
     setLikeCount(isLiked ? likeCount - 1 : likeCount + 1);
+  };
+
+  const handleDelete = async () => {
+    setShowDeleteConfirm(false);
+    const res = await fetch(`/api/posts/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      if (typeof window !== 'undefined') {
+        window.location.reload();
+      }
+    }
+  };
+
+  const handleEdit = async () => {
+    const res = await fetch(`/api/posts/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: editContent }),
+    });
+    if (res.ok) {
+      setIsEditing(false);
+      setContentState(editContent);
+    }
   };
 
   return (
@@ -78,39 +114,76 @@ export default function Post({
               </p>
             </div>
           </div>
-          <button className="text-gray-400 hover:text-gray-600">
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-            </svg>
-          </button>
+          {/* Owner controls: 3-dots menu */}
+          {currentUserId && author && author.id === currentUserId && (
+            <div className="relative">
+              <button
+                className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                onClick={() => setShowMenu((v) => !v)}
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                </svg>
+              </button>
+              {showMenu && (
+                <div className="absolute right-0 mt-2 w-28 bg-white border rounded shadow-lg z-10">
+                  <button
+                    onClick={() => { setIsEditing(true); setShowMenu(false); }}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >Edit</button>
+                  <button
+                    onClick={() => { setShowMenu(false); setShowDeleteConfirm(true); }}
+                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                  >Delete</button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Post Content */}
       <div className="px-4 pb-4">
-        <p className="text-gray-900 whitespace-pre-wrap">{content}</p>
-        {/* Show all images if mediaType is image and media array exists */}
-        {mediaType === 'image' && media && media.length > 0 && media.map((img, idx) =>
-          (typeof img === 'string' && (img.startsWith('/') || img.startsWith('http')) ? (
-            <div key={idx} className="mt-4 rounded-lg overflow-hidden">
-              <Image
-                src={img}
-                alt={`Post image ${idx+1}`}
-                width={600}
-                height={400}
-                className="w-full h-auto object-cover"
-              />
-            </div>
-          ) : null)
-        )}
-        {image && typeof image !== 'string' && (
-          <div className="mt-4 rounded-lg overflow-hidden">
-            <img
-              src={URL.createObjectURL(image)}
-              alt="Post image"
-              className="w-full h-auto object-cover"
+        {isEditing ? (
+          <div className="space-y-2">
+            <textarea
+              className="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              rows={3}
+              value={editContent}
+              onChange={e => setEditContent(e.target.value)}
             />
+            <div className="flex space-x-2">
+              <button type="button" onClick={handleEdit} className="bg-blue-600 text-white px-3 py-1 rounded">Save</button>
+              <button type="button" onClick={() => { setIsEditing(false); setEditContent(contentState); }} className="bg-gray-300 text-gray-800 px-3 py-1 rounded">Cancel</button>
+            </div>
           </div>
+        ) : (
+          <>
+            <p className="text-gray-900 whitespace-pre-wrap">{contentState}</p>
+            {/* Show all images if mediaType is image and media array exists */}
+            {mediaType === 'image' && media && media.length > 0 && media.map((img, idx) =>
+              (typeof img === 'string' && (img.startsWith('/') || img.startsWith('http')) ? (
+                <div key={idx} className="mt-4 rounded-lg overflow-hidden">
+                  <Image
+                    src={img}
+                    alt={`Post image ${idx+1}`}
+                    width={600}
+                    height={400}
+                    className="w-full h-auto object-cover"
+                  />
+                </div>
+              ) : null)
+            )}
+            {image && typeof image !== 'string' && (
+              <div className="mt-4 rounded-lg overflow-hidden">
+                <img
+                  src={URL.createObjectURL(image)}
+                  alt="Post image"
+                  className="w-full h-auto object-cover"
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -162,6 +235,21 @@ export default function Post({
           </button>
         </div>
       </div>
+
+      {/* Delete Confirmation Popup */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black bg-opacity-40" />
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-xs relative z-10">
+            <h3 className="text-lg font-semibold mb-4">Delete Post?</h3>
+            <p className="mb-4 text-gray-700">Are you sure you want to delete this post?</p>
+            <div className="flex justify-end space-x-2">
+              <button onClick={() => setShowDeleteConfirm(false)} className="px-4 py-2 rounded bg-gray-200 text-gray-800">Cancel</button>
+              <button onClick={handleDelete} className="px-4 py-2 rounded bg-red-600 text-white">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
