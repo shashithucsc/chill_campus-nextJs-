@@ -55,36 +55,40 @@ function CreatePostModal({ open, onClose, onPostCreated }: { open: boolean; onCl
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
-        <button onClick={onClose} className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl">×</button>
-        <h2 className="text-lg font-semibold mb-4">Create Post</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <textarea
-            className="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            rows={3}
-            placeholder="What's on your mind?"
-            value={content}
-            onChange={e => setContent(e.target.value)}
-            required={!media}
-          />
-          <input
-            type="file"
-            accept="image/*,video/*"
-            onChange={handleFileChange}
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-          />
-          {error && <div className="text-red-600 text-sm">{error}</div>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
-          >
-            {loading ? 'Posting...' : 'Post'}
-          </button>
-        </form>
+    <>
+      {/* Overlay, but allow pointer events to pass through except modal */}
+      <div className="fixed inset-0 z-40 bg-black bg-opacity-40" aria-hidden="true" />
+      <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+        <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative pointer-events-auto">
+          <button onClick={onClose} className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl">×</button>
+          <h2 className="text-lg font-semibold mb-4">Create Post</h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <textarea
+              className="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              rows={3}
+              placeholder="What's on your mind?"
+              value={content}
+              onChange={e => setContent(e.target.value)}
+              required={!media}
+            />
+            <input
+              type="file"
+              accept="image/*,video/*"
+              onChange={handleFileChange}
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+            {error && <div className="text-red-600 text-sm">{error}</div>}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
+            >
+              {loading ? 'Posting...' : 'Post'}
+            </button>
+          </form>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -133,6 +137,7 @@ export default function HomePage() {
                   key={post._id}
                   id={post._id}
                   author={{
+                    id: post.user?._id || post.user?.id || '',
                     name: post.user?.fullName || 'Unknown',
                     avatar: '/default-avatar.png',
                     role: post.user?.role || '',
