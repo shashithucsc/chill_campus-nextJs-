@@ -12,39 +12,43 @@ export default function LoginPage() {
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  try {
-    const res = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData),
-    });
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      alert(data.message || 'Login failed');
-      return;
+      if (!res.ok) {
+        alert(data.message || 'Login failed');
+        return;
+      }
+
+      // Redirect based on role
+      if (data.user.role === 'admin') {
+        router.push('/admin/dashboard');
+      } else {
+        router.push('/home/home');
+      }
+    } catch (error) {
+      alert('Something went wrong. Please try again.');
+      console.error(error);
     }
-
-    router.push('/home/home');
-  } catch (error) {
-    alert('Something went wrong. Please try again.');
-    console.error(error);
-  }
-};
-
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Welcome back to ChillCampus
+          Sign in to your account
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Don't have an account?{' '}
+          Or{' '}
           <Link href="/auth/signup" className="font-medium text-blue-600 hover:text-blue-500">
-            Sign up
+            create a new account
           </Link>
         </p>
       </div>
@@ -58,15 +62,15 @@ export default function LoginPage() {
               </label>
               <div className="mt-1">
                 <input
-  id="email"
-  name="email"
-  type="email"
-  autoComplete="email"
-  required
-  className="text-black appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-  value={formData.email}
-  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-/>
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  className="text-black appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                />
               </div>
             </div>
 
@@ -76,15 +80,15 @@ export default function LoginPage() {
               </label>
               <div className="mt-1">
                 <input
-  id="password"
-  name="password"
-  type="password"
-  autoComplete="current-password"
-  required
-  className="text-black appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-  value={formData.password}
-  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-/>
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  className="text-black appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                />
               </div>
             </div>
 

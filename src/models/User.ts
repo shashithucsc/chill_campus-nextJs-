@@ -3,8 +3,9 @@ import mongoose, { Document, Schema, models, model } from 'mongoose';
 export interface IUser extends Document {
   email: string;
   password: string;
-  role: 'user' | 'admin';
-  name?: string;
+  role: 'user' | 'admin' | 'student';
+  fullName: string;
+  university: string;
   createdAt: Date;
 }
 
@@ -23,11 +24,16 @@ const UserSchema = new Schema<IUser>(
     },
     role: {
       type: String,
-      enum: ['user', 'admin'],
-      default: 'user',
+      enum: ['user', 'admin', 'student'],
+      default: 'student',
     },
-    name: {
+    fullName: {
       type: String,
+      required: true,
+    },
+    university: {
+      type: String,
+      required: true,
     },
     createdAt: {
       type: Date,
@@ -38,6 +44,5 @@ const UserSchema = new Schema<IUser>(
     timestamps: true,
   }
 );
-
 
 export default models.User || model<IUser>('User', UserSchema);

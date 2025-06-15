@@ -1,12 +1,58 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 export default function Navbar() {
+  const router = useRouter();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        console.log('Fetching user data...');
+        const res = await fetch('/api/user');
+        console.log('API Response status:', res.status);
+        
+        if (res.ok) {
+          const data = await res.json();
+          console.log('Received user data:', data);
+          setUser(data.user);
+        } else {
+          console.log('API request failed:', await res.text());
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      const res = await fetch('/api/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (res.ok) {
+        setUser(null);
+        router.push('/auth/login');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   return (
     <nav className="bg-white shadow-sm fixed w-full z-50">
@@ -94,7 +140,9 @@ export default function Navbar() {
                     className="h-full w-full object-cover"
                   />
                 </div>
-                <span className="hidden md:block text-sm font-medium text-gray-700">John Doe</span>
+                <span className="hidden md:block text-sm font-medium text-gray-700">
+                  {loading ? 'Loading...' : (user?.fullName || 'Guest')}
+                </span>
               </button>
 
               {/* Profile Dropdown */}
@@ -106,7 +154,10 @@ export default function Navbar() {
                   <Link href="/home/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                     Settings
                   </Link>
-                  <button className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                  <button 
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                  >
                     Sign out
                   </button>
                 </div>

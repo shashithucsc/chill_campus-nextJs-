@@ -9,11 +9,11 @@ export async function POST(req: Request) {
     await dbConnect();
     const body = await req.json();
 
-    const { name, email, password, confirmPassword } = body;
+    const { fullName, email, password, confirmPassword, university } = body;
 
     // Basic validation
-    if (!email || !password || !confirmPassword) {
-      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
+    if (!fullName || !email || !password || !confirmPassword || !university) {
+      return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
     }
 
     if (password !== confirmPassword) {
@@ -32,14 +32,15 @@ export async function POST(req: Request) {
 
     // Create new user
     const newUser = await User.create({
-      name,
+      fullName,
       email,
       password: hashedPassword,
-      role: 'user', 
+      university,
+      role: 'student',
     });
 
     return NextResponse.json(
-      { message: 'User registered successfully', user: { id: newUser._id, email: newUser.email } },
+      { message: 'User registered successfully', user: { id: newUser._id, email: newUser.email, fullName: newUser.fullName, university: newUser.university, role: newUser.role, createdAt: newUser.createdAt } },
       { status: 201 }
     );
   } catch (error) {
