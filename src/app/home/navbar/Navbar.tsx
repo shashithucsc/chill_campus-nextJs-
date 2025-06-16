@@ -15,20 +15,17 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        console.log('Fetching user data...');
         const res = await fetch('/api/user');
-        console.log('API Response status:', res.status);
-        
         if (res.ok) {
           const data = await res.json();
-          console.log('Received user data:', data);
-          setUser(data.user);
+          setUser({
+            ...data.user,
+            avatar: data.user.avatar || '/default-avatar.png',
+          });
         } else {
-          console.log('API request failed:', await res.text());
           setUser(null);
         }
       } catch (error) {
-        console.error('Error fetching user:', error);
         setUser(null);
       } finally {
         setLoading(false);
@@ -136,7 +133,7 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
               >
                 <div className="h-8 w-8 rounded-full bg-gray-200 overflow-hidden">
                   <Image
-                    src="/default-avatar.png"
+                    src={user?.avatar || '/default-avatar.png'}
                     alt="Profile"
                     width={32}
                     height={32}

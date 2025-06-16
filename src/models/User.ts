@@ -7,6 +7,7 @@ export interface IUser extends Document {
   fullName: string;
   university: string;
   createdAt: Date;
+  avatar?: string; // Optional avatar field
 }
 
 const UserSchema = new Schema<IUser>(
@@ -38,6 +39,10 @@ const UserSchema = new Schema<IUser>(
     createdAt: {
       type: Date,
       default: Date.now,
+    },
+    avatar: {
+      type: String,
+      default: '',
     },
   },
   {
