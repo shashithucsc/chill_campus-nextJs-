@@ -16,6 +16,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Invalid email or password' }, { status: 401 });
     }
 
+    // Block login if not activated
+    if (!user.isActive) {
+      return NextResponse.json({ message: 'Account not activated. Please check your email for the activation link.' }, { status: 403 });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       console.log('Invalid password'); // Debug log

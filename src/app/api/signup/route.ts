@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import dbConnect from '@/lib/db';
 import User from '@/models/User';
+import { sendActivationEmail } from '@/lib/mailer';
+import crypto from 'crypto';
 
 export async function POST(req: Request) {
   try {
@@ -30,17 +32,27 @@ export async function POST(req: Request) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user
+    // Generate activation token
+    const activationToken = crypto.randomBytes(32).toString('hex');
+
+    // Create new user (inactive by default)
     const newUser = await User.create({
       fullName,
       email,
       password: hashedPassword,
       university,
       role: 'student',
+      isActive: false,
+      activationToken,
     });
 
+    // Send activation email
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const activationLink = `${baseUrl}/api/activate?token=${activationToken}&email=${encodeURIComponent(email)}`;
+    await sendActivationEmail(email, activationLink);
+
     return NextResponse.json(
-      { message: 'User registered successfully', user: { id: newUser._id, email: newUser.email, fullName: newUser.fullName, university: newUser.university, role: newUser.role, createdAt: newUser.createdAt } },
+      { message: 'User registered successfully. Please check your email to activate your account.' },
       { status: 201 }
     );
   } catch (error) {

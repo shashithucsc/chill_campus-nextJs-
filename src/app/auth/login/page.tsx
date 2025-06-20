@@ -10,6 +10,7 @@ export default function LoginPage() {
     email: '',
     password: '',
   });
+  const [popup, setPopup] = useState<{ open: boolean; message: string }>({ open: false, message: '' });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +24,7 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.message || 'Login failed');
+        setPopup({ open: true, message: data.message || 'Login failed' });
         return;
       }
 
@@ -34,13 +35,28 @@ export default function LoginPage() {
         router.push('/home/home');
       }
     } catch (error) {
-      alert('Something went wrong. Please try again.');
+      setPopup({ open: true, message: 'Something went wrong. Please try again.' });
       console.error(error);
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      {/* Popup Modal */}
+      {popup.open && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full text-center">
+            <p className="text-gray-800 mb-4">{popup.message}</p>
+            <button
+              className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              onClick={() => setPopup({ open: false, message: '' })}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
           Sign in to your account
@@ -125,4 +141,4 @@ export default function LoginPage() {
       </div>
     </div>
   );
-} 
+}
