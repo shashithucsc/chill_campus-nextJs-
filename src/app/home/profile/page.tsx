@@ -4,12 +4,15 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Navbar from '../navbar/Navbar';
 import Sidebar from '../sidebar/Sidebar';
+import Post from '../components/Post';
+import CreatePostModal from '../components/CreatePostModal';
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [showCreatePost, setShowCreatePost] = useState(false);
 
   useEffect(() => {
     async function fetchUser() {
@@ -60,8 +63,11 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+      <Navbar onCreatePost={() => setShowCreatePost(true)} />
       <Sidebar />
+      {showCreatePost && (
+        <CreatePostModal onClose={() => setShowCreatePost(false)} />
+      )}
       <div className="pl-64 pt-16">
         {/* Profile Header */}
         <div className="bg-white shadow-sm">

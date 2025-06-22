@@ -45,6 +45,8 @@ export default function Post({
   const [showMenu, setShowMenu] = useState(false);
   const [contentState, setContentState] = useState(content);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [editMedia, setEditMedia] = useState<string | File | null>(image || null);
+  const [editMediaType, setEditMediaType] = useState<'image' | 'video' | null>(mediaType || null);
 
   useEffect(() => {
     // Fetch current user id from /api/user
@@ -69,14 +71,28 @@ export default function Post({
   };
 
   const handleEdit = async () => {
+    const formData = new FormData();
+    formData.append('content', editContent);
+    if (editMedia && typeof editMedia !== 'string') {
+      formData.append('media', editMedia);
+      formData.append('mediaType', editMediaType || '');
+    }
     const res = await fetch(`/api/posts/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: editContent }),
+      body: formData,
     });
     if (res.ok) {
+      const data = await res.json();
       setIsEditing(false);
-      setContentState(editContent);
+      setContentState(data.post.content);
+      // If media was updated, update editMedia and editMediaType from backend response
+      if (data.post.media && data.post.media.length > 0) {
+        setEditMedia(data.post.media[0]);
+        setEditMediaType(data.post.mediaType);
+      } else {
+        setEditMedia(null);
+        setEditMediaType(null);
+      }
     }
   };
 
@@ -152,14 +168,43 @@ export default function Post({
               value={editContent}
               onChange={e => setEditContent(e.target.value)}
             />
+            {/* Image/video edit */}
+            <input
+              type="file"
+              accept="image/*,video/*"
+              onChange={e => {
+                if (e.target.files && e.target.files[0]) {
+                  setEditMedia(e.target.files[0]);
+                  setEditMediaType(e.target.files[0].type.startsWith('video') ? 'video' : 'image');
+                }
+              }}
+            />
+            {editMedia && typeof editMedia === 'string' && (
+              <div className="mt-2">
+                {editMediaType === 'image' ? (
+                  <Image src={editMedia} alt="Edit post image" width={400} height={300} className="rounded" />
+                ) : (
+                  <video src={editMedia} controls className="rounded w-full max-h-64" />
+                )}
+              </div>
+            )}
+            {editMedia && typeof editMedia !== 'string' && (
+              <div className="mt-2">
+                {editMediaType === 'image' ? (
+                  <img src={URL.createObjectURL(editMedia)} alt="Edit post image" className="rounded w-full max-h-64" />
+                ) : (
+                  <video src={URL.createObjectURL(editMedia)} controls className="rounded w-full max-h-64" />
+                )}
+              </div>
+            )}
             <div className="flex space-x-2">
               <button type="button" onClick={handleEdit} className="bg-blue-600 text-white px-3 py-1 rounded">Save</button>
-              <button type="button" onClick={() => { setIsEditing(false); setEditContent(contentState); }} className="bg-gray-300 text-gray-800 px-3 py-1 rounded">Cancel</button>
+              <button type="button" onClick={() => { setIsEditing(false); setEditContent(contentState); setEditMedia(image || null); setEditMediaType(mediaType || null); }} className="bg-gray-300 text-gray-800 px-3 py-1 rounded">Cancel</button>
             </div>
           </div>
         ) : (
           <>
-            <p className="text-gray-900 whitespace-pre-wrap">{contentState}</p>
+            <p className="text-black whitespace-pre-wrap">{contentState}</p>
             {/* Show all images if mediaType is image and media array exists */}
             {mediaType === 'image' && media && media.length > 0 && media.map((img, idx) =>
               (typeof img === 'string' && (img.startsWith('/') || img.startsWith('http')) ? (

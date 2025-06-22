@@ -1,11 +1,6 @@
-'use client';
+import { useState } from 'react';
 
-import { useEffect, useState } from 'react';
-import Navbar from '../navbar/Navbar';
-import Sidebar from '../sidebar/Sidebar';
-import Post from '../components/Post';
-
-function CreatePostModal({ open, onClose, onPostCreated }: { open: boolean; onClose: () => void; onPostCreated: () => void }) {
+export default function CreatePostModal({ open = true, onClose, onPostCreated }: { open?: boolean; onClose: () => void; onPostCreated?: () => void }) {
   const [content, setContent] = useState('');
   const [media, setMedia] = useState<File | null>(null);
   const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
@@ -45,7 +40,7 @@ function CreatePostModal({ open, onClose, onPostCreated }: { open: boolean; onCl
       setMedia(null);
       setMediaType(null);
       setLoading(false);
-      onPostCreated();
+      if (onPostCreated) onPostCreated();
       onClose();
     } catch (err) {
       setError('Failed to create post');
@@ -56,7 +51,6 @@ function CreatePostModal({ open, onClose, onPostCreated }: { open: boolean; onCl
   if (!open) return null;
   return (
     <>
-      {/* Overlay, but allow pointer events to pass through except modal */}
       <div className="fixed inset-0 z-40 bg-black bg-opacity-40" aria-hidden="true" />
       <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
         <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative pointer-events-auto">
@@ -89,72 +83,5 @@ function CreatePostModal({ open, onClose, onPostCreated }: { open: boolean; onCl
         </div>
       </div>
     </>
-  );
-}
-
-export default function HomePage() {
-  const [posts, setPosts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
-
-  const fetchPosts = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/posts');
-      const data = await res.json();
-      setPosts(data.posts || []);
-    } catch (err) {
-      setPosts([]);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchPosts();
-  }, []);
-
-  const handlePostCreated = () => {
-    fetchPosts();
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar onCreatePost={() => setIsCreatePostOpen(true)} />
-      <Sidebar />
-      <CreatePostModal open={isCreatePostOpen} onClose={() => setIsCreatePostOpen(false)} onPostCreated={handlePostCreated} />
-      {/* Main Content */}
-      <main className="pt-16 pl-64">
-        <div className="max-w-2xl mx-auto px-4 py-8">
-          {/* Posts Feed */}
-          <div className="space-y-4">
-            {loading ? (
-              <div className="text-center text-gray-500">Loading posts...</div>
-            ) : posts.length === 0 ? (
-              <div className="text-center text-gray-500">No posts yet.</div>
-            ) : (
-              posts.map((post) => (
-                <Post
-                  key={post._id}
-                  id={post._id}
-                  author={{
-                    id: post.user?._id || post.user?.id || '',
-                    name: post.user?.fullName || 'Unknown',
-                    avatar: '/default-avatar.png',
-                    role: post.user?.role || '',
-                  }}
-                  content={post.content}
-                  image={post.media && post.media.length > 0 ? (post.media[0].startsWith('/') ? post.media[0] : `/uploads/${post.media[0]}`) : undefined}
-                  media={post.media}
-                  mediaType={post.mediaType}
-                  likes={0}
-                  comments={0}
-                  timestamp={new Date(post.createdAt).toLocaleString()}
-                />
-              ))
-            )}
-          </div>
-        </div>
-      </main>
-    </div>
   );
 }
