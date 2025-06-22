@@ -4,10 +4,21 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
+interface Comment {
+  _id: string;
+  user: {
+    id: string;
+    name: string;
+    avatar: string;
+  };
+  content: string;
+  createdAt: string;
+}
+
 interface PostProps {
   id: string;
   author: {
-    id: string; // <-- add id here
+    id: string;
     name: string;
     avatar: string;
     role: string;
@@ -40,13 +51,19 @@ export default function Post({
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(likes);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editContent, setEditContent] = useState(content);
+  // Comments state
+  const [commentList, setCommentList] = useState<Comment[]>([]);
+  const [commentInput, setCommentInput] = useState('');
+  const [commentLoading, setCommentLoading] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [contentState, setContentState] = useState(content);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editMedia, setEditMedia] = useState<string | File | null>(image || null);
   const [editMediaType, setEditMediaType] = useState<'image' | 'video' | null>(mediaType || null);
+  // Editing state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(content);
 
   useEffect(() => {
     // Fetch current user id from /api/user
@@ -55,9 +72,48 @@ export default function Post({
       .then(data => setCurrentUserId(data.user?.id || null));
   }, []);
 
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    setLikeCount(isLiked ? likeCount - 1 : likeCount + 1);
+  useEffect(() => {
+    // Fetch like state and comments from backend
+    fetch(`/api/posts/${id}/reactions`)
+      .then(res => res.json())
+      .then(data => {
+        setIsLiked(data.likedByCurrentUser || false);
+        setLikeCount(data.likeCount || 0);
+      });
+    fetch(`/api/posts/${id}/comments`)
+      .then(res => res.json())
+      .then(data => {
+        setCommentList(data.comments || []);
+      });
+  }, [id]);
+
+  const handleLike = async () => {
+    const newLiked = !isLiked;
+    setIsLiked(newLiked);
+    setLikeCount(likeCount + (newLiked ? 1 : -1));
+    // Persist like/unlike
+    await fetch(`/api/posts/${id}/reactions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ like: newLiked }),
+    });
+  };
+
+  const handleCommentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commentInput.trim()) return;
+    setCommentLoading(true);
+    const res = await fetch(`/api/posts/${id}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: commentInput }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setCommentList([data.comment, ...commentList]);
+      setCommentInput('');
+    }
+    setCommentLoading(false);
   };
 
   const handleDelete = async () => {
@@ -104,7 +160,7 @@ export default function Post({
           <div className="flex items-center space-x-3">
             <div className="h-10 w-10 rounded-full bg-gray-200 overflow-hidden">
               <Image
-                src={author.avatar}
+                src={author.avatar && author.avatar !== '' ? author.avatar : '/default-avatar.png'}
                 alt={author.name}
                 width={40}
                 height={40}
@@ -163,22 +219,26 @@ export default function Post({
         {isEditing ? (
           <div className="space-y-2">
             <textarea
-              className="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder:text-black"
               rows={3}
               value={editContent}
               onChange={e => setEditContent(e.target.value)}
             />
             {/* Image/video edit */}
-            <input
-              type="file"
-              accept="image/*,video/*"
-              onChange={e => {
-                if (e.target.files && e.target.files[0]) {
-                  setEditMedia(e.target.files[0]);
-                  setEditMediaType(e.target.files[0].type.startsWith('video') ? 'video' : 'image');
-                }
-              }}
-            />
+            <label className="block text-black font-medium">
+              Change image/video:
+              <input
+                type="file"
+                accept="image/*,video/*"
+                className="block mt-1 text-black"
+                onChange={e => {
+                  if (e.target.files && e.target.files[0]) {
+                    setEditMedia(e.target.files[0]);
+                    setEditMediaType(e.target.files[0].type.startsWith('video') ? 'video' : 'image');
+                  }
+                }}
+              />
+            </label>
             {editMedia && typeof editMedia === 'string' && (
               <div className="mt-2">
                 {editMediaType === 'image' ? (
@@ -208,7 +268,7 @@ export default function Post({
             {/* Show all images if mediaType is image and media array exists */}
             {mediaType === 'image' && media && media.length > 0 && media.map((img, idx) =>
               (typeof img === 'string' && (img.startsWith('/') || img.startsWith('http')) ? (
-                <div key={idx} className="mt-4 rounded-lg overflow-hidden">
+                <div key={idx} className="mt-4 rounded-lg overflow-hidden relative">
                   <Image
                     src={img}
                     alt={`Post image ${idx+1}`}
@@ -216,8 +276,16 @@ export default function Post({
                     height={400}
                     className="w-full h-auto object-cover"
                   />
+                  
                 </div>
               ) : null)
+            )}
+            {/* Show video if mediaType is video and media exists */}
+            {mediaType === 'video' && media && media.length > 0 && (
+              <div className="mt-4 rounded-lg overflow-hidden relative">
+                <video src={media[0]} controls className="w-full max-h-96 rounded" />
+              
+              </div>
             )}
             {image && typeof image !== 'string' && (
               <div className="mt-4 rounded-lg overflow-hidden">
@@ -256,7 +324,10 @@ export default function Post({
             </svg>
             <span>{likeCount}</span>
           </button>
-          <button className="flex items-center space-x-2 text-gray-500 hover:text-gray-700">
+          <button
+            className="flex items-center space-x-2 text-gray-500 hover:text-gray-700"
+            onClick={() => setShowComments((v) => !v)}
+          >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
@@ -265,22 +336,55 @@ export default function Post({
                 d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
               />
             </svg>
-            <span>{comments}</span>
+            <span>{commentList.length}</span>
           </button>
-          <button className="flex items-center space-x-2 text-gray-500 hover:text-gray-700">
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-              />
-            </svg>
-            <span>Share</span>
-          </button>
+          {/* ...existing share button... */}
         </div>
+        {/* Comments Section */}
+        {showComments && (
+          <div className="mt-4">
+            <form onSubmit={handleCommentSubmit} className="flex items-center space-x-2 mb-2">
+              <input
+                type="text"
+                className="flex-1 border border-gray-300 rounded px-2 py-1 text-black"
+                placeholder="Write a comment..."
+                value={commentInput}
+                onChange={e => setCommentInput(e.target.value)}
+                disabled={commentLoading}
+              />
+              <button
+                type="submit"
+                className="bg-blue-600 text-white px-3 py-1 rounded"
+                disabled={commentLoading || !commentInput.trim()}
+              >
+                {commentLoading ? '...' : 'Post'}
+              </button>
+            </form>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {commentList.length === 0 ? (
+                <div className="text-gray-500 text-sm">No comments yet.</div>
+              ) : (
+                commentList.map((c) => (
+                  <div key={c._id} className="flex items-start space-x-2">
+                    <Image
+                      src={c.user.avatar || '/default-avatar.png'}
+                      alt={c.user.name}
+                      width={28}
+                      height={28}
+                      className="rounded-full object-cover"
+                    />
+                    <div>
+                      <span className="font-medium text-gray-900 text-sm">{c.user.name}</span>
+                      <span className="ml-2 text-xs text-gray-500">{new Date(c.createdAt).toLocaleString()}</span>
+                      <div className="text-gray-800 text-sm">{c.content}</div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
       </div>
-
       {/* Delete Confirmation Popup */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center">

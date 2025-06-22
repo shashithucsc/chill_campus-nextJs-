@@ -139,7 +139,7 @@ export default function HomePage() {
                   author={{
                     id: post.user?._id || post.user?.id || '',
                     name: post.user?.fullName || 'Unknown',
-                    avatar: '/default-avatar.png',
+                    avatar: post.user?.avatar && post.user?.avatar !== '' ? post.user.avatar : '/default-avatar.png',
                     role: post.user?.role || '',
                   }}
                   content={post.content}

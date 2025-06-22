@@ -7,7 +7,10 @@ import fs from 'fs/promises';
 
 export async function GET() {
   await dbConnect();
-  const posts = await Post.find({}).populate('user', 'fullName email').sort({ createdAt: -1 });
+  // Populate fullName, email, avatar, and role for the user
+  const posts = await Post.find({})
+    .populate('user', 'fullName email avatar role')
+    .sort({ createdAt: -1 });
   return NextResponse.json({ posts });
 }
 
