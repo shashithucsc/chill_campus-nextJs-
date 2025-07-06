@@ -6,8 +6,10 @@ import Navbar from '../navbar/Navbar';
 import Sidebar from '../sidebar/Sidebar';
 import Post from '../components/Post';
 import CreatePostModal from '../components/CreatePostModal';
+import { useSidebar } from '../context/SidebarContext';
 
 export default function HomePage() {
+  const { isCollapsed } = useSidebar();
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
@@ -117,9 +119,13 @@ export default function HomePage() {
       {/* Main Content */}
       <motion.main 
         initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        animate={{ 
+          opacity: 1, 
+          y: 0,
+          paddingLeft: isCollapsed ? '0px' : '256px'
+        }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="relative z-10 pt-16 pl-64"
+        className="relative z-10 pt-16"
       >
         <div className="max-w-6xl mx-auto px-8 py-8">
           {/* Welcome Header */}
@@ -233,7 +239,7 @@ export default function HomePage() {
         onPostCreated={handlePostCreated}
       >
         {/* Pass the posts feed as children to show in blurred background */}
-        <div className="min-h-screen pt-16 pl-64">
+        <div className={`min-h-screen pt-16 transition-all duration-300 ${isCollapsed ? 'pl-0' : 'pl-64'}`}>
           <div className="max-w-6xl mx-auto px-8 py-8">
             {/* Welcome Header */}
             <div className="mb-10 text-center">
