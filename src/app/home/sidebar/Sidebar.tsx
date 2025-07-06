@@ -3,16 +3,25 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { motion } from 'framer-motion';
+import { 
+  HomeIcon,
+  UserGroupIcon,
+  CalendarDaysIcon,
+  ChatBubbleLeftRightIcon,
+  ChevronDownIcon,
+  ChevronRightIcon
+} from '@heroicons/react/24/outline';
 
 export default function Sidebar() {
   const [isCommunitiesExpanded, setIsCommunitiesExpanded] = useState(true);
   const [isEventsExpanded, setIsEventsExpanded] = useState(true);
 
   const navigation = [
-    { name: 'Home', href: '/home/home', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
-    { name: 'Communities', href: '/home/communities', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
-    { name: 'Events', href: '/home/events', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
-    { name: 'Messages', href: '/home/messages', icon: 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z' },
+    { name: 'Home', href: '/home/home', icon: HomeIcon },
+    { name: 'Communities', href: '/home/communities', icon: UserGroupIcon },
+    { name: 'Events', href: '/home/events', icon: CalendarDaysIcon },
+    { name: 'Messages', href: '/home/messages', icon: ChatBubbleLeftRightIcon },
   ];
 
   const communities = [
@@ -27,115 +36,166 @@ export default function Sidebar() {
   ];
 
   return (
-    <div className="w-64 bg-white h-screen fixed left-0 top-16 border-r border-gray-200 overflow-y-auto">
-      <div className="p-4">
+    <motion.div 
+      initial={{ x: -300, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] as any }}
+      className="w-64 bg-white/10 backdrop-blur-md h-screen fixed left-0 top-16 border-r border-white/20 overflow-y-auto shadow-2xl"
+    >
+      <div className="p-6">
         {/* Main Navigation */}
-        <nav className="space-y-1">
-          {navigation.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-50 hover:text-blue-600"
-            >
-              <svg
-                className="mr-3 h-5 w-5 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+        <nav className="space-y-2">
+          {navigation.map((item, index) => {
+            const IconComponent = item.icon;
+            return (
+              <motion.div
+                key={item.name}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
-              </svg>
-              {item.name}
-            </Link>
-          ))}
+                <Link
+                  href={item.href}
+                  className="flex items-center px-4 py-3 text-sm font-medium text-white/90 rounded-xl hover:bg-white/20 hover:text-white transition-all duration-300 group backdrop-blur-sm"
+                >
+                  <IconComponent className="mr-3 h-5 w-5 text-white/70 group-hover:text-blue-400 transition-colors" />
+                  {item.name}
+                </Link>
+              </motion.div>
+            );
+          })}
         </nav>
 
         {/* Communities Section */}
         <div className="mt-8">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
             onClick={() => setIsCommunitiesExpanded(!isCommunitiesExpanded)}
-            className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-50"
+            className="flex items-center justify-between w-full px-4 py-3 text-sm font-semibold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent hover:from-blue-200 hover:to-purple-200 transition-all duration-300"
           >
             <span>Communities</span>
-            <svg
-              className={`h-5 w-5 text-gray-400 transform ${isCommunitiesExpanded ? 'rotate-180' : ''}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+            <motion.div
+              animate={{ rotate: isCommunitiesExpanded ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
+              <ChevronDownIcon className="h-5 w-5 text-blue-400" />
+            </motion.div>
+          </motion.button>
           {isCommunitiesExpanded && (
-            <div className="mt-2 space-y-2">
-              {communities.map((community) => (
-                <Link
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="mt-3 space-y-2"
+            >
+              {communities.map((community, index) => (
+                <motion.div
                   key={community.name}
-                  href={`/home/communities/${community.name.toLowerCase()}`}
-                  className="flex items-center px-4 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-50"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  whileHover={{ x: 4, scale: 1.02 }}
                 >
-                  <div className="h-8 w-8 rounded-full bg-gray-200 overflow-hidden mr-3">
-                    <Image
-                      src={community.image}
-                      alt={community.name}
-                      width={32}
-                      height={32}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <div>
-                    <p className="font-medium">{community.name}</p>
-                    <p className="text-xs text-gray-500">{community.members} members</p>
-                  </div>
-                </Link>
+                  <Link
+                    href={`/home/communities/${community.name.toLowerCase()}`}
+                    className="flex items-center px-4 py-3 rounded-xl hover:bg-white/20 transition-all duration-300 backdrop-blur-sm"
+                  >
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/20 rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                      <span className="text-white text-sm font-bold">
+                        {community.name.charAt(0)}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-white text-sm">{community.name}</p>
+                      <p className="text-xs text-white/60">{community.members.toLocaleString()} members</p>
+                    </div>
+                  </Link>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           )}
         </div>
 
         {/* Upcoming Events Section */}
         <div className="mt-8">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
             onClick={() => setIsEventsExpanded(!isEventsExpanded)}
-            className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-50"
+            className="flex items-center justify-between w-full px-4 py-3 text-sm font-semibold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent hover:from-blue-200 hover:to-purple-200 transition-all duration-300"
           >
             <span>Upcoming Events</span>
-            <svg
-              className={`h-5 w-5 text-gray-400 transform ${isEventsExpanded ? 'rotate-180' : ''}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+            <motion.div
+              animate={{ rotate: isEventsExpanded ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
+              <ChevronDownIcon className="h-5 w-5 text-blue-400" />
+            </motion.div>
+          </motion.button>
           {isEventsExpanded && (
-            <div className="mt-2 space-y-2">
-              {upcomingEvents.map((event) => (
-                <Link
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="mt-3 space-y-2"
+            >
+              {upcomingEvents.map((event, index) => (
+                <motion.div
                   key={event.name}
-                  href={`/home/events/${event.name.toLowerCase().replace(' ', '-')}`}
-                  className="flex items-center px-4 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-50"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  whileHover={{ x: 4, scale: 1.02 }}
                 >
-                  <div className="h-8 w-8 rounded-full bg-gray-200 overflow-hidden mr-3">
-                    <Image
-                      src={event.image}
-                      alt={event.name}
-                      width={32}
-                      height={32}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <div>
-                    <p className="font-medium">{event.name}</p>
-                    <p className="text-xs text-gray-500">{event.date}</p>
-                  </div>
-                </Link>
+                  <Link
+                    href={`/home/events/${event.name.toLowerCase().replace(' ', '-')}`}
+                    className="flex items-center px-4 py-3 rounded-xl hover:bg-white/20 transition-all duration-300 backdrop-blur-sm"
+                  >
+                    <div className="w-10 h-10 bg-gradient-to-r from-green-500/20 to-blue-500/20 backdrop-blur-sm border border-white/20 rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                      <CalendarDaysIcon className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-white text-sm">{event.name}</p>
+                      <p className="text-xs text-white/60">{event.date}</p>
+                    </div>
+                  </Link>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           )}
         </div>
+
+        {/* Quick Actions */}
+        <div className="mt-8 p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-lg">
+          <h3 className="text-sm font-semibold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent mb-3">
+            Quick Actions
+          </h3>
+          <div className="space-y-2">
+            <motion.button
+              whileHover={{ scale: 1.02, x: 4 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white rounded-lg hover:bg-white/20 transition-all duration-300 backdrop-blur-sm"
+            >
+              🎓 Join Study Groups
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02, x: 4 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white rounded-lg hover:bg-white/20 transition-all duration-300 backdrop-blur-sm"
+            >
+              🏢 Explore Clubs
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02, x: 4 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white rounded-lg hover:bg-white/20 transition-all duration-300 backdrop-blur-sm"
+            >
+              📚 Find Resources
+            </motion.button>
+          </div>
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 } 

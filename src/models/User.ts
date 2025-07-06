@@ -7,6 +7,9 @@ export interface IUser extends Document {
   fullName: string;
   university: string;
   createdAt: Date;
+  avatar?: string; // Optional avatar field
+  isActive: boolean; // Indicates if the user's email is confirmed
+  activationToken: string; // Token for email confirmation
 }
 
 const UserSchema = new Schema<IUser>(
@@ -38,6 +41,18 @@ const UserSchema = new Schema<IUser>(
     createdAt: {
       type: Date,
       default: Date.now,
+    },
+    avatar: {
+      type: String,
+      default: '',
+    },
+    isActive: {
+      type: Boolean,
+      default: false,
+    },
+    activationToken: {
+      type: String,
+      default: '',
     },
   },
   {
