@@ -40,7 +40,7 @@ export default function Sidebar() {
       initial={{ x: -300, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] as any }}
-      className="w-64 bg-white/95 backdrop-blur-md h-screen fixed left-0 top-16 border-r border-blue-100/20 overflow-y-auto shadow-lg"
+      className="w-64 bg-white/10 backdrop-blur-md h-screen fixed left-0 top-16 border-r border-white/20 overflow-y-auto shadow-2xl"
     >
       <div className="p-6">
         {/* Main Navigation */}
@@ -56,9 +56,9 @@ export default function Sidebar() {
               >
                 <Link
                   href={item.href}
-                  className="flex items-center px-4 py-3 text-sm font-medium text-gray-700 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:text-blue-600 transition-all duration-300 group"
+                  className="flex items-center px-4 py-3 text-sm font-medium text-white/90 rounded-xl hover:bg-white/20 hover:text-white transition-all duration-300 group backdrop-blur-sm"
                 >
-                  <IconComponent className="mr-3 h-5 w-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                  <IconComponent className="mr-3 h-5 w-5 text-white/70 group-hover:text-blue-400 transition-colors" />
                   {item.name}
                 </Link>
               </motion.div>
@@ -71,14 +71,14 @@ export default function Sidebar() {
           <motion.button
             whileHover={{ scale: 1.02 }}
             onClick={() => setIsCommunitiesExpanded(!isCommunitiesExpanded)}
-            className="flex items-center justify-between w-full px-4 py-3 text-sm font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
+            className="flex items-center justify-between w-full px-4 py-3 text-sm font-semibold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent hover:from-blue-200 hover:to-purple-200 transition-all duration-300"
           >
             <span>Communities</span>
             <motion.div
               animate={{ rotate: isCommunitiesExpanded ? 180 : 0 }}
               transition={{ duration: 0.3 }}
             >
-              <ChevronDownIcon className="h-5 w-5 text-blue-600" />
+              <ChevronDownIcon className="h-5 w-5 text-blue-400" />
             </motion.div>
           </motion.button>
           {isCommunitiesExpanded && (
@@ -99,16 +99,16 @@ export default function Sidebar() {
                 >
                   <Link
                     href={`/home/communities/${community.name.toLowerCase()}`}
-                    className="flex items-center px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300"
+                    className="flex items-center px-4 py-3 rounded-xl hover:bg-white/20 transition-all duration-300 backdrop-blur-sm"
                   >
-                    <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-purple-500 rounded-xl flex items-center justify-center mr-3 shadow-md">
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/20 rounded-xl flex items-center justify-center mr-3 shadow-lg">
                       <span className="text-white text-sm font-bold">
                         {community.name.charAt(0)}
                       </span>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900 text-sm">{community.name}</p>
-                      <p className="text-xs text-gray-500">{community.members.toLocaleString()} members</p>
+                      <p className="font-medium text-white text-sm">{community.name}</p>
+                      <p className="text-xs text-white/60">{community.members.toLocaleString()} members</p>
                     </div>
                   </Link>
                 </motion.div>
@@ -122,14 +122,14 @@ export default function Sidebar() {
           <motion.button
             whileHover={{ scale: 1.02 }}
             onClick={() => setIsEventsExpanded(!isEventsExpanded)}
-            className="flex items-center justify-between w-full px-4 py-3 text-sm font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
+            className="flex items-center justify-between w-full px-4 py-3 text-sm font-semibold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent hover:from-blue-200 hover:to-purple-200 transition-all duration-300"
           >
             <span>Upcoming Events</span>
             <motion.div
               animate={{ rotate: isEventsExpanded ? 180 : 0 }}
               transition={{ duration: 0.3 }}
             >
-              <ChevronDownIcon className="h-5 w-5 text-blue-600" />
+              <ChevronDownIcon className="h-5 w-5 text-blue-400" />
             </motion.div>
           </motion.button>
           {isEventsExpanded && (
@@ -150,14 +150,14 @@ export default function Sidebar() {
                 >
                   <Link
                     href={`/home/events/${event.name.toLowerCase().replace(' ', '-')}`}
-                    className="flex items-center px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300"
+                    className="flex items-center px-4 py-3 rounded-xl hover:bg-white/20 transition-all duration-300 backdrop-blur-sm"
                   >
-                    <div className="w-10 h-10 bg-gradient-to-r from-green-400 to-blue-500 rounded-xl flex items-center justify-center mr-3 shadow-md">
+                    <div className="w-10 h-10 bg-gradient-to-r from-green-500/20 to-blue-500/20 backdrop-blur-sm border border-white/20 rounded-xl flex items-center justify-center mr-3 shadow-lg">
                       <CalendarDaysIcon className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900 text-sm">{event.name}</p>
-                      <p className="text-xs text-gray-500">{event.date}</p>
+                      <p className="font-medium text-white text-sm">{event.name}</p>
+                      <p className="text-xs text-white/60">{event.date}</p>
                     </div>
                   </Link>
                 </motion.div>
@@ -167,29 +167,29 @@ export default function Sidebar() {
         </div>
 
         {/* Quick Actions */}
-        <div className="mt-8 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl border border-blue-100/20">
-          <h3 className="text-sm font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
+        <div className="mt-8 p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-lg">
+          <h3 className="text-sm font-semibold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent mb-3">
             Quick Actions
           </h3>
           <div className="space-y-2">
             <motion.button
               whileHover={{ scale: 1.02, x: 4 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-blue-600 rounded-lg hover:bg-white/50 transition-all duration-300"
+              className="w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white rounded-lg hover:bg-white/20 transition-all duration-300 backdrop-blur-sm"
             >
               🎓 Join Study Groups
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.02, x: 4 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-blue-600 rounded-lg hover:bg-white/50 transition-all duration-300"
+              className="w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white rounded-lg hover:bg-white/20 transition-all duration-300 backdrop-blur-sm"
             >
               🏢 Explore Clubs
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.02, x: 4 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-blue-600 rounded-lg hover:bg-white/50 transition-all duration-300"
+              className="w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white rounded-lg hover:bg-white/20 transition-all duration-300 backdrop-blur-sm"
             >
               📚 Find Resources
             </motion.button>

@@ -3,6 +3,18 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  HeartIcon as HeartOutline,
+  ChatBubbleOvalLeftIcon,
+  ShareIcon,
+  EllipsisHorizontalIcon,
+  PencilIcon,
+  TrashIcon,
+  XMarkIcon,
+  PaperAirplaneIcon
+} from '@heroicons/react/24/outline';
+import { HeartIcon as HeartSolid } from '@heroicons/react/24/solid';
 
 interface Comment {
   _id: string;
@@ -153,35 +165,35 @@ export default function Post({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-4">
+    <div className="bg-white/5 backdrop-blur-md rounded-lg shadow-2xl border border-white/10 mb-4 hover:bg-white/10 transition-all duration-300">
       {/* Post Header */}
-      <div className="p-4">
+      <div className="p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="h-10 w-10 rounded-full bg-gray-200 overflow-hidden">
+            <div className="h-12 w-12 rounded-full bg-white/10 border border-white/20 overflow-hidden">
               <Image
                 src={author.avatar && author.avatar !== '' ? author.avatar : '/default-avatar.png'}
                 alt={author.name}
-                width={40}
-                height={40}
+                width={48}
+                height={48}
                 className="h-full w-full object-cover"
               />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <Link href={`/home/profile/${author.name}`} className="font-medium text-gray-900 hover:underline">
+                <Link href={`/home/profile/${author.name}`} className="font-semibold text-white hover:text-blue-300 transition-colors text-lg">
                   {author.name}
                 </Link>
                 {community && (
                   <>
-                    <span className="text-gray-500">in</span>
-                    <Link href={`/home/communities/${community.name}`} className="font-medium text-blue-600 hover:underline">
+                    <span className="text-white/60">in</span>
+                    <Link href={`/home/communities/${community.name}`} className="font-medium text-blue-400 hover:text-blue-300 transition-colors">
                       {community.name}
                     </Link>
                   </>
                 )}
               </div>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-white/70">
                 {author.role} • {timestamp}
               </p>
             </div>
@@ -190,22 +202,22 @@ export default function Post({
           {currentUserId && author && author.id === currentUserId && (
             <div className="relative">
               <button
-                className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                className="text-white/60 hover:text-white/90 focus:outline-none transition-colors"
                 onClick={() => setShowMenu((v) => !v)}
               >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                 </svg>
               </button>
               {showMenu && (
-                <div className="absolute right-0 mt-2 w-28 bg-white border rounded shadow-lg z-10">
+                <div className="absolute right-0 mt-2 w-32 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg shadow-2xl z-10">
                   <button
                     onClick={() => { setIsEditing(true); setShowMenu(false); }}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    className="block w-full text-left px-4 py-3 text-sm text-white/90 hover:bg-white/20 transition-colors"
                   >Edit</button>
                   <button
                     onClick={() => { setShowMenu(false); setShowDeleteConfirm(true); }}
-                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                    className="block w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-white/20 transition-colors"
                   >Delete</button>
                 </div>
               )}
@@ -215,22 +227,22 @@ export default function Post({
       </div>
 
       {/* Post Content */}
-      <div className="px-4 pb-4">
+      <div className="px-6 pb-6">
         {isEditing ? (
           <div className="space-y-2">
             <textarea
-              className="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder:text-black"
-              rows={3}
+              className="w-full border border-white/20 bg-white/10 backdrop-blur-sm rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder:text-white/60"
+              rows={4}
               value={editContent}
               onChange={e => setEditContent(e.target.value)}
             />
             {/* Image/video edit */}
-            <label className="block text-black font-medium">
+            <label className="block text-white font-medium text-lg">
               Change image/video:
               <input
                 type="file"
                 accept="image/*,video/*"
-                className="block mt-1 text-black"
+                className="block mt-2 text-white/90"
                 onChange={e => {
                   if (e.target.files && e.target.files[0]) {
                     setEditMedia(e.target.files[0]);
@@ -257,14 +269,14 @@ export default function Post({
                 )}
               </div>
             )}
-            <div className="flex space-x-2">
-              <button type="button" onClick={handleEdit} className="bg-blue-600 text-white px-3 py-1 rounded">Save</button>
-              <button type="button" onClick={() => { setIsEditing(false); setEditContent(contentState); setEditMedia(image || null); setEditMediaType(mediaType || null); }} className="bg-gray-300 text-gray-800 px-3 py-1 rounded">Cancel</button>
+            <div className="flex space-x-3">
+              <button type="button" onClick={handleEdit} className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all">Save</button>
+              <button type="button" onClick={() => { setIsEditing(false); setEditContent(contentState); setEditMedia(image || null); setEditMediaType(mediaType || null); }} className="bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-lg font-medium hover:bg-white/30 transition-all">Cancel</button>
             </div>
           </div>
         ) : (
           <>
-            <p className="text-black whitespace-pre-wrap">{contentState}</p>
+            <p className="text-white text-lg whitespace-pre-wrap leading-relaxed">{contentState}</p>
             {/* Show all images if mediaType is image and media array exists */}
             {mediaType === 'image' && media && media.length > 0 && media.map((img, idx) =>
               (typeof img === 'string' && (img.startsWith('/') || img.startsWith('http')) ? (
@@ -272,8 +284,8 @@ export default function Post({
                   <Image
                     src={img}
                     alt={`Post image ${idx+1}`}
-                    width={600}
-                    height={400}
+                    width={800}
+                    height={500}
                     className="w-full h-auto object-cover"
                   />
                   
@@ -301,16 +313,16 @@ export default function Post({
       </div>
 
       {/* Post Actions */}
-      <div className="px-4 py-3 border-t border-gray-200">
-        <div className="flex items-center space-x-6">
+      <div className="px-6 py-4 border-t border-white/20">
+        <div className="flex items-center space-x-8">
           <button
             onClick={handleLike}
-            className={`flex items-center space-x-2 ${
-              isLiked ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'
+            className={`flex items-center space-x-2 transition-colors ${
+              isLiked ? 'text-blue-400' : 'text-white/70 hover:text-white'
             }`}
           >
             <svg
-              className="h-5 w-5"
+              className="h-6 w-6"
               fill={isLiked ? 'currentColor' : 'none'}
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -322,13 +334,13 @@ export default function Post({
                 d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
               />
             </svg>
-            <span>{likeCount}</span>
+            <span className="font-medium">{likeCount}</span>
           </button>
           <button
-            className="flex items-center space-x-2 text-gray-500 hover:text-gray-700"
+            className="flex items-center space-x-2 text-white/70 hover:text-white transition-colors"
             onClick={() => setShowComments((v) => !v)}
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -336,17 +348,17 @@ export default function Post({
                 d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
               />
             </svg>
-            <span>{commentList.length}</span>
+            <span className="font-medium">{commentList.length}</span>
           </button>
           {/* ...existing share button... */}
         </div>
         {/* Comments Section */}
         {showComments && (
           <div className="mt-4">
-            <form onSubmit={handleCommentSubmit} className="flex items-center space-x-2 mb-2">
+            <form onSubmit={handleCommentSubmit} className="flex items-center space-x-3 mb-4">
               <input
                 type="text"
-                className="flex-1 border border-gray-300 rounded px-2 py-1 text-black"
+                className="flex-1 border border-white/20 bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Write a comment..."
                 value={commentInput}
                 onChange={e => setCommentInput(e.target.value)}
@@ -354,29 +366,29 @@ export default function Post({
               />
               <button
                 type="submit"
-                className="bg-blue-600 text-white px-3 py-1 rounded"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50"
                 disabled={commentLoading || !commentInput.trim()}
               >
                 {commentLoading ? '...' : 'Post'}
               </button>
             </form>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
+            <div className="space-y-3 max-h-48 overflow-y-auto">
               {commentList.length === 0 ? (
-                <div className="text-gray-500 text-sm">No comments yet.</div>
+                <div className="text-white/60 text-sm">No comments yet.</div>
               ) : (
                 commentList.map((c) => (
-                  <div key={c._id} className="flex items-start space-x-2">
+                  <div key={c._id} className="flex items-start space-x-3">
                     <Image
                       src={c.user.avatar || '/default-avatar.png'}
                       alt={c.user.name}
-                      width={28}
-                      height={28}
-                      className="rounded-full object-cover"
+                      width={32}
+                      height={32}
+                      className="rounded-full object-cover border border-white/20"
                     />
                     <div>
-                      <span className="font-medium text-gray-900 text-sm">{c.user.name}</span>
-                      <span className="ml-2 text-xs text-gray-500">{new Date(c.createdAt).toLocaleString()}</span>
-                      <div className="text-gray-800 text-sm">{c.content}</div>
+                      <span className="font-medium text-white text-sm">{c.user.name}</span>
+                      <span className="ml-2 text-xs text-white/60">{new Date(c.createdAt).toLocaleString()}</span>
+                      <div className="text-white/90 text-sm mt-1">{c.content}</div>
                     </div>
                   </div>
                 ))
@@ -388,13 +400,13 @@ export default function Post({
       {/* Delete Confirmation Popup */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black bg-opacity-40" />
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-xs relative z-10">
-            <h3 className="text-lg font-semibold mb-4">Delete Post?</h3>
-            <p className="mb-4 text-gray-700">Are you sure you want to delete this post?</p>
-            <div className="flex justify-end space-x-2">
-              <button onClick={() => setShowDeleteConfirm(false)} className="px-4 py-2 rounded bg-gray-200 text-gray-800">Cancel</button>
-              <button onClick={handleDelete} className="px-4 py-2 rounded bg-red-600 text-white">Delete</button>
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+          <div className="bg-white/10 backdrop-blur-md rounded-xl shadow-2xl border border-white/20 p-8 w-full max-w-md relative z-10">
+            <h3 className="text-2xl font-semibold mb-6 text-white">Delete Post?</h3>
+            <p className="mb-8 text-white/80 text-lg">Are you sure you want to delete this post?</p>
+            <div className="flex justify-end space-x-4">
+              <button onClick={() => setShowDeleteConfirm(false)} className="px-6 py-3 rounded-lg bg-white/20 backdrop-blur-sm text-white font-medium hover:bg-white/30 transition-all">Cancel</button>
+              <button onClick={handleDelete} className="px-6 py-3 rounded-lg bg-gradient-to-r from-red-600 to-red-700 text-white font-medium hover:from-red-700 hover:to-red-800 transition-all">Delete</button>
             </div>
           </div>
         </div>

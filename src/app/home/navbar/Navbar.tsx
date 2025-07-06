@@ -65,7 +65,7 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.8, ease: "easeOut" }}
-      className="bg-white/95 backdrop-blur-md shadow-lg border-b border-blue-100/20 fixed w-full z-50"
+      className="bg-white/10 backdrop-blur-md shadow-2xl border-b border-white/20 fixed w-full z-50"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
@@ -84,7 +84,7 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
                     className="object-contain"
                   />
                 </div>
-                <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                <span className="text-2xl font-bold bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent">
                   Chill Campus
                 </span>
               </Link>
@@ -94,14 +94,14 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
                 <input
                   type="text"
                   placeholder="Search posts, communities, or events..."
-                  className="w-96 px-4 py-2 pl-12 rounded-xl border border-blue-200/50 bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-300 transition-all duration-300 shadow-sm hover:shadow-md"
+                  className="w-96 px-4 py-3 pl-12 rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 focus:bg-white/20 transition-all duration-300 shadow-lg hover:shadow-xl"
                 />
                 <motion.button 
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
-                  className="absolute left-3 top-2.5"
+                  className="absolute left-3 top-3.5"
                 >
-                  <MagnifyingGlassIcon className="h-5 w-5 text-blue-400" />
+                  <MagnifyingGlassIcon className="h-5 w-5 text-white/70" />
                 </motion.button>
               </div>
             </div>
@@ -111,9 +111,9 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
           <div className="flex items-center space-x-4">
             {/* Create Post Button */}
             <motion.button
-              whileHover={{ scale: 1.05, boxShadow: "0 10px 30px rgba(59, 130, 246, 0.3)" }}
+              whileHover={{ scale: 1.05, boxShadow: "0 15px 40px rgba(59, 130, 246, 0.4)" }}
               whileTap={{ scale: 0.95 }}
-              className="hidden md:flex items-center px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300"
+              className="hidden md:flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold text-sm shadow-2xl hover:shadow-xl transition-all duration-300 border border-white/20"
               onClick={onCreatePost}
             >
               <PlusIcon className="h-5 w-5 mr-2" />
@@ -126,13 +126,13 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                className="p-3 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 focus:outline-none transition-all duration-300 relative"
+                className="p-3 rounded-xl hover:bg-white/20 focus:outline-none transition-all duration-300 relative backdrop-blur-sm"
               >
-                <BellIcon className="h-6 w-6 text-gray-600 hover:text-blue-600 transition-colors" />
+                <BellIcon className="h-6 w-6 text-white/80 hover:text-white transition-colors" />
                 <motion.span 
                   animate={{ scale: [1, 1.2, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
-                  className="absolute top-1 right-1 block h-3 w-3 rounded-full bg-gradient-to-r from-red-500 to-pink-500 shadow-sm"
+                  className="absolute top-1 right-1 block h-3 w-3 rounded-full bg-gradient-to-r from-red-500 to-pink-500 shadow-lg"
                 />
               </motion.button>
 
@@ -143,32 +143,32 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute right-0 mt-2 w-80 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-blue-100/20 py-2 z-50"
+                  className="absolute right-0 mt-2 w-80 bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 py-2 z-50"
                 >
-                  <div className="px-6 py-3 border-b border-blue-100/20">
-                    <h3 className="text-sm font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Notifications</h3>
+                  <div className="px-6 py-3 border-b border-white/20">
+                    <h3 className="text-sm font-semibold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">Notifications</h3>
                   </div>
                   <div className="max-h-96 overflow-y-auto">
                     {/* Sample notifications */}
                     <motion.div 
-                      whileHover={{ backgroundColor: "rgba(59, 130, 246, 0.05)" }}
+                      whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }}
                       className="px-6 py-4 transition-colors"
                     >
-                      <p className="text-sm text-gray-900 font-medium">New comment on your post</p>
-                      <p className="text-xs text-gray-500 mt-1">2 minutes ago</p>
+                      <p className="text-sm text-white font-medium">New comment on your post</p>
+                      <p className="text-xs text-white/60 mt-1">2 minutes ago</p>
                     </motion.div>
                     <motion.div 
-                      whileHover={{ backgroundColor: "rgba(59, 130, 246, 0.05)" }}
+                      whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }}
                       className="px-6 py-4 transition-colors"
                     >
-                      <p className="text-sm text-gray-900 font-medium">Event reminder: Campus Meetup</p>
-                      <p className="text-xs text-gray-500 mt-1">1 hour ago</p>
+                      <p className="text-sm text-white font-medium">Event reminder: Campus Meetup</p>
+                      <p className="text-xs text-white/60 mt-1">1 hour ago</p>
                     </motion.div>
                   </div>
-                  <div className="px-6 py-3 border-t border-blue-100/20">
+                  <div className="px-6 py-3 border-t border-white/20">
                     <motion.button 
                       whileHover={{ scale: 1.05 }}
-                      className="text-sm bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-semibold hover:from-blue-700 hover:to-purple-700"
+                      className="text-sm bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent font-semibold hover:from-blue-300 hover:to-purple-300"
                     >
                       View all notifications
                     </motion.button>
@@ -183,10 +183,10 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center space-x-3 p-2 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 focus:outline-none transition-all duration-300"
+                className="flex items-center space-x-3 p-2 rounded-xl hover:bg-white/20 focus:outline-none transition-all duration-300 backdrop-blur-sm"
               >
                 <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 p-0.5 shadow-lg">
-                  <div className="h-full w-full rounded-full bg-white p-0.5">
+                  <div className="h-full w-full rounded-full bg-white/10 backdrop-blur-sm p-0.5 border border-white/20">
                     <Image
                       src={user?.avatar || '/default-avatar.png'}
                       alt="Profile"
@@ -196,7 +196,7 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
                     />
                   </div>
                 </div>
-                <span className="hidden md:block text-sm font-semibold bg-gradient-to-r from-gray-700 to-gray-600 bg-clip-text text-transparent">
+                <span className="hidden md:block text-sm font-semibold text-white/90">
                   {loading ? 'Loading...' : (user?.fullName || 'Guest')}
                 </span>
               </motion.button>
@@ -208,27 +208,27 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute right-0 mt-2 w-56 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-blue-100/20 py-2 z-50"
+                  className="absolute right-0 mt-2 w-56 bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 py-2 z-50"
                 >
-                  <motion.div whileHover={{ backgroundColor: "rgba(59, 130, 246, 0.05)" }}>
-                    <Link href="/home/profile" className="flex items-center px-6 py-3 text-sm text-gray-700 hover:text-blue-600 font-medium transition-colors">
-                      <UserIcon className="w-5 h-5 mr-3 text-blue-500" />
+                  <motion.div whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }}>
+                    <Link href="/home/profile" className="flex items-center px-6 py-3 text-sm text-white/90 hover:text-white font-medium transition-colors">
+                      <UserIcon className="w-5 h-5 mr-3 text-blue-400" />
                       Your Profile
                     </Link>
                   </motion.div>
-                  <motion.div whileHover={{ backgroundColor: "rgba(59, 130, 246, 0.05)" }}>
-                    <Link href="/home/settings" className="flex items-center px-6 py-3 text-sm text-gray-700 hover:text-blue-600 font-medium transition-colors">
-                      <Cog6ToothIcon className="w-5 h-5 mr-3 text-blue-500" />
+                  <motion.div whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }}>
+                    <Link href="/home/settings" className="flex items-center px-6 py-3 text-sm text-white/90 hover:text-white font-medium transition-colors">
+                      <Cog6ToothIcon className="w-5 h-5 mr-3 text-blue-400" />
                       Settings
                     </Link>
                   </motion.div>
-                  <div className="border-t border-blue-100/20 mt-2 pt-2">
+                  <div className="border-t border-white/20 mt-2 pt-2">
                     <motion.button 
-                      whileHover={{ backgroundColor: "rgba(239, 68, 68, 0.05)" }}
+                      whileHover={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
                       onClick={handleLogout}
-                      className="flex items-center w-full text-left px-6 py-3 text-sm text-red-600 hover:text-red-700 font-medium transition-colors"
+                      className="flex items-center w-full text-left px-6 py-3 text-sm text-red-400 hover:text-red-300 font-medium transition-colors"
                     >
-                      <ArrowRightOnRectangleIcon className="w-5 h-5 mr-3 text-red-500" />
+                      <ArrowRightOnRectangleIcon className="w-5 h-5 mr-3 text-red-400" />
                       Sign out
                     </motion.button>
                   </div>

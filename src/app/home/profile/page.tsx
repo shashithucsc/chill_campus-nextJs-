@@ -66,7 +66,14 @@ export default function ProfilePage() {
       <Navbar onCreatePost={() => setShowCreatePost(true)} />
       <Sidebar />
       {showCreatePost && (
-        <CreatePostModal onClose={() => setShowCreatePost(false)} />
+        <CreatePostModal 
+          open={showCreatePost}
+          onClose={() => setShowCreatePost(false)} 
+          onPostCreated={() => {
+            setShowCreatePost(false);
+            // Optionally refresh user posts here
+          }}
+        />
       )}
       <div className="pl-64 pt-16">
         {/* Profile Header */}
