@@ -66,57 +66,87 @@ const SuccessPopup = ({ isOpen, onClose, message }: SuccessPopupProps) => {
 };
 
 export default function CreateCommunityForm() {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const router = useRouter();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [errors, setErrors] = useState<Partial<FormData>>({});
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     name: '',
     category: '',
     description: '',
-    visibility: 'Public'
+    visibility: 'Public',
+    imageUrl: ''
   });
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
+    // Clear any previous errors
+    setErrors(prev => ({ ...prev, submit: '' }));
 
-      const response = await fetch('/api/upload', {
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      setErrors(prev => ({
+        ...prev,
+        submit: 'Invalid file type. Only JPEG, PNG, WebP and GIF images are allowed.'
+      }));
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors(prev => ({
+        ...prev,
+        submit: 'File size too large. Maximum size is 5MB.'
+      }));
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      // Show preview immediately for better UX
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+      setImageFile(file);
+
+      // Create FormData for upload
+      const uploadData = new FormData();
+      uploadData.append('file', file);
+
+      // Upload the image
+      const uploadRes = await fetch('/api/upload', {
         method: 'POST',
-        body: formData,
-        credentials: 'include'  // Add this to include cookies
+        body: uploadData,
+        credentials: 'include'
       });
 
-      if (!response.ok) throw new Error('Upload failed');
+      const response = await uploadRes.json();
 
-      const data = await response.json();
-      setFormData(prev => ({ ...prev, imageUrl: data.url }));
-      setImagePreview(URL.createObjectURL(file));
-    } catch (error) {
+      if (!uploadRes.ok) {
+        throw new Error(response.message || 'Failed to upload image');
+      }
+
+      // Update form data with the new image URL
+      setFormData(prev => ({ ...prev, imageUrl: response.url }));
+    } catch (error: any) {
       console.error('Error uploading image:', error);
       setErrors(prev => ({
         ...prev,
-        submit: 'Failed to upload image'
+        submit: error.message || 'Failed to upload image'
       }));
-    }
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      
+      // Clear preview on error
+      setImagePreview('');
+      setImageFile(null);
+      setFormData(prev => ({ ...prev, imageUrl: '' }));
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -150,28 +180,10 @@ export default function CreateCommunityForm() {
     if (!validateForm()) return;
 
     setIsLoading(true);
-    setErrors(prev => ({ ...prev, submit: '' }));
+    setErrors({});
 
     try {
-      let imageUrl = '';
-      if (imageFile) {
-        const formData = new FormData();
-        formData.append('file', imageFile as Blob);
-        
-        const uploadRes = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-          credentials: 'include'
-        });
-        
-        if (!uploadRes.ok) {
-          throw new Error('Failed to upload image');
-        }
-        
-        const uploadData = await uploadRes.json();
-        imageUrl = uploadData.url;
-      }
-
+      // Create the community with the image URL that was already uploaded
       const response = await fetch('/api/communities/create', {
         method: 'POST',
         headers: {
@@ -179,11 +191,11 @@ export default function CreateCommunityForm() {
         },
         credentials: 'include',
         body: JSON.stringify({
-          name: formData.name,
+          name: formData.name.trim(),
           category: formData.category,
-          description: formData.description,
+          description: formData.description.trim(),
           visibility: formData.visibility,
-          imageUrl: imageUrl
+          imageUrl: formData.imageUrl // This was set during image upload
         }),
       });
 
@@ -192,12 +204,23 @@ export default function CreateCommunityForm() {
         throw new Error(data.message || 'Failed to create community');
       }
 
-      await response.json();
+      const data = await response.json();
       setShowSuccessPopup(true);
+      
+      // Reset form
+      setFormData({
+        name: '',
+        category: '',
+        description: '',
+        visibility: 'Public',
+        imageUrl: ''
+      });
+      setImagePreview('');
+      setImageFile(null);
     } catch (err: any) {
       setErrors(prev => ({
         ...prev,
-        submit: err.message || 'Something went wrong'
+        submit: err.message || 'Failed to create community'
       }));
     } finally {
       setIsLoading(false);
@@ -314,15 +337,16 @@ export default function CreateCommunityForm() {
             className="space-y-2"
           >
             <label className="block text-white/90 text-sm font-medium">
-              Community Banner (Optional)
+              Community Banner
             </label>
             <div className="relative">
               <input
                 type="file"
-                onChange={handleImageUpload}
+                onChange={handleImageChange}
                 accept="image/*"
                 className="hidden"
                 id="image-upload"
+                disabled={isLoading}
               />
               <label
                 htmlFor="image-upload"
@@ -338,8 +362,10 @@ export default function CreateCommunityForm() {
                     />
                     <button
                       type="button"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.preventDefault();
                         setImagePreview('');
+                        setImageFile(null);
                         setFormData(prev => ({ ...prev, imageUrl: '' }));
                       }}
                       className="absolute top-2 right-2 p-1 bg-black/50 rounded-full hover:bg-black/70 transition-all"
@@ -349,10 +375,16 @@ export default function CreateCommunityForm() {
                   </div>
                 ) : (
                   <div className="text-center">
-                    <PhotoIcon className="mx-auto h-8 w-8 text-white/40" />
-                    <p className="mt-2 text-sm text-white/60">
-                      Click to upload banner image
-                    </p>
+                    {isLoading ? (
+                      <ArrowPathIcon className="mx-auto h-8 w-8 text-white/40 animate-spin" />
+                    ) : (
+                      <>
+                        <PhotoIcon className="mx-auto h-8 w-8 text-white/40" />
+                        <p className="mt-2 text-sm text-white/60">
+                          Click to upload banner image
+                        </p>
+                      </>
+                    )}
                   </div>
                 )}
               </label>
