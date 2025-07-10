@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { signIn, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,41 +18,46 @@ import {
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { data: session, status } = useSession();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [popup, setPopup] = useState({ open: false, message: '' });
+  const callbackUrl = searchParams.get('callbackUrl') || '/home';
+  
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
+    password: ''
   });
-  const [popup, setPopup] = useState<{ open: boolean; message: string }>({ open: false, message: '' });
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+
+  // If already authenticated, redirect to callback URL
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.push(callbackUrl);
+    }
+  }, [status, router, callbackUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
+
     try {
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+      const result = await signIn('credentials', {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setPopup({ open: true, message: data.message || 'Login failed' });
-        setIsLoading(false);
-        return;
+      if (result?.error) {
+        setError('Invalid email or password');
+      } else if (result?.ok) {
+        router.push(callbackUrl);
       }
-
-      // Redirect based on role
-      if (data.user.role === 'admin') {
-        router.push('/admin/dashboard');
-      } else {
-        router.push('/home/home');
-      }
-    } catch (error) {
-      setPopup({ open: true, message: 'Something went wrong. Please try again.' });
-      console.error(error);
+    } catch (err) {
+      setError('An error occurred during login');
+    } finally {
       setIsLoading(false);
     }
   };
