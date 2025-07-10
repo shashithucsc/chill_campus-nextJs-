@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSession } from 'next-auth/react';
 import Navbar from '../navbar/Navbar';
 import Sidebar from '../sidebar/Sidebar';
 import { useSidebar } from '../context/SidebarContext';
@@ -17,71 +18,17 @@ import {
   TagIcon
 } from '@heroicons/react/24/outline';
 
-// Sample data - In a real app, this would come from an API
-const communities = [
-  {
-    id: '1',
-    name: 'Computer Science',
-    description: 'A community for CS students to share knowledge, projects, and cutting-edge technology discussions.',
-    members: 1234,
-    banner: '/uploads/1749996045421-m93mlw.webp',
-    tags: ['Programming', 'Technology', 'Research'],
-    category: 'Tech',
-    isJoined: false,
-  },
-  {
-    id: '2',
-    name: 'Engineering Hub',
-    description: 'Connect with fellow engineering students and collaborate on innovative projects.',
-    members: 856,
-    banner: '/uploads/1750575347949-8t4icy.png',
-    tags: ['Mechanical', 'Electrical', 'Civil'],
-    category: 'Tech',
-    isJoined: true,
-  },
-  {
-    id: '3',
-    name: 'Business Network',
-    description: 'Network with business students and share industry insights and opportunities.',
-    members: 567,
-    banner: '/uploads/1750577439376-dvzo74.jpg',
-    tags: ['Marketing', 'Finance', 'Management'],
-    category: 'Business',
-    isJoined: false,
-  },
-  {
-    id: '4',
-    name: 'Photography Club',
-    description: 'Capture moments, share techniques, and explore the art of photography together.',
-    members: 423,
-    banner: '/uploads/1750577661175-33yp3h.jpg',
-    tags: ['Photography', 'Art', 'Creative'],
-    category: 'Clubs',
-    isJoined: false,
-  },
-  {
-    id: '5',
-    name: 'Campus Events',
-    description: 'Stay updated with all campus events, festivals, and social gatherings.',
-    members: 892,
-    banner: '/uploads/1750578859340-bbhefe.jpg',
-    tags: ['Events', 'Social', 'Campus'],
-    category: 'Events',
-    isJoined: true,
-  },
-  {
-    id: '6',
-    name: 'Study Groups',
-    description: 'Form study groups, share resources, and excel in your academic journey.',
-    members: 654,
-    banner: '/uploads/1751788489853-ip3vxz.jpg',
-    tags: ['Study', 'Academic', 'Collaboration'],
-    category: 'Academic',
-    isJoined: false,
-  },
-];
-
-const categories = ['All', 'Tech', 'Business', 'Clubs', 'Events', 'Academic'];
+interface Community {
+  id: string;
+  name: string;
+  description: string;
+  members: number;
+  imageUrl: string;
+  category: string;
+  isJoined: boolean;
+  visibility: string;
+  createdBy: string;
+}
 
 // Skeleton component for loading state
 const CommunityCardSkeleton = () => (
@@ -102,13 +49,12 @@ const CommunityCardSkeleton = () => (
 );
 
 export default function CommunitiesPage() {
+  const { data: session } = useSession();
   const { isCollapsed } = useSidebar();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
-  const [communitiesData, setCommunitiesData] = useState(communities);
+  const [communitiesData, setCommunitiesData] = useState<Community[]>([]);
 
   // Animation variants
   const containerVariants = {
@@ -135,19 +81,61 @@ export default function CommunitiesPage() {
   };
 
   useEffect(() => {
-    // Simulate loading and fetch user data
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1500);
+    // Fetch communities
+    const fetchCommunities = async () => {
+      try {
+        const response = await fetch('/api/communities', {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        if (data.success) {
+          setCommunitiesData(data.communities);
+        }
+      } catch (error) {
+        console.error('Error fetching communities:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    // Fetch user data for auth check
-    fetch('/api/user')
-      .then(res => res.json())
-      .then(data => setUser(data.user))
-      .catch(() => setUser(null));
-
-    return () => clearTimeout(timer);
+    fetchCommunities();
   }, []);
+
+  const handleJoinToggle = async (communityId: string, currentlyJoined: boolean) => {
+    if (!session) {
+      // Redirect to login or show login prompt
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/communities/${communityId}/join`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          action: currentlyJoined ? 'leave' : 'join'
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        // Update local state
+        setCommunitiesData(prev => prev.map(community => 
+          community.id === communityId 
+            ? { 
+                ...community, 
+                isJoined: !currentlyJoined,
+                members: data.memberCount
+              }
+            : community
+        ));
+      }
+    } catch (error) {
+      console.error('Error toggling membership:', error);
+    }
+  };
 
   const filteredCommunities = communitiesData.filter((community) => {
     const matchesSearch = community.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -155,20 +143,6 @@ export default function CommunitiesPage() {
     const matchesCategory = selectedCategory === 'All' || community.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
-
-  const handleJoinToggle = (communityId: string) => {
-    setCommunitiesData(prev => 
-      prev.map(community => 
-        community.id === communityId 
-          ? { 
-              ...community, 
-              isJoined: !community.isJoined,
-              members: community.isJoined ? community.members - 1 : community.members + 1
-            }
-          : community
-      )
-    );
-  };
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -274,7 +248,7 @@ export default function CommunitiesPage() {
               </div>
 
               {/* Create Community Button */}
-              {user && (
+              {session && (
                 <motion.button
                   whileHover={{ scale: 1.05, boxShadow: "0 15px 40px rgba(59, 130, 246, 0.4)" }}
                   whileTap={{ scale: 0.95 }}
@@ -288,7 +262,7 @@ export default function CommunitiesPage() {
 
             {/* Category Filter */}
             <div className="flex flex-wrap gap-3">
-              {categories.map((category) => (
+              {['All', 'Tech', 'Business', 'Clubs', 'Events', 'Academic'].map((category) => (
                 <motion.button
                   key={category}
                   whileHover={{ scale: 1.05 }}
@@ -331,7 +305,7 @@ export default function CommunitiesPage() {
                 <p className="text-white/70 text-lg mb-8">Try adjusting your search or filter criteria</p>
               </motion.div>
             ) : (
-              filteredCommunities.map((community, index) => (
+              filteredCommunities.map((community) => (
                 <motion.div
                   key={community.id}
                   variants={itemVariants}
@@ -342,7 +316,7 @@ export default function CommunitiesPage() {
                     {/* Banner Image */}
                     <div className="relative h-48 overflow-hidden">
                       <Image
-                        src={community.banner}
+                        src={community.imageUrl || '/default-community-banner.jpg'}
                         alt={community.name}
                         fill
                         className="object-cover group-hover:scale-110 transition-transform duration-500"
@@ -366,23 +340,6 @@ export default function CommunitiesPage() {
                         </p>
                       </div>
 
-                      {/* Tags */}
-                      <div className="flex flex-wrap gap-2">
-                        {community.tags.slice(0, 2).map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-3 py-1 bg-white/20 backdrop-blur-sm text-white/90 text-xs rounded-full border border-white/20"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                        {community.tags.length > 2 && (
-                          <span className="px-3 py-1 bg-white/20 backdrop-blur-sm text-white/90 text-xs rounded-full border border-white/20">
-                            +{community.tags.length - 2}
-                          </span>
-                        )}
-                      </div>
-
                       {/* Footer */}
                       <div className="flex items-center justify-between pt-4 border-t border-white/20">
                         <div className="flex items-center space-x-2">
@@ -392,21 +349,27 @@ export default function CommunitiesPage() {
                           </span>
                         </div>
                         
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleJoinToggle(community.id);
-                          }}
-                          className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-300 ${
-                            community.isJoined
-                              ? 'bg-white/20 text-white hover:bg-white/30'
-                              : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg'
-                          }`}
-                        >
-                          {community.isJoined ? 'Leave' : 'Join'}
-                        </motion.button>
+                        {session ? (
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleJoinToggle(community.id, community.isJoined)}
+                            className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-300 ${
+                              community.isJoined
+                                ? 'bg-white/20 text-white hover:bg-white/30'
+                                : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg'
+                            }`}
+                          >
+                            {community.isJoined ? 'Leave' : 'Join'}
+                          </motion.button>
+                        ) : (
+                          <Link 
+                            href="/auth/login"
+                            className="px-4 py-2 rounded-lg font-medium text-sm bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg transition-all duration-300"
+                          >
+                            Sign in to Join
+                          </Link>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -418,4 +381,4 @@ export default function CommunitiesPage() {
       </motion.main>
     </div>
   );
-} 
+}
