@@ -14,15 +14,24 @@ export async function GET(req: Request) {
       .populate('createdBy', 'name email')
       .lean();
 
-    // Add isJoined field to each community
-    const communitiesWithJoinStatus = communities.map(community => ({
-      ...community,
-      id: community._id.toString(),
-      isJoined: community.members.some(memberId => 
-        memberId.toString() === userId
-      ),
-      members: community.members.length // Convert members array to count
-    }));
+    // Add isJoined field and process image URLs
+    const communitiesWithJoinStatus = communities.map(community => {
+      // Ensure the imageUrl is properly formed
+      let imageUrl = community.imageUrl;
+      if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('/')) {
+        imageUrl = `/uploads/${imageUrl}`;
+      }
+
+      return {
+        ...community,
+        id: community._id.toString(),
+        isJoined: community.members.some(memberId => 
+          memberId.toString() === userId
+        ),
+        members: community.members.length,
+        imageUrl: imageUrl || '/images/default-community-banner.jpg'
+      };
+    });
 
     return NextResponse.json({ 
       success: true, 

@@ -11,12 +11,53 @@ import { useSidebar } from '../context/SidebarContext';
 import { 
   MagnifyingGlassIcon,
   PlusIcon,
-  UserGroupIcon,
-  ChevronDownIcon,
-  FunnelIcon,
-  SparklesIcon,
-  TagIcon
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
+
+// Add this new component for handling image errors
+const CommunityBanner = ({ imageUrl, name }: { imageUrl: string; name: string }) => {
+  const [imageError, setImageError] = useState(false);
+  const defaultImage = '/images/default-community-banner.jpg';
+
+  // Function to get full image URL with validation
+  const getImageUrl = (url: string) => {
+    if (!url || typeof url !== 'string') return defaultImage;
+    url = url.trim();
+    
+    // Handle absolute URLs (including http/https)
+    if (url.match(/^https?:\/\//)) return url;
+    
+    // Handle relative URLs from uploads directory
+    if (url.startsWith('/uploads/')) {
+      // Simple validation of the uploads path format
+      if (url.match(/^\/uploads\/[\w-]+\.(jpg|jpeg|png|gif|webp)$/i)) {
+        return url;
+      }
+    }
+    
+    return defaultImage;
+  };
+
+  // Reset error state when imageUrl changes
+  useEffect(() => {
+    setImageError(false);
+  }, [imageUrl]);
+
+  return (
+    <div className="relative h-48 overflow-hidden bg-slate-800">
+      <Image
+        src={imageError ? defaultImage : getImageUrl(imageUrl)}
+        alt={`${name} community banner`}
+        fill
+        className="object-cover group-hover:scale-110 transition-transform duration-500"
+        onError={() => setImageError(true)}
+        priority={true}
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+    </div>
+  );
+};
 
 interface Community {
   id: string;
@@ -249,14 +290,16 @@ export default function CommunitiesPage() {
 
               {/* Create Community Button */}
               {session && (
-                <motion.button
-                  whileHover={{ scale: 1.05, boxShadow: "0 15px 40px rgba(59, 130, 246, 0.4)" }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl font-semibold text-lg shadow-2xl hover:shadow-xl transition-all duration-300 border border-white/20"
-                >
-                  <PlusIcon className="h-6 w-6 mr-3" />
-                  Create Community
-                </motion.button>
+                <Link href="/home/communities/create">
+                  <motion.button
+                    whileHover={{ scale: 1.05, boxShadow: "0 15px 40px rgba(59, 130, 246, 0.4)" }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl font-semibold text-lg shadow-2xl hover:shadow-xl transition-all duration-300 border border-white/20"
+                  >
+                    <PlusIcon className="h-6 w-6 mr-3" />
+                    Create Community
+                  </motion.button>
+                </Link>
               )}
             </div>
 
@@ -313,20 +356,13 @@ export default function CommunitiesPage() {
                   className="group"
                 >
                   <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 overflow-hidden shadow-2xl hover:shadow-3xl hover:border-white/30 transition-all duration-300">
-                    {/* Banner Image */}
-                    <div className="relative h-48 overflow-hidden">
-                      <Image
-                        src={community.imageUrl || '/default-community-banner.jpg'}
-                        alt={community.name}
-                        fill
-                        className="object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                      <div className="absolute top-4 right-4">
-                        <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm font-medium border border-white/20">
-                          {community.category}
-                        </span>
-                      </div>
+                    {/* Use the new CommunityBanner component */}
+                    <CommunityBanner imageUrl={community.imageUrl} name={community.name} />
+                    
+                    <div className="absolute top-4 right-4 z-10">
+                      <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm font-medium border border-white/20">
+                        {community.category}
+                      </span>
                     </div>
 
                     {/* Content */}

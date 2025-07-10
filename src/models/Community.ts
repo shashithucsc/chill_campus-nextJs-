@@ -25,7 +25,15 @@ const communitySchema = new mongoose.Schema({
   },
   imageUrl: {
     type: String,
-    default: ''
+    default: '',
+    validate: {
+      validator: function(value: string) {
+        if (!value) return true; // Allow empty string
+        // Allow URLs starting with http/https or /uploads/
+        return /^(https?:\/\/|\/uploads\/).+/.test(value);
+      },
+      message: 'Invalid image URL format'
+    }
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
