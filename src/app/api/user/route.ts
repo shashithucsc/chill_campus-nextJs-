@@ -15,8 +15,34 @@ interface SessionUser {
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getSession();
-    console.log('Session data:', session);
+    // Try to get session from custom session system
+    let session = await getSession();
+    console.log('Custom session data:', session);
+
+    // If that fails, check for session sync headers from middleware
+    if (!session || !session.user || typeof session.user !== 'object') {
+      // Check if the middleware indicated we have NextAuth session but need to sync
+      const needsSync = req.headers.get('X-Needs-Session-Sync') === 'true';
+      if (needsSync) {
+        const userId = req.headers.get('X-User-Id');
+        const userEmail = req.headers.get('X-User-Email');
+        const userName = req.headers.get('X-User-Name');
+        
+        console.log('Session sync headers:', { userId, userEmail, userName });
+        
+        if (userId && userEmail) {
+          // Create a mock session that matches our custom session format
+          session = {
+            user: {
+              id: userId,
+              email: userEmail,
+              fullName: userName || 'User',
+              role: 'user' // Default role
+            }
+          };
+        }
+      }
+    }
 
     if (!session || !session.user || typeof session.user !== 'object') {
       console.log('No valid session found');

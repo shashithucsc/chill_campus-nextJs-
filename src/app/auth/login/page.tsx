@@ -23,25 +23,25 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [popup, setPopup] = useState({ open: false, message: '' });
+  const [popup, setPopup] = useState({ open: false, message: '', type: 'error' });
   const callbackUrl = searchParams.get('callbackUrl') || '/home';
+  
+  // Flag to track if user has explicitly attempted login
+  const [hasAttemptedLogin, setHasAttemptedLogin] = useState(false);
   
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
 
-  // If already authenticated, redirect to callback URL
-  useEffect(() => {
-    if (status === 'authenticated') {
-      router.push(callbackUrl);
-    }
-  }, [status, router, callbackUrl]);
+  // No more automatic redirects when the page loads
+  // The redirection will only happen after successful login
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setHasAttemptedLogin(true); // Mark that user has explicitly attempted login
 
     try {
       const result = await signIn('credentials', {
@@ -51,12 +51,48 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError('Invalid email or password');
+        setPopup({ 
+          open: true, 
+          message: 'Invalid email or password. Please try again.', 
+          type: 'error' 
+        });
+        setHasAttemptedLogin(false); // Reset login attempt on error
       } else if (result?.ok) {
-        router.push(callbackUrl);
+        // Show success message
+        setPopup({ 
+          open: true, 
+          message: 'Login successful! Redirecting to dashboard...', 
+          type: 'success' 
+        });
+
+        // Also create the custom session
+        try {
+          // Call the login API to create the custom session
+          await fetch('/api/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email: formData.email,
+              password: formData.password
+            }),
+          });
+        } catch (error) {
+          console.error('Error creating custom session:', error);
+        }
+        
+        // Delay redirect to show success message
+        setTimeout(() => {
+          router.push(callbackUrl);
+        }, 1500);
       }
     } catch (err) {
-      setError('An error occurred during login');
+      setPopup({
+        open: true,
+        message: 'An error occurred during login. Please try again later.',
+        type: 'error'
+      });
     } finally {
       setIsLoading(false);
     }
@@ -288,7 +324,7 @@ export default function LoginPage() {
         </motion.div>
       </div>
 
-      {/* Error Popup */}
+      {/* Status Popup (Error or Success) */}
       <AnimatePresence>
         {popup.open && (
           <motion.div 
@@ -301,19 +337,29 @@ export default function LoginPage() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 text-center border border-red-200"
+              className={`bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 text-center border ${
+                popup.type === 'success' ? 'border-green-200' : 'border-red-200'
+              }`}
             >
-              <div className="w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
-                <span className="text-red-600 text-xl">❌</span>
+              <div className={`w-12 h-12 mx-auto mb-4 rounded-full flex items-center justify-center ${
+                popup.type === 'success' ? 'bg-green-100' : 'bg-red-100'
+              }`}>
+                <span className={`text-xl ${popup.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                  {popup.type === 'success' ? '✅' : '❌'}
+                </span>
               </div>
               <p className="text-gray-800 mb-6 font-medium">{popup.message}</p>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-6 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-semibold hover:from-red-600 hover:to-red-700 transition-all duration-300"
-                onClick={() => setPopup({ open: false, message: '' })}
+                className={`px-6 py-2 text-white rounded-xl font-semibold transition-all duration-300 ${
+                  popup.type === 'success' 
+                  ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700' 
+                  : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700'
+                }`}
+                onClick={() => setPopup({ open: false, message: '', type: popup.type })}
               >
-                Try Again
+                {popup.type === 'success' ? 'Please wait...' : 'Try Again'}
               </motion.button>
             </motion.div>
           </motion.div>
