@@ -78,11 +78,28 @@ export default function Post({
   const [editContent, setEditContent] = useState(content);
 
   useEffect(() => {
-    // Fetch current user id from /api/user
-    fetch('/api/user')
-      .then(res => res.json())
-      .then(data => setCurrentUserId(data.user?.id || null));
-  }, []);
+    // Try to get current user ID from both NextAuth session and custom session
+    const fetchCurrentUser = async () => {
+      try {
+        // First try the NextAuth session
+        const res = await fetch('/api/user');
+        if (res.ok) {
+          const data = await res.json();
+          setCurrentUserId(data.user?.id || null);
+        } else {
+          setCurrentUserId(null);
+        }
+        
+        console.log('Current user ID:', currentUserId);
+        console.log('Post author ID:', author?.id);
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+        setCurrentUserId(null);
+      }
+    };
+    
+    fetchCurrentUser();
+  }, [author?.id]);
 
   useEffect(() => {
     // Fetch like state and comments from backend

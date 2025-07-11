@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { useSession, signOut } from 'next-auth/react';
 import { 
   PlusIcon, 
   BellIcon, 
@@ -16,48 +17,18 @@ import {
 
 export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await fetch('/api/user');
-        if (res.ok) {
-          const data = await res.json();
-          setUser({
-            ...data.user,
-            avatar: data.user.avatar || '/default-avatar.png',
-          });
-        } else {
-          setUser(null);
-        }
-      } catch (error) {
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, []);
+  const loading = status === 'loading';
+  
+  // Log session data for debugging
+  console.log('Session in Navbar:', session);
+  console.log('Session status:', status);
 
   const handleLogout = async () => {
-    try {
-      const res = await fetch('/api/logout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      if (res.ok) {
-        setUser(null);
-        router.push('/auth/login');
-      }
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+    await signOut({ redirect: false });
+    router.push('/auth/login');
   };
 
   return (
@@ -75,7 +46,7 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
               whileHover={{ scale: 1.05 }}
               className="flex-shrink-0 flex items-center"
             >
-              <Link href="/home/home" className="flex items-center space-x-3">
+              <Link href="/home" className="flex items-center space-x-3">
                 <div className="relative w-10 h-10">
                   <Image
                     src="/logo.png"
@@ -188,7 +159,7 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
                 <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 p-0.5 shadow-lg">
                   <div className="h-full w-full rounded-full bg-white/10 backdrop-blur-sm p-0.5 border border-white/20">
                     <Image
-                      src={user?.avatar || '/default-avatar.png'}
+                      src={session?.user?.image || '/default-avatar.png'}
                       alt="Profile"
                       width={36}
                       height={36}
@@ -197,7 +168,7 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
                   </div>
                 </div>
                 <span className="hidden md:block text-sm font-semibold text-white/90">
-                  {loading ? 'Loading...' : (user?.fullName || 'Guest')}
+                  {loading ? 'Loading...' : (session?.user?.name || 'Guest')}
                 </span>
               </motion.button>
 

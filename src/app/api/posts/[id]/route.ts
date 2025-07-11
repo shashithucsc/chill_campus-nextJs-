@@ -7,7 +7,34 @@ import fs from 'fs/promises';
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   await dbConnect();
-  const session = await getSession();
+  
+  // Try to get session from custom session system
+  let session = await getSession();
+  
+  // If that fails, check for session sync headers from middleware
+  if (!session || !session.user || !(session.user as any).id) {
+    // Check if the middleware indicated we have NextAuth session but need to sync
+    const needsSync = req.headers.get('X-Needs-Session-Sync') === 'true';
+    if (needsSync) {
+      const userId = req.headers.get('X-User-Id');
+      const userEmail = req.headers.get('X-User-Email');
+      const userName = req.headers.get('X-User-Name');
+      
+      if (userId && userEmail) {
+        // Create a mock session that matches our custom session format
+        session = {
+          user: {
+            id: userId,
+            email: userEmail,
+            fullName: userName || 'User',
+            role: 'user' // Default role
+          }
+        };
+      }
+    }
+  }
+  
+  // If we still don't have a session, return unauthorized
   if (!session || !session.user || !(session.user as any).id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -53,7 +80,34 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   await dbConnect();
-  const session = await getSession();
+  
+  // Try to get session from custom session system
+  let session = await getSession();
+  
+  // If that fails, check for session sync headers from middleware
+  if (!session || !session.user || !(session.user as any).id) {
+    // Check if the middleware indicated we have NextAuth session but need to sync
+    const needsSync = req.headers.get('X-Needs-Session-Sync') === 'true';
+    if (needsSync) {
+      const userId = req.headers.get('X-User-Id');
+      const userEmail = req.headers.get('X-User-Email');
+      const userName = req.headers.get('X-User-Name');
+      
+      if (userId && userEmail) {
+        // Create a mock session that matches our custom session format
+        session = {
+          user: {
+            id: userId,
+            email: userEmail,
+            fullName: userName || 'User',
+            role: 'user' // Default role
+          }
+        };
+      }
+    }
+  }
+  
+  // If we still don't have a session, return unauthorized
   if (!session || !session.user || !(session.user as any).id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

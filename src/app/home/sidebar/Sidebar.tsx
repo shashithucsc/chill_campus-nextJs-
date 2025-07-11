@@ -14,7 +14,7 @@ export default function Sidebar() {
   const { isCollapsed, toggleSidebar } = useSidebar();
 
   const navigation = [
-    { name: 'Home', href: '/home/home', icon: HomeIcon },
+    { name: 'Home', href: '/home', icon: HomeIcon },
     { name: 'Communities', href: '/home/communities', icon: UserGroupIcon },
   ];
 
