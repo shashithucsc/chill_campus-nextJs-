@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Post from '@/models/Post';
+import User from '@/models/User';
 import { getSession } from '@/lib/session';
 import path from 'path';
 import fs from 'fs/promises';

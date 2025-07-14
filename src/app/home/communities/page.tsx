@@ -8,6 +8,7 @@ import { useSession } from 'next-auth/react';
 import Navbar from '../navbar/Navbar';
 import Sidebar from '../sidebar/Sidebar';
 import { useSidebar } from '../context/SidebarContext';
+import AnimatedBackground from './components/AnimatedBackground';
 import { 
   MagnifyingGlassIcon,
   PlusIcon,
@@ -192,52 +193,8 @@ export default function CommunitiesPage() {
         {/* Dark gradient background */}
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-purple-900/90 to-indigo-900/95"></div>
         
-        {/* Floating Background Elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(10)].map((_, i) => (
-            <motion.div
-              key={i}
-              animate={{
-                y: [-20, 20, -20],
-                x: [-10, 10, -10],
-              }}
-              transition={{
-                duration: 8,
-                repeat: Infinity,
-                ease: [0.25, 0.1, 0.25, 1] as any,
-                delay: Math.random() * 4
-              }}
-              className="absolute w-32 h-32 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-              }}
-            />
-          ))}
-          
-          {/* Glass particles */}
-          {[...Array(15)].map((_, i) => (
-            <motion.div
-              key={`particle-${i}`}
-              animate={{
-                y: [-15, 15, -15],
-                x: [-8, 8, -8],
-                opacity: [0.2, 0.6, 0.2]
-              }}
-              transition={{
-                duration: 5,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: Math.random() * 3
-              }}
-              className="absolute w-2 h-2 bg-white/20 rounded-full"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-              }}
-            />
-          ))}
-        </div>
+        {/* Client-side animated background component */}
+        <AnimatedBackground />
       </div>
 
       <Navbar />
@@ -355,9 +312,19 @@ export default function CommunitiesPage() {
                   whileHover={{ y: -8, scale: 1.02 }}
                   className="group"
                 >
-                  <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 overflow-hidden shadow-2xl hover:shadow-3xl hover:border-white/30 transition-all duration-300">
-                    {/* Use the new CommunityBanner component */}
-                    <CommunityBanner imageUrl={community.imageUrl} name={community.name} />
+                  <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 overflow-hidden shadow-2xl hover:shadow-3xl hover:border-white/30 hover:bg-white/15 transition-all duration-300 relative">
+                    {/* View indicator */}
+                    <div className="absolute top-4 left-4 z-10 bg-blue-500/80 text-white text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-sm flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                      <span>View</span>
+                    </div>
+                    {/* Use Link to make the banner and title clickable */}
+                    <Link href={`/home/communities/${community.id}`} className="cursor-pointer block">
+                      <CommunityBanner imageUrl={community.imageUrl} name={community.name} />
+                    </Link>
                     
                     <div className="absolute top-4 right-4 z-10">
                       <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm font-medium border border-white/20">
@@ -368,9 +335,11 @@ export default function CommunitiesPage() {
                     {/* Content */}
                     <div className="p-6 space-y-4">
                       <div>
-                        <h2 className="text-xl font-bold text-white mb-2 group-hover:text-blue-300 transition-colors">
-                          {community.name}
-                        </h2>
+                        <Link href={`/home/communities/${community.id}`} className="block">
+                          <h2 className="text-xl font-bold text-white mb-2 group-hover:text-blue-300 transition-colors">
+                            {community.name}
+                          </h2>
+                        </Link>
                         <p className="text-white/80 text-sm leading-relaxed line-clamp-2">
                           {community.description}
                         </p>
