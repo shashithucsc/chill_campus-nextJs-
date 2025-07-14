@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
+import ParticlesBackground from './components/ParticlesBackground';
 import { 
   UserGroupIcon, 
   AcademicCapIcon, 
@@ -15,51 +16,23 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function LandingPage() {
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        delayChildren: 0.3,
-        staggerChildren: 0.2
-      }
-    }
-  };
-
+  // Animation variants for staggered animations
   const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        duration: 0.8,
-        ease: "easeOut"
-      }
-    }
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
   };
-
+  
+  // Animation for floating icons
   const floatingVariants = {
     animate: {
-      y: [-10, 10, -10],
-      transition: {
-        duration: 3,
-        repeat: Infinity,
-        ease: "easeInOut"
-      }
+      y: [-10, 10, -10]
     }
   };
-
-  const particleVariants = {
-    animate: {
-      y: [-20, 20, -20],
-      x: [-10, 10, -10],
-      transition: {
-        duration: 4,
-        repeat: Infinity,
-        ease: "easeInOut"
-      }
-    }
+  
+  const floatingTransition = {
+    duration: 3,
+    repeat: Infinity,
+    ease: "easeInOut"
   };
 
   return (
@@ -75,33 +48,19 @@ export default function LandingPage() {
         >
           <source src="/background.mp4" type="video/mp4" />
         </video>
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/80 via-purple-900/70 to-indigo-900/80"></div>
+        {/* Gradient Overlay - Reduced opacity for elegant glass effect */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/60 via-purple-900/50 to-indigo-900/60 backdrop-blur-[2px]"></div>
       </div>
 
       {/* Floating Particles */}
-      <div className="absolute inset-0 z-10 pointer-events-none">
-        {[...Array(8)].map((_, i) => (
-          <motion.div
-            key={i}
-            variants={particleVariants}
-            animate="animate"
-            className="absolute w-2 h-2 bg-white/20 rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 2}s`
-            }}
-          />
-        ))}
-      </div>
+      <ParticlesBackground />
 
       {/* Navigation */}
       <motion.nav 
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 1, ease: "easeOut" }}
-        className="relative z-50 fixed w-full bg-white/10 backdrop-blur-md border-b border-white/20"
+        className="fixed z-50 w-full bg-white/10 backdrop-blur-md border-b border-white/20"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -156,9 +115,12 @@ export default function LandingPage() {
       <main className="relative z-40 min-h-screen flex items-center justify-center">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ 
+              duration: 0.5,
+              staggerChildren: 0.2
+            }}
             className="text-center space-y-8"
           >
             {/* Floating Icons */}
@@ -213,7 +175,11 @@ export default function LandingPage() {
             </div>
 
             {/* Main Headline */}
-            <motion.div variants={itemVariants} className="space-y-6">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="space-y-6">
               <motion.h1 
                 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight"
                 initial={{ scale: 0.9 }}
