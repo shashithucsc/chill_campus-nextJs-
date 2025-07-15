@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   HeartIcon as HeartOutline,
@@ -62,6 +63,8 @@ export default function Post({
 }: PostProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(likes);
+  // Get session directly from useSession hook
+  const { data: session } = useSession();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   // Comments state
   const [commentList, setCommentList] = useState<Comment[]>([]);
@@ -76,30 +79,19 @@ export default function Post({
   // Editing state
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(content);
+  
+  // Debug log for post ownership
+  console.log('Post props in Post component:', { id, authorId: author?.id });
+  console.log('Session user ID in Post component:', session?.user?.id);
+  console.log('Is owner?', author?.id === session?.user?.id);
 
+  // Set current user ID from session when session changes
   useEffect(() => {
-    // Try to get current user ID from both NextAuth session and custom session
-    const fetchCurrentUser = async () => {
-      try {
-        // First try the NextAuth session
-        const res = await fetch('/api/user');
-        if (res.ok) {
-          const data = await res.json();
-          setCurrentUserId(data.user?.id || null);
-        } else {
-          setCurrentUserId(null);
-        }
-        
-        console.log('Current user ID:', currentUserId);
-        console.log('Post author ID:', author?.id);
-      } catch (error) {
-        console.error('Error fetching current user:', error);
-        setCurrentUserId(null);
-      }
-    };
-    
-    fetchCurrentUser();
-  }, [author?.id]);
+    if (session?.user?.id) {
+      setCurrentUserId(session.user.id);
+      console.log('CurrentUserId set from session:', session.user.id);
+    }
+  }, [session]);
 
   useEffect(() => {
     // Fetch like state and comments from backend
@@ -216,7 +208,7 @@ export default function Post({
             </div>
           </div>
           {/* Owner controls: 3-dots menu */}
-          {currentUserId && author && author.id === currentUserId && (
+          {session?.user?.id && author && author.id === session.user.id && (
             <div className="relative">
               <button
                 className="text-white/60 hover:text-white/90 focus:outline-none transition-colors"

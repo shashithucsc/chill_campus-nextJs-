@@ -44,43 +44,64 @@ export default function LoginPage() {
     setHasAttemptedLogin(true); // Mark that user has explicitly attempted login
 
     try {
-      const result = await signIn('credentials', {
-        email: formData.email,
-        password: formData.password,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        setPopup({ 
-          open: true, 
-          message: 'Invalid email or password. Please try again.', 
-          type: 'error' 
-        });
-        setHasAttemptedLogin(false); // Reset login attempt on error
-      } else if (result?.ok) {
-        // Show success message
-        setPopup({ 
-          open: true, 
-          message: 'Login successful! Redirecting to dashboard...', 
-          type: 'success' 
+      try {
+        // First create the custom session with our own JWT
+        const customSessionResponse = await fetch('/api/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password
+          }),
         });
 
-        // Also create the custom session
-        try {
-          // Call the login API to create the custom session
-          await fetch('/api/login', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              email: formData.email,
-              password: formData.password
-            }),
+        if (!customSessionResponse.ok) {
+          const errorData = await customSessionResponse.json();
+          setPopup({
+            open: true,
+            message: errorData.message || 'Login failed. Please try again.',
+            type: 'error'
           });
-        } catch (error) {
-          console.error('Error creating custom session:', error);
+          setHasAttemptedLogin(false);
+          return;
         }
+
+        // Then use NextAuth for client-side session
+        const result = await signIn('credentials', {
+          email: formData.email,
+          password: formData.password,
+          redirect: false,
+        });
+
+        if (result?.error) {
+          setPopup({ 
+            open: true, 
+            message: 'Invalid email or password. Please try again.', 
+            type: 'error' 
+          });
+          setHasAttemptedLogin(false); // Reset login attempt on error
+        } else if (result?.ok) {
+          // Show success message
+          setPopup({ 
+            open: true, 
+            message: 'Login successful! Redirecting to dashboard...', 
+            type: 'success' 
+          });
+          
+          // Delay redirect to show success message
+          setTimeout(() => {
+            router.push(callbackUrl);
+          }, 1500);
+        }
+      } catch (err) {
+        console.error('Login error:', err);
+        setPopup({
+          open: true,
+          message: 'An error occurred during login. Please try again later.',
+          type: 'error'
+        });
         
         // Delay redirect to show success message
         setTimeout(() => {

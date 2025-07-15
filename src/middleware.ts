@@ -18,16 +18,20 @@ export async function middleware(request: NextRequest) {
     // Check if we have a NextAuth session
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
     
-    // If the user has a NextAuth session but not a custom session, sync them
-    if (token && !request.cookies.has('session')) {
-      // Need to call the login API to create a custom session
-      // We'll add a special header to indicate this request comes from middleware
+    // If the user has a NextAuth session, always provide the headers
+    // This ensures session info is available even if custom session expires
+    if (token) {
+      console.log("Middleware: NextAuth session found for API route:", path);
+      
+      // Add session info headers to all API requests when user is authenticated
       const response = NextResponse.next();
       response.headers.set('X-Needs-Session-Sync', 'true');
       response.headers.set('X-User-Id', token.id as string);
       response.headers.set('X-User-Email', token.email as string);
       response.headers.set('X-User-Name', token.name as string);
       return response;
+    } else {
+      console.log("Middleware: No NextAuth session for API route:", path);
     }
   }
   

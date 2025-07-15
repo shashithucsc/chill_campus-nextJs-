@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import dbConnect from '@/lib/db'; 
 import User from '@/models/User';
-import { createSession } from '@/lib/session';
+import { createSession, deleteSession } from '@/lib/session';
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,7 +10,8 @@ export async function POST(req: NextRequest) {
     const { email, password } = await req.json();
     console.log('Login attempt for email:', email); // Debug log
 
-    const user = await User.findOne({ email });
+    // Use case-insensitive email search to avoid casing issues
+    const user = await User.findOne({ email: { $regex: new RegExp(`^${email}$`, 'i') } });
     if (!user) {
       console.log('User not found'); // Debug log
       return NextResponse.json({ message: 'Invalid email or password' }, { status: 401 });
@@ -27,6 +28,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Invalid email or password' }, { status: 401 });
     }
 
+    // Clear any existing session first to avoid conflicts
+    await deleteSession();
+    
     console.log('Creating session for user:', user._id.toString());
     // Create session with string ID
     await createSession({
