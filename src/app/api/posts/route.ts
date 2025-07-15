@@ -6,12 +6,24 @@ import { getSession } from '@/lib/session';
 import path from 'path';
 import fs from 'fs/promises';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   await dbConnect();
+  
+  // Get query parameters
+  const url = new URL(req.url);
+  const userId = url.searchParams.get('userId');
+  
+  // Build query filter
+  const filter: any = {};
+  if (userId) {
+    filter.user = userId;
+  }
+  
   // Populate fullName, email, avatar, and role for the user
-  const posts = await Post.find({})
+  const posts = await Post.find(filter)
     .populate('user', 'fullName email avatar role')
     .sort({ createdAt: -1 });
+  
   return NextResponse.json({ posts });
 }
 

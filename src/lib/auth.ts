@@ -4,6 +4,20 @@ import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import bcrypt from 'bcrypt';
 
+// Extend the user type to include role
+declare module "next-auth" {
+  interface User {
+    role?: string;
+  }
+}
+
+// Extend JWT to include role
+declare module "next-auth/jwt" {
+  interface JWT {
+    role?: string;
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -19,9 +33,15 @@ export const authOptions: NextAuthOptions = {
 
         await dbConnect();
 
-        const user = await User.findOne({ email: credentials.email });
+        // Use case-insensitive email search
+        const user = await User.findOne({ email: { $regex: new RegExp(`^${credentials.email}$`, 'i') } });
         if (!user) {
           return null;
+        }
+
+        // Check if user is active
+        if (!user.isActive) {
+          throw new Error('Account not activated. Please check your email for the activation link.');
         }
 
         const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
@@ -29,10 +49,12 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        // Return user with consistent ID format and all needed properties
         return {
           id: user._id.toString(),
           email: user.email,
           name: user.fullName,
+          role: user.role,
           image: user.avatar || null,
         };
       }
@@ -50,6 +72,7 @@ export const authOptions: NextAuthOptions = {
         token.email = user.email;
         token.name = user.name;
         token.image = user.image;
+        token.role = user.role; // Add user role to token
       }
       return token;
     },
@@ -59,6 +82,7 @@ export const authOptions: NextAuthOptions = {
         session.user.email = token.email as string;
         session.user.name = token.name as string;
         session.user.image = token.image as string | null;
+        (session.user as any).role = token.role as string;
       }
       return session;
     }
