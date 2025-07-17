@@ -15,8 +15,6 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     }
 
     await dbConnect();
-    const data = await req.json();
-    const { action } = data; // 'join' or 'leave'
     const communityId = params.id;
 
     const community = await Community.findById(communityId);
@@ -30,25 +28,20 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     const userId = session.user.id;
     const isMember = community.members.includes(userId);
 
-    if (action === 'join' && !isMember) {
+    if (!isMember) {
       community.members.push(userId);
-    } else if (action === 'leave' && isMember) {
-      community.members = community.members.filter(
-        (id: any) => id.toString() !== userId
-      );
+      await community.save();
     }
-
-    await community.save();
 
     return NextResponse.json({
       success: true,
-      message: action === 'join' ? 'Joined community' : 'Left community',
+      message: 'Joined community successfully',
       memberCount: community.members.length
     });
   } catch (error: any) {
-    console.error('Join/Leave community error:', error);
+    console.error('Join community error:', error);
     return NextResponse.json(
-      { success: false, message: 'Failed to update membership' },
+      { success: false, message: 'Failed to join community' },
       { status: 500 }
     );
   }
