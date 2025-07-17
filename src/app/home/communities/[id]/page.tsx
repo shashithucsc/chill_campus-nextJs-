@@ -3,7 +3,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useSession } from 'next-auth/react';
 import { 
   UserIcon, 
@@ -12,9 +12,34 @@ import {
   PaperAirplaneIcon,
   UserGroupIcon,
   ArrowLeftIcon,
+  PlusIcon,
 } from '@heroicons/react/24/outline';
 import Navbar from '../../navbar/Navbar';
 import Sidebar from '../../sidebar/Sidebar';
+import Post from '../../components/Post';
+import CreateCommunityPostModal from '../components/CreateCommunityPostModal';
+
+// Utility function to format date
+const formatDate = (dateString: string | Date) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInMilliseconds = now.getTime() - date.getTime();
+  const diffInMinutes = Math.floor(diffInMilliseconds / (1000 * 60));
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  const diffInDays = Math.floor(diffInHours / 24);
+
+  if (diffInMinutes < 1) {
+    return 'Just now';
+  } else if (diffInMinutes < 60) {
+    return `${diffInMinutes}m ago`;
+  } else if (diffInHours < 24) {
+    return `${diffInHours}h ago`;
+  } else if (diffInDays < 7) {
+    return `${diffInDays}d ago`;
+  } else {
+    return date.toLocaleDateString();
+  }
+};
 import Link from 'next/link';
 
 // Types
@@ -52,10 +77,9 @@ export default function CommunityPage() {
   const [community, setCommunity] = useState<Community | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [postContent, setPostContent] = useState('');
-  const [postSubmitting, setPostSubmitting] = useState(false);
-  const [media, setMedia] = useState<File | null>(null);
-  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
+  const [postLoading, setPostLoading] = useState(false);
+  const [showCreatePost, setShowCreatePost] = useState(false);
+  const [joinLoading, setJoinLoading] = useState(false);
 
   // Simple animation variants without transitions
   const fadeIn = {
@@ -81,71 +105,32 @@ export default function CommunityPage() {
       }
     };
 
-    const fetchPosts = async () => {
-      try {
-        const response = await fetch(`/api/communities/${id}/posts`);
-        const data = await response.json();
-        setPosts(data.posts || []);
-      } catch (error) {
-        console.error('Error fetching posts:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (id) {
       fetchCommunity();
       fetchPosts();
     }
   }, [id]);
-
-  // Handle file input change
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setMedia(e.target.files[0]);
-      const type = e.target.files[0].type.startsWith('video') ? 'video' : 'image';
-      setMediaType(type);
+  // Fetch posts function
+  const fetchPosts = async () => {
+    setPostLoading(true);
+    try {
+      const response = await fetch(`/api/communities/${id}/posts`);
+      const data = await response.json();
+      setPosts(data.posts || []);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    } finally {
+      setPostLoading(false);
     }
   };
 
-  // Handle post submission
-  const handleSubmitPost = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!postContent.trim() && !media) return;
-
-    setPostSubmitting(true);
-    try {
-      const formData = new FormData();
-      formData.append('content', postContent);
-      if (media) {
-        formData.append('media', media);
-        formData.append('mediaType', mediaType || '');
-      }
-
-      const res = await fetch('/api/posts', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (res.ok) {
-        // Refresh posts
-        const response = await fetch(`/api/communities/${id}/posts`);
-        const data = await response.json();
-        setPosts(data.posts || []);
-        setPostContent('');
-        setMedia(null);
-        setMediaType(null);
-      } else {
-        console.error('Failed to create post');
-      }
-    } catch (err) {
-      console.error('Error creating post:', err);
-    } finally {
-      setPostSubmitting(false);
-    }
+  // Handle post creation
+  const handlePostCreated = () => {
+    fetchPosts();
   };
 
   const handleLeaveCommunity = async () => {
+    setJoinLoading(true);
     try {
       await fetch(`/api/communities/${id}/leave`, {
         method: 'POST',
@@ -154,10 +139,13 @@ export default function CommunityPage() {
       setCommunity(prev => prev ? { ...prev, isMember: false, memberCount: prev.memberCount - 1 } : null);
     } catch (error) {
       console.error('Error leaving community:', error);
+    } finally {
+      setJoinLoading(false);
     }
   };
 
   const handleJoinCommunity = async () => {
+    setJoinLoading(true);
     try {
       await fetch(`/api/communities/${id}/join`, {
         method: 'POST',
@@ -166,6 +154,8 @@ export default function CommunityPage() {
       setCommunity(prev => prev ? { ...prev, isMember: true, memberCount: prev.memberCount + 1 } : null);
     } catch (error) {
       console.error('Error joining community:', error);
+    } finally {
+      setJoinLoading(false);
     }
   };
 
@@ -315,87 +305,26 @@ export default function CommunityPage() {
         
         {/* Post Creation and Feed */}
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Create Post */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="bg-white/10 backdrop-blur-md rounded-xl border border-white/20 p-4 md:p-6 mb-8 shadow-xl"
-          >
-            <form onSubmit={handleSubmitPost}>
-              <textarea 
-                className="w-full bg-white/5 backdrop-blur-sm border border-white/20 rounded-xl p-4 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none"
-                placeholder="Share something with this community..."
-                rows={3}
-                value={postContent}
-                onChange={(e) => setPostContent(e.target.value)}
-              />
-              
-              {media && (
-                <div className="mt-2 relative">
-                  {mediaType === 'image' ? (
-                    <div className="relative h-32 w-32 overflow-hidden rounded-lg border border-white/30">
-                      <Image 
-                        src={URL.createObjectURL(media)} 
-                        alt="Post media preview" 
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <div className="relative h-32 w-full max-w-xs overflow-hidden rounded-lg border border-white/30">
-                      <video src={URL.createObjectURL(media)} className="h-full w-auto" />
-                    </div>
-                  )}
-                  <button 
-                    type="button"
-                    onClick={() => {
-                      setMedia(null);
-                      setMediaType(null);
-                    }}
-                    className="absolute top-1 right-1 bg-black/50 rounded-full p-1 text-white"
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+          {/* Create Post Button */}
+          {community?.isMember && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="bg-white/10 backdrop-blur-md rounded-xl border border-white/20 p-6 mb-8 shadow-xl cursor-pointer hover:bg-white/15 transition-all duration-300"
+              onClick={() => setShowCreatePost(true)}
+            >
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                  <PlusIcon className="h-6 w-6 text-white" />
                 </div>
-              )}
-              
-              <div className="flex items-center justify-between mt-4">
-                <div className="flex items-center">
-                  <label className="cursor-pointer text-white/70 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10">
-                    <input 
-                      type="file" 
-                      accept="image/*,video/*" 
-                      className="hidden"
-                      onChange={handleFileChange} 
-                    />
-                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </label>
+                <div>
+                  <p className="text-white/90 text-lg font-medium">Share something with the community</p>
+                  <p className="text-white/60 text-sm">What's happening in {community?.name}?</p>
                 </div>
-                <button 
-                  type="submit"
-                  disabled={(!postContent.trim() && !media) || postSubmitting}
-                  className={`flex items-center px-5 py-2 rounded-xl ${(!postContent.trim() && !media) || postSubmitting ? 'bg-blue-500/50 cursor-not-allowed' : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'} text-white transition-all duration-300`}
-                >
-                  {postSubmitting ? (
-                    <>
-                      <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
-                      Posting...
-                    </>
-                  ) : (
-                    <>
-                      <PaperAirplaneIcon className="h-5 w-5 mr-2" />
-                      Post
-                    </>
-                  )}
-                </button>
               </div>
-            </form>
-          </motion.div>
+            </motion.div>
+          )}
 
           {/* Posts Feed */}
           <motion.div
@@ -404,7 +333,7 @@ export default function CommunityPage() {
             transition={{ staggerChildren: 0.15 }}
             className="space-y-6"
           >
-            {loading ? (
+            {postLoading ? (
               // Loading state
               [...Array(3)].map((_, i) => (
                 <div key={i} className="bg-white/10 backdrop-blur-md rounded-xl border border-white/20 p-6 animate-pulse">
@@ -435,85 +364,61 @@ export default function CommunityPage() {
                 <p className="text-white/70">
                   Be the first to share something with this community!
                 </p>
+                {community?.isMember && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShowCreatePost(true)}
+                    className="mt-4 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-medium shadow-lg"
+                  >
+                    Create First Post
+                  </motion.button>
+                )}
               </motion.div>
             ) : (
-              // Posts list
-              posts.map((post) => (
+              // Posts list using Post component
+              posts.map((post, index) => (
                 <motion.div
                   key={post._id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4 }}
-                  className="bg-white/10 backdrop-blur-md rounded-xl border border-white/20 p-6 shadow-xl hover:bg-white/15 transition-colors duration-300"
+                  transition={{ duration: 0.4, delay: index * 0.1 }}
                 >
-                  {/* Post header */}
-                  <div className="flex items-center mb-4">
-                    <div className="h-10 w-10 rounded-full bg-white/10 border border-white/30 overflow-hidden">
-                      <Image
-                        src={post.user.avatar || "/default-avatar.png"}
-                        alt={post.user.fullName}
-                        width={40}
-                        height={40}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                    <div className="ml-3">
-                      <h3 className="font-medium text-white">{post.user.fullName}</h3>
-                      <div className="text-sm text-white/60 flex items-center">
-                        <CalendarIcon className="h-3 w-3 mr-1" />
-                        {formatDate(post.createdAt)}
-                        <span className="mx-1">•</span>
-                        <UserIcon className="h-3 w-3 mr-1" />
-                        {post.user.role}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Post content */}
-                  <p className="text-white/90 mb-4">{post.content}</p>
-                  
-                  {/* Post media */}
-                  {post.media && post.media.length > 0 && post.mediaType === 'image' && (
-                    <div className="rounded-lg overflow-hidden mb-4 border border-white/20">
-                      <Image
-                        src={post.media[0]}
-                        alt="Post image"
-                        width={800}
-                        height={500}
-                        className="w-full h-auto object-cover"
-                      />
-                    </div>
-                  )}
-                  
-                  {post.media && post.media.length > 0 && post.mediaType === 'video' && (
-                    <div className="rounded-lg overflow-hidden mb-4 border border-white/20">
-                      <video
-                        src={post.media[0]}
-                        controls
-                        className="w-full h-auto"
-                      />
-                    </div>
-                  )}
-                  
-                  {/* Post actions */}
-                  <div className="flex items-center text-white/70 space-x-5 mt-2">
-                    <button className="flex items-center space-x-1 hover:text-white transition-colors">
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                      </svg>
-                      <span>{post.likeCount || 0}</span>
-                    </button>
-                    
-                    <button className="flex items-center space-x-1 hover:text-white transition-colors">
-                      <ChatBubbleLeftIcon className="h-5 w-5" />
-                      <span>{post.commentCount || 0}</span>
-                    </button>
-                  </div>
+                  <Post
+                    id={post._id}
+                    author={{
+                      id: post.user._id,
+                      name: post.user.fullName,
+                      avatar: post.user.avatar || '/default-avatar.png',
+                      role: post.user.role
+                    }}
+                    content={post.content}
+                    media={post.media}
+                    mediaType={post.mediaType}
+                    likes={post.likeCount || 0}
+                    comments={post.commentCount || 0}
+                    timestamp={formatDate(post.createdAt)}
+                    community={{
+                      name: community?.name || '',
+                      avatar: community?.coverImage || ''
+                    }}
+                  />
                 </motion.div>
               ))
             )}
           </motion.div>
         </div>
+
+        {/* Create Community Post Modal */}
+        {showCreatePost && community && (
+          <CreateCommunityPostModal
+            open={showCreatePost}
+            onClose={() => setShowCreatePost(false)}
+            onPostCreated={handlePostCreated}
+            communityId={community._id}
+            communityName={community.name}
+          />
+        )}
       </div>
     </div>
   );
