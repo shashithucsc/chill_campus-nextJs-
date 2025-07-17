@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import Community from "@/models/Community";
+import Post from "@/models/Post";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import mongoose from "mongoose";
@@ -30,14 +31,8 @@ export async function POST(
 
     await dbConnect();
     
-    // Remove user from community members
-    const community = await Community.findByIdAndUpdate(
-      communityId,
-      {
-        $pull: { members: session.user.id }
-      },
-      { new: true }
-    );
+    // First check if user is a member and get current community
+    const community = await Community.findById(communityId);
     
     if (!community) {
       return NextResponse.json(
@@ -45,11 +40,42 @@ export async function POST(
         { status: 404 }
       );
     }
-    
-    return NextResponse.json({
-      message: "Successfully left community",
-      memberCount: community.members.length
-    });
+
+    if (!community.members.includes(session.user.id)) {
+      return NextResponse.json(
+        { error: "You are not a member of this community" },
+        { status: 400 }
+      );
+    }
+
+    // Check if this is the last member
+    if (community.members.length === 1) {
+      // Delete all posts in this community first
+      await Post.deleteMany({ community: communityId });
+      
+      // Then delete the community
+      await Community.findByIdAndDelete(communityId);
+      
+      return NextResponse.json({
+        message: "Community deleted as you were the last member",
+        deleted: true
+      });
+    } else {
+      // Remove user from community members
+      const updatedCommunity = await Community.findByIdAndUpdate(
+        communityId,
+        {
+          $pull: { members: session.user.id }
+        },
+        { new: true }
+      );
+      
+      return NextResponse.json({
+        message: "Successfully left community",
+        memberCount: updatedCommunity.members.length,
+        deleted: false
+      });
+    }
   } catch (error) {
     console.error("Error leaving community:", error);
     return NextResponse.json(

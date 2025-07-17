@@ -80,6 +80,8 @@ export default function CommunityPage() {
   const [postLoading, setPostLoading] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [joinLoading, setJoinLoading] = useState(false);
+  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [showDeleteWarning, setShowDeleteWarning] = useState(false);
 
   // Simple animation variants without transitions
   const fadeIn = {
@@ -94,17 +96,19 @@ export default function CommunityPage() {
   };
 
   // Fetch community data
-  useEffect(() => {
-    const fetchCommunity = async () => {
-      try {
-        const response = await fetch(`/api/communities/${id}`);
-        const data = await response.json();
-        setCommunity(data.community);
-      } catch (error) {
-        console.error('Error fetching community:', error);
-      }
-    };
+  const fetchCommunity = async () => {
+    try {
+      const response = await fetch(`/api/communities/${id}`);
+      const data = await response.json();
+      setCommunity(data.community);
+    } catch (error) {
+      console.error('Error fetching community:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (id) {
       fetchCommunity();
       fetchPosts();
@@ -130,32 +134,79 @@ export default function CommunityPage() {
   };
 
   const handleLeaveCommunity = async () => {
+    // Check if this is the last member
+    if (community && community.memberCount === 1) {
+      setShowDeleteWarning(true);
+      return;
+    }
+
+    await performLeaveCommunity();
+  };
+
+  const performLeaveCommunity = async () => {
     setJoinLoading(true);
     try {
-      await fetch(`/api/communities/${id}/leave`, {
+      const response = await fetch(`/api/communities/${id}/leave`, {
         method: 'POST',
       });
-      // Update the community state
-      setCommunity(prev => prev ? { ...prev, isMember: false, memberCount: prev.memberCount - 1 } : null);
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Check if community was deleted
+        if (data.deleted) {
+          setMessage({ text: 'Community has been deleted as you were the last member.', type: 'success' });
+          // Redirect to communities page after a delay
+          setTimeout(() => {
+            window.location.href = '/home/communities';
+          }, 3000);
+        } else {
+          // Refetch community data to get updated membership status
+          await fetchCommunity();
+          setMessage({ text: 'Successfully left the community!', type: 'success' });
+        }
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to leave community:', errorData.error);
+        setMessage({ text: 'Failed to leave community. Please try again.', type: 'error' });
+      }
     } catch (error) {
       console.error('Error leaving community:', error);
+      setMessage({ text: 'An error occurred. Please try again.', type: 'error' });
     } finally {
       setJoinLoading(false);
+      setShowDeleteWarning(false);
+      // Clear message after 3 seconds
+      setTimeout(() => setMessage(null), 3000);
     }
   };
 
   const handleJoinCommunity = async () => {
     setJoinLoading(true);
     try {
-      await fetch(`/api/communities/${id}/join`, {
+      const response = await fetch(`/api/communities/${id}/join`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
-      // Update the community state
-      setCommunity(prev => prev ? { ...prev, isMember: true, memberCount: prev.memberCount + 1 } : null);
+      
+      if (response.ok) {
+        // Refetch community data to get updated membership status
+        await fetchCommunity();
+        setMessage({ text: 'Successfully joined the community!', type: 'success' });
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to join community:', errorData.message);
+        setMessage({ text: 'Failed to join community. Please try again.', type: 'error' });
+      }
     } catch (error) {
       console.error('Error joining community:', error);
+      setMessage({ text: 'An error occurred. Please try again.', type: 'error' });
     } finally {
       setJoinLoading(false);
+      // Clear message after 3 seconds
+      setTimeout(() => setMessage(null), 3000);
     }
   };
 
@@ -275,16 +326,25 @@ export default function CommunityPage() {
                     {community.isMember ? (
                       <button
                         onClick={handleLeaveCommunity}
-                        className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-lg border border-white/20 transition-all duration-300"
+                        disabled={joinLoading}
+                        className={`px-4 py-2 backdrop-blur-md text-white rounded-lg border transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
+                          community.memberCount === 1
+                            ? 'bg-red-600/20 hover:bg-red-600/30 border-red-400/30 hover:border-red-400/50'
+                            : 'bg-white/10 hover:bg-white/20 border-white/20'
+                        }`}
                       >
-                        Leave Community
+                        {joinLoading 
+                          ? (community.memberCount === 1 ? 'Deleting...' : 'Leaving...') 
+                          : (community.memberCount === 1 ? 'Delete Community' : 'Leave Community')
+                        }
                       </button>
                     ) : (
                       <button
                         onClick={handleJoinCommunity}
-                        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg shadow-lg transition-all duration-300"
+                        disabled={joinLoading}
+                        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Join Community
+                        {joinLoading ? 'Joining...' : 'Join Community'}
                       </button>
                     )}
                   </motion.div>
@@ -419,6 +479,84 @@ export default function CommunityPage() {
             communityName={community.name}
           />
         )}
+
+        {/* Delete Community Warning Modal */}
+        <AnimatePresence>
+          {showDeleteWarning && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.3 }}
+                className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-6 max-w-md mx-4 shadow-2xl"
+              >
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center rounded-full bg-red-500/20 border border-red-400/30">
+                    <span className="text-3xl">⚠️</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-3">
+                    Delete Community?
+                  </h3>
+                  <p className="text-white/80 mb-6 leading-relaxed">
+                    You are the last member of <span className="font-semibold text-blue-300">"{community?.name}"</span>. 
+                    Leaving will permanently delete this community and all its posts. This action cannot be undone.
+                  </p>
+                  <div className="flex space-x-3">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setShowDeleteWarning(false)}
+                      className="flex-1 px-4 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-medium border border-white/20 transition-all duration-300"
+                    >
+                      Cancel
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={performLeaveCommunity}
+                      disabled={joinLoading}
+                      className="flex-1 px-4 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl font-medium shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {joinLoading ? 'Deleting...' : 'Delete Community'}
+                    </motion.button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Toast Notification */}
+        <AnimatePresence>
+          {message && (
+            <motion.div
+              initial={{ opacity: 0, y: -50, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -50, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
+              className="fixed top-20 right-4 z-50 max-w-sm"
+            >
+              <div className={`p-4 rounded-2xl shadow-2xl backdrop-blur-md border ${
+                message.type === 'success'
+                  ? 'bg-green-500/90 border-green-400/50 text-white'
+                  : 'bg-red-500/90 border-red-400/50 text-white'
+              }`}>
+                <div className="flex items-center">
+                  <span className="mr-2 text-lg">
+                    {message.type === 'success' ? '✅' : '❌'}
+                  </span>
+                  <p className="font-medium">{message.text}</p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
