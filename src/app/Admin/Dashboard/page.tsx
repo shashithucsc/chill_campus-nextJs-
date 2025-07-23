@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   UserIcon,
@@ -26,13 +26,14 @@ const navLinks = [
   { name: "Settings", icon: Cog6ToothIcon },
 ];
 
-const metrics = [
-  { name: "Total Users", value: 1245, icon: UserIcon, color: "from-blue-500 to-purple-500" },
-  { name: "Total Communities", value: 32, icon: RectangleGroupIcon, color: "from-green-400 to-blue-400" },
-  { name: "Active Posts", value: 487, icon: DocumentTextIcon, color: "from-pink-500 to-red-400" },
-  { name: "Reported Posts", value: 12, icon: ExclamationTriangleIcon, color: "from-yellow-400 to-red-500" },
-  { name: "New Signups (Week)", value: 56, icon: UsersIcon, color: "from-indigo-400 to-blue-500" },
-  { name: "Total Comments", value: 3200, icon: ChatBubbleLeftRightIcon, color: "from-cyan-400 to-blue-400" },
+
+const metricConfig = [
+  { name: "Total Users", key: "totalUsers", icon: UserIcon, color: "from-blue-500 to-purple-500" },
+  { name: "Total Communities", key: "totalCommunities", icon: RectangleGroupIcon, color: "from-green-400 to-blue-400" },
+  { name: "Total Posts", key: "totalPosts", icon: DocumentTextIcon, color: "from-pink-500 to-red-400" },
+  { name: "Reported Posts", key: "reportedPosts", icon: ExclamationTriangleIcon, color: "from-yellow-400 to-red-500" },
+  { name: "New Signups (Week)", key: "newSignupsWeek", icon: UsersIcon, color: "from-indigo-400 to-blue-500" },
+  { name: "Total Comments", key: "totalComments", icon: ChatBubbleLeftRightIcon, color: "from-cyan-400 to-blue-400" },
 ];
 
 const recentActions = [
@@ -48,6 +49,27 @@ export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [metrics, setMetrics] = useState({
+    totalUsers: 0,
+    totalCommunities: 0,
+    totalPosts: 0,
+    reportedPosts: 0,
+    newSignupsWeek: 0,
+    totalComments: 0,
+  });
+  const [loadingMetrics, setLoadingMetrics] = useState(true);
+
+  // Fetch metrics from backend
+  useEffect(() => {
+    setLoadingMetrics(true);
+    fetch("/api/metrics")
+      .then((res) => res.json())
+      .then((data) => {
+        setMetrics(data);
+        setLoadingMetrics(false);
+      })
+      .catch(() => setLoadingMetrics(false));
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 font-sans">
@@ -122,7 +144,7 @@ export default function AdminDashboard() {
       <main className="md:ml-64 pt-24 px-4 sm:px-8 pb-8 transition-all">
         {/* Metrics Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-10">
-          {metrics.map((metric, i) => (
+          {metricConfig.map((metric, i) => (
             <motion.div
               key={metric.name}
               initial={{ opacity: 0, y: 30 }}
@@ -135,7 +157,13 @@ export default function AdminDashboard() {
                 <metric.icon className="h-8 w-8" />
               </div>
               <div>
-                <div className="text-3xl font-bold text-white mb-1">{metric.value}</div>
+                <div className="text-3xl font-bold text-white mb-1">
+                  {loadingMetrics ? (
+                    <span className="animate-pulse text-white/40">...</span>
+                  ) : (
+                    (metrics as any)[metric.key]
+                  )}
+                </div>
                 <div className="text-white/70 text-lg font-medium">{metric.name}</div>
               </div>
             </motion.div>
