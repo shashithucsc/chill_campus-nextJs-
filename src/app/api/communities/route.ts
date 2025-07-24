@@ -1,46 +1,206 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Community from '@/models/Community';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
     await dbConnect();
-    const session = await getServerSession(authOptions);
-    const userId = session?.user?.id;
-
-    const communities = await Community.find()
-      .populate('createdBy', 'name email')
-      .lean();
-
-    // Add isJoined field and process image URLs
-    const communitiesWithJoinStatus = communities.map(community => {
-      // Ensure the imageUrl is properly formed
-      let imageUrl = community.imageUrl;
-      if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('/')) {
-        imageUrl = `/uploads/${imageUrl}`;
+    
+    const { searchParams } = new URL(req.url);
+    const search = searchParams.get('search') || '';
+    const status = searchParams.get('status');
+    const sort = searchParams.get('sort') || 'latest';
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const isAdmin = searchParams.get('admin') === 'true';
+    
+    if (isAdmin) {
+      // Admin view - return all communities with detailed info
+      let filter: any = {};
+      
+      if (search) {
+        filter.$or = [
+          { name: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } },
+          { tags: { $in: [new RegExp(search, 'i')] } }
+        ];
       }
+      
+      if (status && status !== 'All') {
+        filter.status = status;
+      }
+      
+      // Build sort query
+      let sortQuery: any = {};
+      if (sort === 'latest') {
+        sortQuery.createdAt = -1;
+      } else if (sort === 'oldest') {
+        sortQuery.createdAt = 1;
+      } else if (sort === 'name') {
+        sortQuery.name = 1;
+      } else if (sort === 'members') {
+        sortQuery.memberCount = -1;
+      }
+      
+      // Get total count for pagination
+      const total = await Community.countDocuments(filter);
+      
+      // Get communities with member count and creator info
+      const communities = await Community.aggregate([
+        { $match: filter },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'createdBy',
+            foreignField: '_id',
+            as: 'creator'
+          }
+        },
+        {
+          $addFields: {
+            memberCount: { $size: '$members' },
+            creatorName: { $arrayElemAt: ['$creator.fullName', 0] }
+          }
+        },
+        {
+          $project: {
+            name: 1,
+            description: 1,
+            category: 1,
+            status: 1,
+            coverImage: 1,
+            tags: 1,
+            memberCount: 1,
+            creatorName: 1,
+            createdAt: 1,
+            updatedAt: 1
+          }
+        },
+        { $sort: sortQuery },
+        { $skip: (page - 1) * limit },
+        { $limit: limit }
+      ]);
+      
+      return NextResponse.json({
+        communities,
+        pagination: {
+          total,
+          page,
+          limit,
+          pages: Math.ceil(total / limit)
+        }
+      });
+    } else {
+      // Regular user view - existing functionality
+      const session = await getServerSession(authOptions);
+      const userId = session?.user?.id;
 
-      return {
-        ...community,
-        id: community._id.toString(),
-        isJoined: community.members.some(memberId => 
-          memberId.toString() === userId
-        ),
-        members: community.members.length,
-        imageUrl: imageUrl || '/images/default-community-banner.jpg'
-      };
-    });
+      const communities = await Community.find({ status: 'Active' })
+        .populate('createdBy', 'fullName email')
+        .lean();
 
-    return NextResponse.json({ 
-      success: true, 
-      communities: communitiesWithJoinStatus 
-    });
+      // Add isJoined field and process image URLs
+      const communitiesWithJoinStatus = communities.map(community => {
+        // Ensure the coverImage is properly formed
+        let coverImage = community.coverImage;
+        if (coverImage && !coverImage.startsWith('http') && !coverImage.startsWith('/')) {
+          coverImage = `/uploads/${coverImage}`;
+        }
+
+        return {
+          ...community,
+          id: community._id.toString(),
+          isJoined: community.members.some(memberId => 
+            memberId.toString() === userId
+          ),
+          memberCount: community.members.length,
+          coverImage: coverImage || '/images/default-community-banner.jpg'
+        };
+      });
+
+      return NextResponse.json({ 
+        success: true, 
+        communities: communitiesWithJoinStatus 
+      });
+    }
   } catch (error: any) {
     console.error('Fetch communities error:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to fetch communities' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST - Create new community
+export async function POST(request: NextRequest) {
+  try {
+    await dbConnect();
+    
+    const body = await request.json();
+    const { 
+      name, 
+      description, 
+      category = 'Others', 
+      status = 'Active', 
+      coverImage = '', 
+      tags = [],
+      createdBy 
+    } = body;
+    
+    // Validation
+    if (!name || !description || !createdBy) {
+      return NextResponse.json(
+        { error: 'Name, description, and creator are required' },
+        { status: 400 }
+      );
+    }
+    
+    // Check if community already exists
+    const existingCommunity = await Community.findOne({ 
+      name: { $regex: new RegExp(`^${name}$`, 'i') } 
+    });
+    if (existingCommunity) {
+      return NextResponse.json(
+        { error: 'Community with this name already exists' },
+        { status: 400 }
+      );
+    }
+    
+    // Create new community
+    const newCommunity = new Community({
+      name,
+      description,
+      category,
+      status,
+      coverImage,
+      tags: Array.isArray(tags) ? tags : [],
+      createdBy,
+      members: [createdBy] // Creator is automatically a member
+    });
+    
+    await newCommunity.save();
+    
+    // Return community with member count
+    const communityWithCount = await Community.aggregate([
+      { $match: { _id: newCommunity._id } },
+      {
+        $addFields: {
+          memberCount: { $size: '$members' }
+        }
+      }
+    ]);
+    
+    return NextResponse.json({ 
+      community: communityWithCount[0] 
+    }, { status: 201 });
+    
+  } catch (error) {
+    console.error('Error creating community:', error);
+    return NextResponse.json(
+      { error: 'Failed to create community' },
       { status: 500 }
     );
   }

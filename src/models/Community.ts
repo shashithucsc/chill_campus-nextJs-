@@ -8,22 +8,27 @@ const communitySchema = new mongoose.Schema({
     unique: true,
     index: true // Add index for better query performance
   },
-  category: {
-    type: String,
-    required: [true, 'Category is required'],
-    enum: ['Tech', 'Arts', 'Clubs', 'Events', 'Others']
-  },
   description: {
     type: String,
     required: [true, 'Description is required'],
     maxlength: [1000, 'Description cannot be longer than 1000 characters']
+  },
+  category: {
+    type: String,
+    required: [true, 'Category is required'],
+    enum: ['Tech', 'Arts', 'Clubs', 'Events', 'Others']
   },
   visibility: {
     type: String,
     enum: ['Public', 'Private'],
     default: 'Public'
   },
-  imageUrl: {
+  status: {
+    type: String,
+    enum: ['Active', 'Disabled'],
+    default: 'Active'
+  },
+  coverImage: {
     type: String,
     default: '',
     validate: {
@@ -35,6 +40,10 @@ const communitySchema = new mongoose.Schema({
       message: 'Invalid image URL format'
     }
   },
+  tags: [{
+    type: String,
+    trim: true
+  }],
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

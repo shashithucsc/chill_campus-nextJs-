@@ -29,8 +29,23 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 
-// Define the type for community data
+// Define the type for community data - matches our backend API
 interface Community {
+  _id: string;
+  name: string;
+  description: string;
+  memberCount: number;
+  createdAt: string;
+  updatedAt?: string;
+  status: 'Active' | 'Disabled';
+  coverImage: string;
+  tags: string[];
+  category?: string;
+  creatorName?: string;
+}
+
+// Interface for the display layer
+interface DisplayCommunity {
   id: string;
   name: string;
   description: string;
@@ -41,89 +56,42 @@ interface Community {
   tags: string[];
 }
 
+// Transform backend community to display community
+const transformCommunity = (community: Community): DisplayCommunity => ({
+  id: community._id,
+  name: community.name,
+  description: community.description,
+  memberCount: community.memberCount,
+  createdAt: community.createdAt,
+  status: community.status,
+  coverImage: community.coverImage || '',
+  tags: community.tags || []
+});
+
+// Helper function to get proper image URL
+const getImageUrl = (imageUrl: string | undefined): string => {
+  if (!imageUrl || imageUrl.trim() === '') {
+    return '/images/default-community-banner.jpg';
+  }
+  
+  const cleanUrl = imageUrl.trim();
+  
+  // If it's already a full URL (starts with http/https), return as is
+  if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')) {
+    return cleanUrl;
+  }
+  
+  // If it starts with /, it's already a proper path
+  if (cleanUrl.startsWith('/')) {
+    return cleanUrl;
+  }
+  
+  // Otherwise, assume it's a filename in uploads directory
+  return `/uploads/${cleanUrl}`;
+};
+
 // Mock community data
-const mockCommunities: Community[] = [
-  {
-    id: '1',
-    name: 'Computer Science Club',
-    description: 'A community for computer science enthusiasts to collaborate and learn together.',
-    memberCount: 128,
-    createdAt: '2025-01-10',
-    status: 'Active',
-    coverImage: '/uploads/1752221215022-j3no.jpeg',
-    tags: ['Technology', 'Programming']
-  },
-  {
-    id: '2',
-    name: 'Art & Design Studio',
-    description: 'Share your creative works and get inspired by fellow artists.',
-    memberCount: 94,
-    createdAt: '2025-02-15',
-    status: 'Active',
-    coverImage: '/uploads/1752133976371-io0.png',
-    tags: ['Art', 'Design']
-  },
-  {
-    id: '3',
-    name: 'Sports Enthusiasts',
-    description: 'For students who love sports and fitness activities on campus.',
-    memberCount: 156,
-    createdAt: '2025-02-28',
-    status: 'Active',
-    coverImage: '/uploads/1752134725259-k7pu.png',
-    tags: ['Sports', 'Fitness']
-  },
-  {
-    id: '4',
-    name: 'Mathematics Forum',
-    description: 'Discuss mathematical concepts, problems, and research.',
-    memberCount: 73,
-    createdAt: '2025-03-05',
-    status: 'Disabled',
-    coverImage: '/uploads/1752134349401-ebno.png',
-    tags: ['Science', 'Mathematics']
-  },
-  {
-    id: '5',
-    name: 'Music Production',
-    description: 'For students interested in creating and sharing music.',
-    memberCount: 112,
-    createdAt: '2025-03-20',
-    status: 'Active',
-    coverImage: '/uploads/1750578673157-mgtbza.mp4',
-    tags: ['Music', 'Arts']
-  },
-  {
-    id: '6',
-    name: 'Entrepreneurship Network',
-    description: 'Connect with fellow entrepreneurs and share business ideas.',
-    memberCount: 87,
-    createdAt: '2025-04-02',
-    status: 'Active',
-    coverImage: '/uploads/1751788489853-ip3vxz.jpg',
-    tags: ['Business', 'Innovation']
-  },
-  {
-    id: '7',
-    name: 'Literature Club',
-    description: 'Discuss books, poetry, and all things literary.',
-    memberCount: 64,
-    createdAt: '2025-04-15',
-    status: 'Disabled',
-    coverImage: '',
-    tags: ['Literature', 'Arts']
-  },
-  {
-    id: '8',
-    name: 'Psychology Society',
-    description: 'Explore the human mind and behavior through discussions and events.',
-    memberCount: 92,
-    createdAt: '2025-05-01',
-    status: 'Active',
-    coverImage: '/uploads/1750577439376-dvzo74.jpg',
-    tags: ['Psychology', 'Science']
-  },
-];
+const mockCommunities: Community[] = [];
 
 const navLinks = [
   { name: "Overview", icon: HomeIcon, href: "/Admin/Dashboard" },
@@ -135,7 +103,17 @@ const navLinks = [
 ];
 
 // Community Card Component
-const CommunityCard = ({ community, index }: { community: Community, index: number }) => {
+const CommunityCard = ({ 
+  community, 
+  index, 
+  onStatusToggle, 
+  onDelete 
+}: { 
+  community: Community, 
+  index: number,
+  onStatusToggle: (id: string, currentStatus: string) => void,
+  onDelete: (id: string) => void
+}) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -144,24 +122,27 @@ const CommunityCard = ({ community, index }: { community: Community, index: numb
       className="bg-black/30 backdrop-blur-md rounded-xl border border-white/10 shadow-lg overflow-hidden hover:shadow-xl transition-all"
     >
       {/* Cover Image */}
-      <div className="h-40 w-full relative overflow-hidden">
-        {community.coverImage ? (
+      <div className="h-40 w-full relative overflow-hidden group">
+        {community.coverImage && community.coverImage.trim() !== '' ? (
           <Image 
-            src={community.coverImage} 
+            src={getImageUrl(community.coverImage)} 
             alt={community.name} 
             fill 
-            className="object-cover"
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
             onError={(e) => {
               // Fallback if image fails to load
               const target = e.target as HTMLImageElement;
-              target.src = "/public/images/default-community-banner.jpg";
+              target.src = "/images/default-community-banner.jpg";
             }}
+            unoptimized={getImageUrl(community.coverImage).startsWith('/uploads/')}
           />
         ) : (
-          <div className="h-full w-full bg-gradient-to-r from-purple-900/60 to-blue-900/60 flex items-center justify-center">
+          <div className="h-full w-full bg-gradient-to-r from-purple-900/60 to-blue-900/60 flex items-center justify-center group-hover:from-purple-800/70 group-hover:to-blue-800/70 transition-colors duration-300">
             <RectangleGroupIcon className="h-16 w-16 text-white/50" />
           </div>
         )}
+        {/* Overlay gradient for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         {/* Status badge */}
         <div className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-medium ${
           community.status === 'Active' 
@@ -179,11 +160,15 @@ const CommunityCard = ({ community, index }: { community: Community, index: numb
         
         {/* Tags */}
         <div className="flex flex-wrap gap-2 mb-4">
-          {community.tags.map(tag => (
+          {community.tags && community.tags.length > 0 ? community.tags.map(tag => (
             <span key={tag} className="px-2 py-1 bg-white/10 rounded-md text-xs text-white/80">
               {tag}
             </span>
-          ))}
+          )) : (
+            <span className="px-2 py-1 bg-white/5 rounded-md text-xs text-white/50">
+              No tags
+            </span>
+          )}
         </div>
         
         {/* Stats */}
@@ -216,6 +201,7 @@ const CommunityCard = ({ community, index }: { community: Community, index: numb
           <motion.button 
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={() => onStatusToggle(community._id, community.status)}
             className="flex items-center px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 rounded-lg transition-all text-sm"
             title={community.status === 'Active' ? 'Disable Community' : 'Enable Community'}
           >
@@ -228,6 +214,7 @@ const CommunityCard = ({ community, index }: { community: Community, index: numb
           <motion.button 
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={() => onDelete(community._id)}
             className="flex items-center px-3 py-1.5 bg-red-500/20 hover:bg-red-500/40 text-red-300 rounded-lg transition-all text-sm"
             title="Delete Community"
           >
@@ -240,13 +227,214 @@ const CommunityCard = ({ community, index }: { community: Community, index: numb
 };
 
 export default function CommunitiesPage() {
+  // UI State
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  // Form state for adding community
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    category: '',
+    tags: '',
+    coverImage: null as File | null
+  });
+
+  // Handle form submission
+  const handleCreateCommunity = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      let coverImageUrl = '';
+      
+      // Upload image if provided
+      if (formData.coverImage) {
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', formData.coverImage);
+        
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: uploadFormData,
+        });
+        
+        if (uploadResponse.ok) {
+          const uploadData = await uploadResponse.json();
+          coverImageUrl = uploadData.filePath;
+        } else {
+          throw new Error('Failed to upload image');
+        }
+      }
+
+      // Get current user session for createdBy field
+      const sessionResponse = await fetch('/api/auth/session');
+      const sessionData = await sessionResponse.json();
+      
+      if (!sessionData?.user?.id) {
+        throw new Error('User session not found. Please login again.');
+      }
+
+      // Create community
+      const response = await fetch('/api/communities', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          description: formData.description,
+          category: formData.category,
+          tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+          coverImage: coverImageUrl,
+          createdBy: sessionData.user.id
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create community');
+      }
+
+      // Reset form and close modal
+      setFormData({ name: '', description: '', category: '', tags: '', coverImage: null });
+      setImagePreview(null);
+      setShowAddModal(false);
+      
+      // Refresh communities list
+      fetchCommunities();
+      
+      alert('Community created successfully!');
+    } catch (error) {
+      console.error('Error creating community:', error);
+      alert(`Failed to create community: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle community status toggle (Enable/Disable)
+  const handleStatusToggle = async (id: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === 'Active' ? 'Disabled' : 'Active';
+      const response = await fetch(`/api/communities/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update community status');
+      }
+
+      // Refresh communities list
+      fetchCommunities();
+    } catch (error) {
+      console.error('Error updating community status:', error);
+      alert('Failed to update community status. Please try again.');
+    }
+  };
+
+  // Handle community deletion
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this community? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/communities/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete community');
+      }
+
+      // Refresh communities list
+      fetchCommunities();
+    } catch (error) {
+      console.error('Error deleting community:', error);
+      alert('Failed to delete community. Please try again.');
+    }
+  };
+
+  // Handle image file selection with preview
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setFormData({...formData, coverImage: file || null});
+    
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setImagePreview(null);
+    }
+  };
+
+  // Data and filtering state
+  const [communities, setCommunities] = useState<Community[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [totalCommunities, setTotalCommunities] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [sortOrder, setSortOrder] = useState<string>("latest");
-  const [filteredCommunities, setFilteredCommunities] = useState<Community[]>(mockCommunities);
-  const [isMobile, setIsMobile] = useState(false);
+  const [filteredCommunities, setFilteredCommunities] = useState<Community[]>([]);
+
+  // Fetch communities from API
+  const fetchCommunities = async () => {
+    try {
+      setIsLoading(true);
+      const params = new URLSearchParams({
+        admin: 'true',
+        page: currentPage.toString(),
+        limit: '20', // Get more for client-side filtering
+        ...(search && { search }),
+        ...(statusFilter !== 'All' && { status: statusFilter }),
+      });
+
+      const response = await fetch(`/api/communities?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch communities');
+      }
+
+      const data = await response.json();
+      setCommunities(data.communities || []);
+      setTotalCommunities(data.totalCommunities || 0);
+    } catch (error) {
+      console.error('Error fetching communities:', error);
+      setCommunities([]);
+      setTotalCommunities(0);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load communities on component mount and when filters change
+  useEffect(() => {
+    fetchCommunities();
+  }, [currentPage, statusFilter]);
+
+  // Effect to refetch when search changes (with debounce)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (currentPage === 1) {
+        fetchCommunities();
+      } else {
+        setCurrentPage(1); // This will trigger fetchCommunities via the above useEffect
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [search]);
 
   // Check if screen is mobile
   useEffect(() => {
@@ -261,20 +449,20 @@ export default function CommunitiesPage() {
     }
   }, []);
 
-  // Filter and sort communities
+  // Filter and sort communities (client-side for immediate response)
   useEffect(() => {
-    let results = [...mockCommunities];
+    let results = [...communities];
     
-    // Apply search filter
-    if (search) {
+    // Apply search filter (if not already filtered by API)
+    if (search && !statusFilter || statusFilter === 'All') {
       results = results.filter(community => 
         community.name.toLowerCase().includes(search.toLowerCase()) || 
         community.description.toLowerCase().includes(search.toLowerCase()) ||
-        community.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()))
+        (community.tags && community.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase())))
       );
     }
     
-    // Apply status filter
+    // Apply status filter (if not already filtered by API)
     if (statusFilter !== 'All') {
       results = results.filter(community => community.status === statusFilter);
     }
@@ -292,10 +480,10 @@ export default function CommunitiesPage() {
     });
     
     setFilteredCommunities(results);
-  }, [search, statusFilter, sortOrder]);
+  }, [communities, search, statusFilter, sortOrder]);
 
   // Count active communities
-  const activeCommunities = mockCommunities.filter(c => c.status === 'Active').length;
+  const activeCommunities = communities.filter(c => c.status === 'Active').length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 font-sans">
@@ -385,11 +573,12 @@ export default function CommunitiesPage() {
                 <RectangleGroupIcon className="h-8 w-8 text-blue-400 mr-3" />
                 <h1 className="text-2xl font-bold text-white">Manage Communities</h1>
               </div>
-              <p className="text-white/70 mt-2">You are managing {activeCommunities} active communities out of {mockCommunities.length} total.</p>
+              <p className="text-white/70 mt-2">You are managing {activeCommunities} active communities out of {totalCommunities} total.</p>
             </div>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => setShowAddModal(true)}
               className="flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl text-white shadow-lg hover:shadow-xl transition-all text-sm font-medium"
             >
               <PlusCircleIcon className="h-5 w-5 mr-2" /> Create New Community
@@ -442,10 +631,33 @@ export default function CommunitiesPage() {
         </motion.div>
 
         {/* Communities Grid */}
-        {filteredCommunities.length > 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, index) => (
+              <div key={index} className="bg-black/30 backdrop-blur-md rounded-xl border border-white/10 overflow-hidden animate-pulse">
+                <div className="h-40 w-full bg-white/10"></div>
+                <div className="p-4">
+                  <div className="h-4 bg-white/10 rounded mb-2"></div>
+                  <div className="h-3 bg-white/10 rounded mb-3 w-3/4"></div>
+                  <div className="flex space-x-2 mb-3">
+                    <div className="h-6 bg-white/10 rounded w-16"></div>
+                    <div className="h-6 bg-white/10 rounded w-20"></div>
+                  </div>
+                  <div className="h-3 bg-white/10 rounded w-1/2"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredCommunities.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredCommunities.map((community, index) => (
-              <CommunityCard key={community.id} community={community} index={index} />
+              <CommunityCard 
+                key={community._id} 
+                community={community} 
+                index={index}
+                onStatusToggle={handleStatusToggle}
+                onDelete={handleDelete}
+              />
             ))}
           </div>
         ) : (
@@ -460,8 +672,8 @@ export default function CommunitiesPage() {
           </motion.div>
         )}
 
-        {/* Pagination (Optional) */}
-        {filteredCommunities.length > 0 && (
+        {/* Pagination */}
+        {!isLoading && filteredCommunities.length > 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -469,7 +681,7 @@ export default function CommunitiesPage() {
             className="flex justify-between items-center mt-8 text-white/80"
           >
             <div className="text-sm">
-              Showing <span className="font-medium">{filteredCommunities.length}</span> of <span className="font-medium">{mockCommunities.length}</span> communities
+              Showing <span className="font-medium">{filteredCommunities.length}</span> of <span className="font-medium">{totalCommunities}</span> communities
             </div>
             <div className="flex items-center space-x-2">
               <button className="p-2 rounded-lg bg-black/30 backdrop-blur-md hover:bg-white/10 transition-all">
@@ -486,6 +698,145 @@ export default function CommunitiesPage() {
           </motion.div>
         )}
       </main>
+
+      {/* Add Community Modal */}
+      <AnimatePresence>
+        {showAddModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowAddModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-black/80 backdrop-blur-xl rounded-2xl border border-white/20 p-6 w-full max-w-md shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-white">Create New Community</h3>
+                <button
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setImagePreview(null);
+                    setFormData({ name: '', description: '', category: '', tags: '', coverImage: null });
+                  }}
+                  className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                >
+                  <svg className="h-5 w-5 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <form className="space-y-4" onSubmit={handleCreateCommunity}>
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-2">Community Name</label>
+                  <input
+                    type="text"
+                    placeholder="Enter community name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    required
+                    className="w-full px-4 py-3 rounded-xl border border-white/20 bg-black/40 backdrop-blur-md text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-2">Description</label>
+                  <textarea
+                    placeholder="Enter community description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    required
+                    rows={3}
+                    className="w-full px-4 py-3 rounded-xl border border-white/20 bg-black/40 backdrop-blur-md text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-2">Category</label>
+                  <select 
+                    value={formData.category}
+                    onChange={(e) => setFormData({...formData, category: e.target.value})}
+                    required
+                    className="w-full px-4 py-3 rounded-xl border border-white/20 bg-black/40 backdrop-blur-md text-white focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all"
+                  >
+                    <option value="">Select a category</option>
+                    <option value="Technology">Technology</option>
+                    <option value="Education">Education</option>
+                    <option value="Arts">Arts</option>
+                    <option value="Sports">Sports</option>
+                    <option value="Science">Science</option>
+                    <option value="Business">Business</option>
+                    <option value="Social">Social</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-2">Cover Image</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="w-full px-4 py-3 rounded-xl border border-white/20 bg-black/40 backdrop-blur-md text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-blue-500/20 file:text-blue-300 hover:file:bg-blue-500/30 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all"
+                  />
+                  {imagePreview && (
+                    <div className="mt-3">
+                      <p className="text-white/80 text-sm mb-2">Preview:</p>
+                      <div className="relative w-full h-32 rounded-lg overflow-hidden border border-white/20">
+                        <Image
+                          src={imagePreview}
+                          alt="Cover preview"
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  <p className="text-white/50 text-xs mt-1">Optional - Upload a cover image for the community</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-2">Tags (comma-separated)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., programming, web development, coding"
+                    value={formData.tags}
+                    onChange={(e) => setFormData({...formData, tags: e.target.value})}
+                    className="w-full px-4 py-3 rounded-xl border border-white/20 bg-black/40 backdrop-blur-md text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddModal(false);
+                      setImagePreview(null);
+                      setFormData({ name: '', description: '', category: '', tags: '', coverImage: null });
+                    }}
+                    disabled={isSubmitting}
+                    className="flex-1 px-4 py-3 rounded-xl border border-white/20 text-white/80 hover:bg-white/10 transition-colors disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium hover:shadow-lg transition-all disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'Creating...' : 'Create Community'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
