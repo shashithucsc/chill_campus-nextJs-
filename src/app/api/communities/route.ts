@@ -71,6 +71,7 @@ export async function GET(req: NextRequest) {
             category: 1,
             status: 1,
             coverImage: 1,
+            imageUrl: 1, // Add imageUrl field
             tags: 1,
             memberCount: 1,
             creatorName: 1,
@@ -82,9 +83,23 @@ export async function GET(req: NextRequest) {
         { $skip: (page - 1) * limit },
         { $limit: limit }
       ]);
+
+      // Process image URLs for admin view, similar to user view
+      const processedCommunities = communities.map(community => {
+        // Prefer imageUrl over coverImage, similar to frontend logic
+        let displayImage = community.imageUrl || community.coverImage;
+        if (displayImage && !displayImage.startsWith('http') && !displayImage.startsWith('/')) {
+          displayImage = `/uploads/${displayImage}`;
+        }
+
+        return {
+          ...community,
+          coverImage: displayImage || '/images/default-community-banner.jpg'
+        };
+      });
       
       return NextResponse.json({
-        communities,
+        communities: processedCommunities,
         pagination: {
           total,
           page,

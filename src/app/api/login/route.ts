@@ -6,9 +6,11 @@ import { createSession, deleteSession } from '@/lib/session';
 
 export async function POST(req: NextRequest) {
   try {
-    await dbConnect();
     const { email, password } = await req.json();
     console.log('Login attempt for email:', email); // Debug log
+
+    // Connect to database for all authentication
+    await dbConnect();
 
     // Use case-insensitive email search to avoid casing issues
     const user = await User.findOne({ email: { $regex: new RegExp(`^${email}$`, 'i') } });
