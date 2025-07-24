@@ -10,6 +10,7 @@ export interface IUser extends Document {
   avatar?: string; // Optional avatar field
   isActive: boolean; // Indicates if the user's email is confirmed
   activationToken: string; // Token for email confirmation
+  status: 'Active' | 'Suspended'; // User status for admin management
 }
 
 const UserSchema = new Schema<IUser>(
@@ -53,6 +54,11 @@ const UserSchema = new Schema<IUser>(
     activationToken: {
       type: String,
       default: '',
+    },
+    status: {
+      type: String,
+      enum: ['Active', 'Suspended'],
+      default: 'Active',
     },
   },
   {
