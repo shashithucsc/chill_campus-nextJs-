@@ -44,6 +44,7 @@ export default function LoginPage() {
     setHasAttemptedLogin(true); // Mark that user has explicitly attempted login
 
     try {
+      // Handle all logins (including admin) with unified flow
       try {
         // First create the custom session with our own JWT
         const customSessionResponse = await fetch('/api/login', {
@@ -75,6 +76,8 @@ export default function LoginPage() {
           return;
         }
 
+        const userData = await customSessionResponse.json();
+
         // Then use NextAuth for client-side session
         const result = await signIn('credentials', {
           email: formData.email,
@@ -90,17 +93,30 @@ export default function LoginPage() {
           });
           setHasAttemptedLogin(false); // Reset login attempt on error
         } else if (result?.ok) {
-          // Show success message
-          setPopup({ 
-            open: true, 
-            message: 'Login successful! Redirecting to dashboard...', 
-            type: 'success' 
-          });
-          
-          // Delay redirect to show success message
-          setTimeout(() => {
-            router.push(callbackUrl);
-          }, 1500);
+          // Check if this is an admin user and redirect accordingly
+          if (userData.user?.role === 'admin') {
+            setPopup({ 
+              open: true, 
+              message: 'Admin login successful! Redirecting to dashboard...', 
+              type: 'success' 
+            });
+            
+            setTimeout(() => {
+              router.push('/Admin/Dashboard');
+            }, 1500);
+          } else {
+            // Show success message for regular users
+            setPopup({ 
+              open: true, 
+              message: 'Login successful! Redirecting to home...', 
+              type: 'success' 
+            });
+            
+            // Delay redirect to show success message
+            setTimeout(() => {
+              router.push('/home');
+            }, 1500);
+          }
         }
       } catch (err) {
         console.error('Login error:', err);
@@ -109,11 +125,7 @@ export default function LoginPage() {
           message: 'An error occurred during login. Please try again later.',
           type: 'error'
         });
-        
-        // Delay redirect to show success message
-        setTimeout(() => {
-          router.push(callbackUrl);
-        }, 1500);
+        setHasAttemptedLogin(false);
       }
     } catch (err) {
       setPopup({
@@ -322,6 +334,13 @@ export default function LoginPage() {
                     Forgot password?
                   </a>
                 </div>
+              </div>
+
+              {/* Admin Credentials Hint */}
+              <div className="bg-blue-500/10 border border-blue-400/20 rounded-xl p-3">
+                <p className="text-xs text-blue-300/90 text-center">
+                  <span className="font-semibold">Admin Access:</span> admin@gmail.com / admin123
+                </p>
               </div>
 
               {/* Submit Button */}

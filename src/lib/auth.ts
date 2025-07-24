@@ -27,13 +27,17 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
+        console.log('NextAuth authorize called with:', { email: credentials?.email, hasPassword: !!credentials?.password });
+        
         if (!credentials?.email || !credentials?.password) {
+          console.log('Missing credentials');
           return null;
         }
 
+        console.log('Checking database for user:', credentials.email);
         await dbConnect();
 
-        // Use case-insensitive email search
+        // Use case-insensitive email search for regular users
         const user = await User.findOne({ email: { $regex: new RegExp(`^${credentials.email}$`, 'i') } });
         if (!user) {
           return null;
@@ -51,9 +55,11 @@ export const authOptions: NextAuthOptions = {
 
         const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
         if (!isPasswordValid) {
+          console.log('Password validation failed for user:', user.email);
           return null;
         }
 
+        console.log('User authenticated successfully:', user.email);
         // Return user with consistent ID format and all needed properties
         return {
           id: user._id.toString(),

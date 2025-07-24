@@ -3,7 +3,7 @@ import mongoose, { Document, Schema, models, model } from 'mongoose';
 export interface IUser extends Document {
   email: string;
   password: string;
-  role: 'student' | 'community_admin' | 'community_moderator';
+  role: 'student' | 'community_admin' | 'community_moderator' | 'admin';
   fullName: string;
   university: string;
   createdAt: Date;
@@ -28,7 +28,7 @@ const UserSchema = new Schema<IUser>(
     },
     role: {
       type: String,
-      enum: ['student', 'community_admin', 'community_moderator'],
+      enum: ['student', 'community_admin', 'community_moderator', 'admin'],
       default: 'student',
     },
     fullName: {

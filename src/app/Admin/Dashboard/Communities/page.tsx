@@ -254,6 +254,7 @@ export default function CommunitiesPage() {
       
       // Upload image if provided
       if (formData.coverImage) {
+        console.log('Uploading image...', formData.coverImage.name);
         const uploadFormData = new FormData();
         uploadFormData.append('file', formData.coverImage);
         
@@ -264,19 +265,37 @@ export default function CommunitiesPage() {
         
         if (uploadResponse.ok) {
           const uploadData = await uploadResponse.json();
-          coverImageUrl = uploadData.filePath;
+          coverImageUrl = uploadData.filePath || uploadData.url;
+          console.log('Image uploaded successfully:', coverImageUrl);
         } else {
-          throw new Error('Failed to upload image');
+          const errorText = await uploadResponse.text();
+          console.error('Upload failed:', errorText);
+          throw new Error(`Failed to upload image: ${errorText}`);
         }
       }
 
       // Get current user session for createdBy field
+      console.log('Getting user session...');
       const sessionResponse = await fetch('/api/auth/session');
       const sessionData = await sessionResponse.json();
+      
+      console.log('Session data:', sessionData);
       
       if (!sessionData?.user?.id) {
         throw new Error('User session not found. Please login again.');
       }
+
+      // Prepare community data
+      const communityData = {
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        category: formData.category,
+        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+        coverImage: coverImageUrl,
+        createdBy: sessionData.user.id
+      };
+
+      console.log('Creating community with data:', communityData);
 
       // Create community
       const response = await fetch('/api/communities', {
@@ -284,20 +303,17 @@ export default function CommunitiesPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: formData.name,
-          description: formData.description,
-          category: formData.category,
-          tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
-          coverImage: coverImageUrl,
-          createdBy: sessionData.user.id
-        }),
+        body: JSON.stringify(communityData),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create community');
+        console.error('Community creation failed:', errorData);
+        throw new Error(errorData.error || errorData.message || 'Failed to create community');
       }
+
+      const result = await response.json();
+      console.log('Community created successfully:', result);
 
       // Reset form and close modal
       setFormData({ name: '', description: '', category: '', tags: '', coverImage: null });
@@ -305,7 +321,7 @@ export default function CommunitiesPage() {
       setShowAddModal(false);
       
       // Refresh communities list
-      fetchCommunities();
+      await fetchCommunities();
       
       alert('Community created successfully!');
     } catch (error) {
@@ -706,14 +722,14 @@ export default function CommunitiesPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto"
             onClick={() => setShowAddModal(false)}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-black/80 backdrop-blur-xl rounded-2xl border border-white/20 p-6 w-full max-w-md shadow-2xl"
+              className="bg-black/80 backdrop-blur-xl rounded-2xl border border-white/20 p-6 w-full max-w-lg max-h-[90vh] my-8 shadow-2xl overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-6">
@@ -732,33 +748,39 @@ export default function CommunitiesPage() {
                 </button>
               </div>
 
-              <form className="space-y-4" onSubmit={handleCreateCommunity}>
+              <form className="space-y-6" onSubmit={handleCreateCommunity}>
                 <div>
-                  <label className="block text-sm font-medium text-white/80 mb-2">Community Name</label>
+                  <label className="block text-sm font-medium text-white/80 mb-2">Community Name *</label>
                   <input
                     type="text"
                     placeholder="Enter community name"
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
                     required
+                    minLength={3}
+                    maxLength={50}
                     className="w-full px-4 py-3 rounded-xl border border-white/20 bg-black/40 backdrop-blur-md text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all"
                   />
+                  <p className="text-white/50 text-xs mt-1">3-50 characters</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-white/80 mb-2">Description</label>
+                  <label className="block text-sm font-medium text-white/80 mb-2">Description *</label>
                   <textarea
                     placeholder="Enter community description"
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
                     required
+                    minLength={10}
+                    maxLength={500}
                     rows={3}
                     className="w-full px-4 py-3 rounded-xl border border-white/20 bg-black/40 backdrop-blur-md text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all resize-none"
                   />
+                  <p className="text-white/50 text-xs mt-1">{formData.description.length}/500 characters</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-white/80 mb-2">Category</label>
+                  <label className="block text-sm font-medium text-white/80 mb-2">Category *</label>
                   <select 
                     value={formData.category}
                     onChange={(e) => setFormData({...formData, category: e.target.value})}
@@ -766,13 +788,11 @@ export default function CommunitiesPage() {
                     className="w-full px-4 py-3 rounded-xl border border-white/20 bg-black/40 backdrop-blur-md text-white focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all"
                   >
                     <option value="">Select a category</option>
-                    <option value="Technology">Technology</option>
-                    <option value="Education">Education</option>
+                    <option value="Tech">Technology</option>
                     <option value="Arts">Arts</option>
-                    <option value="Sports">Sports</option>
-                    <option value="Science">Science</option>
-                    <option value="Business">Business</option>
-                    <option value="Social">Social</option>
+                    <option value="Clubs">Clubs</option>
+                    <option value="Events">Events</option>
+                    <option value="Others">Others</option>
                   </select>
                 </div>
 
@@ -780,28 +800,29 @@ export default function CommunitiesPage() {
                   <label className="block text-sm font-medium text-white/80 mb-2">Cover Image</label>
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
                     onChange={handleImageChange}
                     className="w-full px-4 py-3 rounded-xl border border-white/20 bg-black/40 backdrop-blur-md text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-blue-500/20 file:text-blue-300 hover:file:bg-blue-500/30 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all"
                   />
                   {imagePreview && (
                     <div className="mt-3">
                       <p className="text-white/80 text-sm mb-2">Preview:</p>
-                      <div className="relative w-full h-32 rounded-lg overflow-hidden border border-white/20">
+                      <div className="relative w-full h-40 rounded-lg overflow-hidden border border-white/20">
                         <Image
                           src={imagePreview}
                           alt="Cover preview"
                           fill
                           className="object-cover"
+                          unoptimized
                         />
                       </div>
                     </div>
                   )}
-                  <p className="text-white/50 text-xs mt-1">Optional - Upload a cover image for the community</p>
+                  <p className="text-white/50 text-xs mt-1">Optional - Upload JPG, PNG, WebP or GIF (max 5MB)</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-white/80 mb-2">Tags (comma-separated)</label>
+                  <label className="block text-sm font-medium text-white/80 mb-2">Tags</label>
                   <input
                     type="text"
                     placeholder="e.g., programming, web development, coding"
@@ -809,9 +830,10 @@ export default function CommunitiesPage() {
                     onChange={(e) => setFormData({...formData, tags: e.target.value})}
                     className="w-full px-4 py-3 rounded-xl border border-white/20 bg-black/40 backdrop-blur-md text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all"
                   />
+                  <p className="text-white/50 text-xs mt-1">Optional - Separate multiple tags with commas</p>
                 </div>
 
-                <div className="flex gap-3 pt-4">
+                <div className="flex gap-3 pt-4 border-t border-white/10">
                   <button
                     type="button"
                     onClick={() => {
@@ -820,16 +842,24 @@ export default function CommunitiesPage() {
                       setFormData({ name: '', description: '', category: '', tags: '', coverImage: null });
                     }}
                     disabled={isSubmitting}
-                    className="flex-1 px-4 py-3 rounded-xl border border-white/20 text-white/80 hover:bg-white/10 transition-colors disabled:opacity-50"
+                    className="flex-1 px-4 py-3 rounded-xl border border-white/20 text-white/80 hover:bg-white/10 transition-colors disabled:opacity-50 font-medium"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    disabled={isSubmitting}
-                    className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium hover:shadow-lg transition-all disabled:opacity-50"
+                    disabled={isSubmitting || !formData.name.trim() || !formData.description.trim() || !formData.category}
+                    className="flex-1 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium hover:shadow-lg hover:from-blue-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSubmitting ? 'Creating...' : 'Create Community'}
+                    {isSubmitting ? (
+                      <span className="flex items-center justify-center">
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Creating...
+                      </span>
+                    ) : 'Create Community'}
                   </button>
                 </div>
               </form>
