@@ -22,21 +22,18 @@ const CommunityBanner = ({ imageUrl, name }: { imageUrl: string; name: string })
 
   // Function to get full image URL with validation
   const getImageUrl = (url: string) => {
-    if (!url || typeof url !== 'string') return defaultImage;
-    url = url.trim();
+    if (!url || typeof url !== 'string' || url.trim() === '') return defaultImage;
+    
+    const cleanUrl = url.trim();
     
     // Handle absolute URLs (including http/https)
-    if (url.match(/^https?:\/\//)) return url;
+    if (cleanUrl.match(/^https?:\/\//)) return cleanUrl;
     
-    // Handle relative URLs from uploads directory
-    if (url.startsWith('/uploads/')) {
-      // Simple validation of the uploads path format
-      if (url.match(/^\/uploads\/[\w-]+\.(jpg|jpeg|png|gif|webp)$/i)) {
-        return url;
-      }
-    }
+    // Handle relative URLs starting with /
+    if (cleanUrl.startsWith('/')) return cleanUrl;
     
-    return defaultImage;
+    // Handle uploads directory files (assume it's a filename)
+    return `/uploads/${cleanUrl}`;
   };
 
   // Reset error state when imageUrl changes
@@ -54,6 +51,7 @@ const CommunityBanner = ({ imageUrl, name }: { imageUrl: string; name: string })
         onError={() => setImageError(true)}
         priority={true}
         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        unoptimized={getImageUrl(imageUrl).startsWith('/uploads/')}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
     </div>
@@ -64,12 +62,13 @@ interface Community {
   id: string;
   name: string;
   description: string;
-  members: number;
+  memberCount: number; // Changed from 'members' to 'memberCount' to match API
   imageUrl: string;
   category: string;
   isJoined: boolean;
   visibility: string;
   createdBy: string;
+  coverImage?: string; // Add coverImage field from API
 }
 
 // Skeleton component for loading state
@@ -131,7 +130,12 @@ export default function CommunitiesPage() {
         });
         const data = await response.json();
         if (data.success) {
-          setCommunitiesData(data.communities);
+          // Transform the API response to match our interface
+          const transformedCommunities = data.communities.map((community: any) => ({
+            ...community,
+            imageUrl: community.imageUrl || community.coverImage || '/images/default-community-banner.jpg'
+          }));
+          setCommunitiesData(transformedCommunities);
         }
       } catch (error) {
         console.error('Error fetching communities:', error);
@@ -169,7 +173,7 @@ export default function CommunitiesPage() {
             ? { 
                 ...community, 
                 isJoined: !currentlyJoined,
-                members: data.memberCount
+                memberCount: data.memberCount
               }
             : community
         ));
@@ -350,7 +354,7 @@ export default function CommunitiesPage() {
                         <div className="flex items-center space-x-2">
                           <UserGroupIcon className="h-5 w-5 text-white/60" />
                           <span className="text-white/80 text-sm font-medium">
-                            {community.members.toLocaleString()} members
+                            {community.memberCount?.toLocaleString() || 0} members
                           </span>
                         </div>
                         
