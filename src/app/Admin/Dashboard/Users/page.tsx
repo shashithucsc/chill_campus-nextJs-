@@ -31,7 +31,7 @@ interface User {
   _id: string;
   fullName: string;
   email: string;
-  role: 'user' | 'admin' | 'student';
+  role: 'student' | 'community admin' | 'community moderator';
   status: 'Active' | 'Suspended';
   createdAt: string;
   avatar?: string;
@@ -44,7 +44,7 @@ interface DisplayUser {
   id: string;
   name: string;
   email: string;
-  role: 'User' | 'Organizer' | 'Admin';
+  role: 'Student' | 'Community Admin' | 'Community Moderator';
   status: 'Active' | 'Suspended';
   joined: string;
   avatar: string;
@@ -55,7 +55,8 @@ const transformUser = (user: User): DisplayUser => ({
   id: user._id,
   name: user.fullName,
   email: user.email,
-  role: user.role === 'admin' ? 'Admin' : user.role === 'student' ? 'User' : 'Organizer',
+  role: user.role === 'student' ? 'Student' : 
+        user.role === 'community admin' ? 'Community Admin' : 'Community Moderator',
   status: user.status,
   joined: user.createdAt,
   avatar: user.avatar || ''
@@ -97,9 +98,9 @@ const UserRow = ({ user, index, onStatusToggle, onDelete }: {
       <td className="py-4 px-4 text-white/80">{user.email}</td>
       <td className="py-4 px-4">
         <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-          user.role === 'Admin' 
+          user.role === 'Community Admin' 
             ? 'bg-purple-500/20 text-purple-300' 
-            : user.role === 'Organizer' 
+            : user.role === 'Community Moderator' 
               ? 'bg-blue-500/20 text-blue-300'
               : 'bg-gray-500/20 text-gray-300'
         }`}>
@@ -193,9 +194,9 @@ const UserCard = ({ user, index, onStatusToggle, onDelete }: {
       <div className="grid grid-cols-2 gap-2 mb-3 text-sm">
         <div className="text-white/60">Role:</div>
         <div className={`${
-          user.role === 'Admin' 
+          user.role === 'Community Admin' 
             ? 'text-purple-300' 
-            : user.role === 'Organizer' 
+            : user.role === 'Community Moderator' 
               ? 'text-blue-300'
               : 'text-gray-300'
         }`}>{user.role}</div>
@@ -531,9 +532,9 @@ export default function UsersPage() {
                 className="appearance-none px-4 py-3 pr-10 rounded-xl border border-white/20 bg-black/30 backdrop-blur-md text-white focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all shadow-lg"
               >
                 <option value="All">All Roles</option>
-                <option value="Admin">Admin</option>
-                <option value="User">Student</option>
-                <option value="Organizer">User</option>
+                <option value="Student">Student</option>
+                <option value="Community Admin">Community Admin</option>
+                <option value="Community Moderator">Community Moderator</option>
               </select>
               <FunnelIcon className="h-5 w-5 text-white/60 absolute right-3 top-3.5 pointer-events-none" />
             </div>
@@ -786,8 +787,8 @@ const AddUserModal = ({
               className="w-full px-3 py-2 rounded-lg border border-white/20 bg-black/30 text-white focus:outline-none focus:ring-2 focus:ring-blue-400/50"
             >
               <option value="student">Student</option>
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
+              <option value="community_admin">Community Admin</option>
+              <option value="community_moderator">Community Moderator</option>
             </select>
           </div>
 

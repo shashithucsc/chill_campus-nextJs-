@@ -59,6 +59,13 @@ export default function LoginPage() {
 
         if (!customSessionResponse.ok) {
           const errorData = await customSessionResponse.json();
+          
+          // Check if user is suspended
+          if (errorData.suspended) {
+            router.push('/suspended');
+            return;
+          }
+          
           setPopup({
             open: true,
             message: errorData.message || 'Login failed. Please try again.',

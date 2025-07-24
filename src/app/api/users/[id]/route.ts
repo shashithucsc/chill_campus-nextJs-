@@ -5,12 +5,13 @@ import User from '@/models/User';
 // GET - Fetch single user
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
     
-    const user = await User.findById(params.id).select('-password').lean();
+    const { id } = await params;
+    const user = await User.findById(id).select('-password').lean();
     
     if (!user) {
       return NextResponse.json(
@@ -33,18 +34,19 @@ export async function GET(
 // PUT - Update user
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
     
+    const { id } = await params;
     const body = await request.json();
-    const { name, email, role, status } = body;
+    const { fullName, email, role, status } = body;
     
     // Find and update user
     const updatedUser = await User.findByIdAndUpdate(
-      params.id,
-      { name, email, role, status, updatedAt: new Date() },
+      id,
+      { fullName, email, role, status },
       { new: true, runValidators: true }
     ).select('-password');
     
@@ -69,12 +71,13 @@ export async function PUT(
 // DELETE - Delete user
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
     
-    const deletedUser = await User.findByIdAndDelete(params.id);
+    const { id } = await params;
+    const deletedUser = await User.findByIdAndDelete(id);
     
     if (!deletedUser) {
       return NextResponse.json(

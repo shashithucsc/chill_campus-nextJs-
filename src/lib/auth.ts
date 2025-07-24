@@ -44,6 +44,11 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Account not activated. Please check your email for the activation link.');
         }
 
+        // Check if user is suspended
+        if (user.status === 'Suspended') {
+          throw new Error('Account suspended. Please contact support for assistance.');
+        }
+
         const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
         if (!isPasswordValid) {
           return null;
