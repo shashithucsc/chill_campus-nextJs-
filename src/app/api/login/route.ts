@@ -22,6 +22,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Account not activated. Please check your email for the activation link.' }, { status: 403 });
     }
 
+    // Block login if user is suspended
+    if (user.status === 'Suspended') {
+      return NextResponse.json({ 
+        message: 'Your account has been suspended. Please contact support for assistance.',
+        suspended: true 
+      }, { status: 403 });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       console.log('Invalid password'); // Debug log

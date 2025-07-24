@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     
     if (search) {
       filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
+        { fullName: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } }
       ];
     }
@@ -68,12 +68,12 @@ export async function POST(request: NextRequest) {
     await dbConnect();
     
     const body = await request.json();
-    const { name, email, role = 'User', status = 'Active', password } = body;
+    const { fullName, email, role = 'student', status = 'Active', password, university } = body;
     
     // Validation
-    if (!name || !email || !password) {
+    if (!fullName || !email || !password || !university) {
       return NextResponse.json(
-        { error: 'Name, email, and password are required' },
+        { error: 'Full name, email, password, and university are required' },
         { status: 400 }
       );
     }
@@ -89,12 +89,14 @@ export async function POST(request: NextRequest) {
     
     // Create new user
     const newUser = new User({
-      name,
+      fullName,
       email,
       password, // In production, hash this password
       role,
       status,
-      createdAt: new Date()
+      university,
+      isActive: true,
+      activationToken: ''
     });
     
     await newUser.save();
@@ -102,8 +104,9 @@ export async function POST(request: NextRequest) {
     // Return user without password
     const userResponse = newUser.toObject();
     delete userResponse.password;
+    delete userResponse.activationToken;
     
-    return NextResponse.json(userResponse, { status: 201 });
+    return NextResponse.json({ user: userResponse }, { status: 201 });
     
   } catch (error) {
     console.error('Error creating user:', error);
