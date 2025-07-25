@@ -6,12 +6,15 @@ import {
   HomeIcon,
   UserGroupIcon,
   ChevronLeftIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  ChatBubbleLeftIcon
 } from '@heroicons/react/24/outline';
 import { useSidebar } from '../context/SidebarContext';
+import { useChat } from '../context/ChatContext';
 
 export default function Sidebar() {
   const { isCollapsed, toggleSidebar } = useSidebar();
+  const { toggleChat, isChatOpen } = useChat();
 
   const navigation = [
     { name: 'Home', href: '/home', icon: HomeIcon },
@@ -63,6 +66,29 @@ export default function Sidebar() {
                     );
                   })}
                 </nav>
+              </div>
+
+              {/* Chat Button */}
+              <div className="px-6 mb-6">
+                <motion.button
+                  onClick={toggleChat}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: navigation.length * 0.1 }}
+                  className={`flex items-center w-full px-6 py-4 text-lg font-medium rounded-xl transition-all duration-300 group backdrop-blur-sm ${
+                    isChatOpen 
+                      ? 'bg-blue-500/30 text-white border border-blue-400/30' 
+                      : 'text-white/90 hover:bg-white/20 hover:text-white'
+                  }`}
+                >
+                  <ChatBubbleLeftIcon className={`mr-4 h-6 w-6 transition-colors ${
+                    isChatOpen 
+                      ? 'text-blue-400' 
+                      : 'text-white/70 group-hover:text-blue-400'
+                  }`} />
+                  Messages
+                  {/* Notification badge could go here if needed */}
+                </motion.button>
               </div>
 
               {/* App Logo/Branding */}

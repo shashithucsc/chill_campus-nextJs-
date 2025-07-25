@@ -19,8 +19,9 @@ const ConversationSchema = new Schema<IConversation>(
       required: true
     }],
     lastMessage: {
-      type: Schema.Types.ObjectId,
-      ref: 'DirectMessage'
+      type: Schema.Types.ObjectId
+      // Temporarily removed ref to break circular dependency
+      // ref: 'DirectMessage'
     },
     lastMessageAt: {
       type: Date,

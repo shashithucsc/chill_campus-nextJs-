@@ -4,15 +4,44 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '../navbar/Navbar';
 import Sidebar from '../sidebar/Sidebar';
+import ChatSidebar from '../sidebar/ChatSidebar';
 import Post from '../components/Post';
 import CreatePostModal from '../components/CreatePostModal';
+import MessageInbox from '../components/MessageInbox';
+import DirectMessageUI from '../components/DirectMessageUI';
+import NewMessageModal from '../components/NewMessageModal';
 import { useSidebar } from '../context/SidebarContext';
+import { useChat } from '../context/ChatContext';
+import { 
+  ChatBubbleLeftIcon,
+  XMarkIcon,
+  ArrowLeftIcon
+} from '@heroicons/react/24/outline';
 
 export default function HomePage() {
   const { isCollapsed } = useSidebar();
+  const { openChat, setSelectedConversation } = useChat();
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
+  
+  // Messaging states
+  const [showMessaging, setShowMessaging] = useState(false);
+  const [selectedRecipientId, setSelectedRecipientId] = useState<string | null>(null);
+  const [showNewMessageModal, setShowNewMessageModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check if mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Animation variants
   const containerVariants = {
@@ -56,6 +85,41 @@ export default function HomePage() {
 
   const handlePostCreated = () => {
     fetchPosts();
+  };
+
+  // Messaging handlers
+  const handleProfileClick = (userId: string) => {
+    if (userId) {
+      // Open the chat sidebar and set the selected conversation
+      setSelectedConversation(userId);
+      openChat();
+      
+      // Keep existing mobile functionality for backward compatibility
+      if (isMobile) {
+        setSelectedRecipientId(userId);
+        setShowMessaging(true);
+      }
+    }
+  };
+
+  const handleConversationSelect = (recipientId: string) => {
+    setSelectedRecipientId(recipientId);
+    if (isMobile) {
+      setShowMessaging(true);
+    }
+  };
+
+  const handleNewConversation = (recipientId: string) => {
+    setSelectedRecipientId(recipientId);
+    setShowMessaging(true);
+    setShowNewMessageModal(false);
+  };
+
+  const handleBackToFeed = () => {
+    if (isMobile) {
+      setShowMessaging(false);
+      setSelectedRecipientId(null);
+    }
   };
 
   return (
@@ -115,18 +179,37 @@ export default function HomePage() {
 
       <Navbar onCreatePost={() => setIsCreatePostOpen(true)} />
       <Sidebar />
+      <ChatSidebar />
       
-      {/* Main Content */}
-      <motion.main 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ 
-          opacity: 1, 
-          y: 0,
-          paddingLeft: isCollapsed ? '0px' : '256px'
-        }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        className="relative z-10 pt-16"
-      >
+      {/* Mobile Messaging Overlay */}
+      {isMobile && showMessaging && selectedRecipientId && (
+        <motion.div
+          initial={{ x: '100%' }}
+          animate={{ x: 0 }}
+          exit={{ x: '100%' }}
+          className="fixed inset-0 z-50 bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900"
+        >
+          <DirectMessageUI
+            recipientId={selectedRecipientId}
+            onBack={handleBackToFeed}
+          />
+        </motion.div>
+      )}
+
+      {/* Desktop Layout */}
+      <div className="flex h-screen pt-16">
+        {/* Main Content */}
+        <motion.main 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ 
+            opacity: 1, 
+            y: 0,
+            marginLeft: isCollapsed ? '0px' : '256px',
+            marginRight: !isMobile && showMessaging ? '400px' : '0px'
+          }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="flex-1 relative z-10 overflow-y-auto"
+        >
         <div className="max-w-6xl mx-auto px-8 py-8">
           {/* Welcome Header */}
           <motion.div 
@@ -224,6 +307,7 @@ export default function HomePage() {
                     likes={0}
                     comments={0}
                     timestamp={new Date(post.createdAt).toLocaleString()}
+                    onProfileClick={handleProfileClick}
                   />
                 </motion.div>
               ))
@@ -231,6 +315,59 @@ export default function HomePage() {
           </motion.div>
         </div>
       </motion.main>
+      </div>
+
+      {/* Desktop Messaging Sidebar */}
+      {!isMobile && (
+        <AnimatePresence>
+          {showMessaging && (
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              className="fixed right-0 top-16 bottom-0 w-96 bg-black/20 backdrop-blur-sm border-l border-white/10 z-40"
+            >
+              {selectedRecipientId ? (
+                <DirectMessageUI
+                  recipientId={selectedRecipientId}
+                  onBack={() => {
+                    setShowMessaging(false);
+                    setSelectedRecipientId(null);
+                  }}
+                />
+              ) : (
+                <MessageInbox
+                  onConversationSelect={handleConversationSelect}
+                  onNewMessage={() => setShowNewMessageModal(true)}
+                  selectedConversationId={selectedRecipientId || undefined}
+                />
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
+
+      {/* Messaging Toggle Button */}
+      {!isMobile && !showMessaging && (
+        <motion.button
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setShowMessaging(true)}
+          className="fixed bottom-8 right-8 w-14 h-14 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-2xl flex items-center justify-center z-30 transition-all"
+        >
+          <ChatBubbleLeftIcon className="h-6 w-6" />
+        </motion.button>
+      )}
+
+      {/* New Message Modal */}
+      <NewMessageModal
+        isOpen={showNewMessageModal}
+        onClose={() => setShowNewMessageModal(false)}
+        onConversationStart={handleNewConversation}
+      />
 
       {/* Create Post Modal with blurred background posts */}
       <CreatePostModal 

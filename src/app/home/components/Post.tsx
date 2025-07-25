@@ -47,6 +47,7 @@ interface PostProps {
     name: string;
     avatar: string;
   };
+  onProfileClick?: (userId: string) => void;
 }
 
 export default function Post({
@@ -60,6 +61,7 @@ export default function Post({
   comments,
   timestamp,
   community,
+  onProfileClick,
 }: PostProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(likes);
@@ -179,7 +181,11 @@ export default function Post({
       <div className="p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="h-12 w-12 rounded-full bg-white/10 border border-white/20 overflow-hidden">
+            <div 
+              className="h-12 w-12 rounded-full bg-white/10 border border-white/20 overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all"
+              onClick={() => onProfileClick?.(author.id)}
+              title="Send direct message"
+            >
               <Image
                 src={author.avatar && author.avatar !== '' ? author.avatar : '/default-avatar.png'}
                 alt={author.name}
