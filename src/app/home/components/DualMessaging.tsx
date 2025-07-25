@@ -37,6 +37,7 @@ export default function DualMessaging({ community, className = '' }: DualMessagi
   const [selectedRecipientId, setSelectedRecipientId] = useState<string | null>(null);
   const [showNewMessageModal, setShowNewMessageModal] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Check if mobile
   useEffect(() => {
@@ -61,6 +62,11 @@ export default function DualMessaging({ community, className = '' }: DualMessagi
     setSelectedRecipientId(recipientId);
     setMode('direct');
     setShowNewMessageModal(false);
+  };
+
+  // Handle message sent - refresh conversations
+  const handleMessageSent = () => {
+    setRefreshTrigger(prev => prev + 1);
   };
 
   // Handle back navigation
@@ -137,6 +143,7 @@ export default function DualMessaging({ community, className = '' }: DualMessagi
                 onNewMessage={() => setShowNewMessageModal(true)}
                 selectedConversationId={selectedRecipientId}
                 className="flex-1"
+                refreshTrigger={refreshTrigger}
               />
             </motion.div>
           )}
@@ -180,6 +187,7 @@ export default function DualMessaging({ community, className = '' }: DualMessagi
               <DirectMessageUI
                 recipientId={selectedRecipientId}
                 onBack={handleBack}
+                onNewMessage={handleMessageSent}
               />
             </motion.div>
           )}
@@ -245,6 +253,7 @@ export default function DualMessaging({ community, className = '' }: DualMessagi
               onConversationSelect={handleConversationSelect}
               onNewMessage={() => setShowNewMessageModal(true)}
               selectedConversationId={selectedRecipientId}
+              refreshTrigger={refreshTrigger}
             />
           )}
           
@@ -283,7 +292,10 @@ export default function DualMessaging({ community, className = '' }: DualMessagi
               exit={{ opacity: 0 }}
               className="h-full"
             >
-              <DirectMessageUI recipientId={selectedRecipientId} />
+              <DirectMessageUI 
+                recipientId={selectedRecipientId} 
+                onNewMessage={handleMessageSent}
+              />
             </motion.div>
           ) : (
             <motion.div

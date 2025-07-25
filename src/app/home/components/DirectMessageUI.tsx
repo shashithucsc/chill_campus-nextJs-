@@ -59,9 +59,10 @@ interface Recipient {
 interface DirectMessageUIProps {
   recipientId: string;
   onBack?: () => void;
+  onNewMessage?: () => void;
 }
 
-export default function DirectMessageUI({ recipientId, onBack }: DirectMessageUIProps) {
+export default function DirectMessageUI({ recipientId, onBack, onNewMessage }: DirectMessageUIProps) {
   const { data: session } = useSession();
   const [messages, setMessages] = useState<DirectMessage[]>([]);
   const [recipient, setRecipient] = useState<Recipient | null>(null);
@@ -133,6 +134,9 @@ export default function DirectMessageUI({ recipientId, onBack }: DirectMessageUI
       setNewMessage('');
       setReplyingTo(null);
       setTimeout(scrollToBottom, 100);
+      
+      // Notify parent component about new message
+      onNewMessage?.();
     } catch (error) {
       console.error('Error sending message:', error);
     } finally {

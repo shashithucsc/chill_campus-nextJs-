@@ -1,6 +1,7 @@
 'use client';
 
 import { SidebarProvider } from './context/SidebarContext';
+import { ChatProvider } from './context/ChatContext';
 
 export default function HomeLayout({
   children,
@@ -9,7 +10,9 @@ export default function HomeLayout({
 }) {
   return (
     <SidebarProvider>
-      {children}
+      <ChatProvider>
+        {children}
+      </ChatProvider>
     </SidebarProvider>
   );
 }

@@ -15,9 +15,11 @@ import {
 import { ChatBubbleLeftIcon as ChatBubbleLeftSolid } from '@heroicons/react/24/solid';
 
 interface LastMessage {
+  _id: string;
   content: string;
   timestamp: string;
-  senderId: string;
+  messageType: string;
+  isFromMe: boolean;
 }
 
 interface Participant {
@@ -29,11 +31,11 @@ interface Participant {
 
 interface Conversation {
   _id: string;
-  participants: Participant[];
+  participant: Participant; // Changed from participants array to single participant
   lastMessage: LastMessage;
-  unreadCount: Record<string, number>;
-  isArchived: Record<string, boolean>;
-  updatedAt: string;
+  unreadCount: number; // Changed from Record to number
+  isArchived: boolean; // Changed from Record to boolean
+  lastMessageAt: string; // Changed from updatedAt to lastMessageAt
   createdAt: string;
 }
 
@@ -42,19 +44,24 @@ interface MessageInboxProps {
   onNewMessage: () => void;
   selectedConversationId?: string;
   className?: string;
+  refreshTrigger?: number;
 }
 
 export default function MessageInbox({ 
   onConversationSelect, 
   onNewMessage, 
   selectedConversationId,
-  className = ''
+  className = '',
+  refreshTrigger = 0
 }: MessageInboxProps) {
   const { data: session } = useSession();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showArchived, setShowArchived] = useState(false);
+  const [userSearchResults, setUserSearchResults] = useState<Participant[]>([]);
+  const [isSearchingUsers, setIsSearchingUsers] = useState(false);
+  const [showUserSearch, setShowUserSearch] = useState(false);
 
   // Fetch conversations
   const fetchConversations = async () => {
@@ -69,6 +76,62 @@ export default function MessageInbox({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Search users for new conversations
+  const searchUsers = async (query: string) => {
+    if (!query.trim() || query.length < 2) {
+      setUserSearchResults([]);
+      setIsSearchingUsers(false);
+      return;
+    }
+
+    setIsSearchingUsers(true);
+    try {
+      const response = await fetch(`/api/users/search?q=${encodeURIComponent(query)}&limit=10`);
+      if (!response.ok) throw new Error('Failed to search users');
+      
+      const data = await response.json();
+      setUserSearchResults(data.users || []);
+    } catch (error) {
+      console.error('Error searching users:', error);
+      setUserSearchResults([]);
+    } finally {
+      setIsSearchingUsers(false);
+    }
+  };
+
+  // Handle search input change
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    
+    // If search query is for users (when no existing conversations match)
+    if (value.trim().length >= 2) {
+      const hasMatchingConversations = conversations.some(conversation => {
+        const otherParticipant = getOtherParticipant(conversation);
+        return otherParticipant?.fullName.toLowerCase().includes(value.toLowerCase()) ||
+               conversation.lastMessage?.content.toLowerCase().includes(value.toLowerCase());
+      });
+      
+      if (!hasMatchingConversations) {
+        setShowUserSearch(true);
+        searchUsers(value);
+      } else {
+        setShowUserSearch(false);
+        setUserSearchResults([]);
+      }
+    } else {
+      setShowUserSearch(false);
+      setUserSearchResults([]);
+    }
+  };
+
+  // Start conversation with a user
+  const startConversationWithUser = (user: Participant) => {
+    onConversationSelect(user._id);
+    setSearchQuery('');
+    setShowUserSearch(false);
+    setUserSearchResults([]);
   };
 
   // Format timestamp for conversation list
@@ -92,19 +155,17 @@ export default function MessageInbox({
 
   // Get other participant in conversation
   const getOtherParticipant = (conversation: Conversation) => {
-    return conversation.participants.find(p => p._id !== session?.user?.id);
+    return conversation.participant; // Simply return the participant since it's already the "other" participant
   };
 
   // Get unread count for current user
   const getUnreadCount = (conversation: Conversation) => {
-    const userId = session?.user?.id;
-    return userId ? (conversation.unreadCount[userId] || 0) : 0;
+    return conversation.unreadCount; // Already a number from API
   };
 
   // Check if conversation is archived for current user
   const isConversationArchived = (conversation: Conversation) => {
-    const userId = session?.user?.id;
-    return userId ? (conversation.isArchived[userId] || false) : false;
+    return conversation.isArchived; // Already a boolean from API
   };
 
   // Filter conversations based on search and archive status
@@ -141,16 +202,10 @@ export default function MessageInbox({
       setConversations(prev => 
         prev.map(conv => {
           if (conv._id === conversationId) {
-            const userId = session?.user?.id;
-            if (userId) {
-              return {
-                ...conv,
-                unreadCount: {
-                  ...conv.unreadCount,
-                  [userId]: 0
-                }
-              };
-            }
+            return {
+              ...conv,
+              unreadCount: 0 // Simply set to 0 since it's now a number
+            };
           }
           return conv;
         })
@@ -182,6 +237,13 @@ export default function MessageInbox({
 
     return () => clearInterval(interval);
   }, []);
+
+  // Refresh conversations when refreshTrigger changes
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      fetchConversations();
+    }
+  }, [refreshTrigger]);
 
   if (isLoading) {
     return (
@@ -225,11 +287,20 @@ export default function MessageInbox({
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
           <input
             type="text"
-            placeholder="Search messages..."
+            placeholder="Search conversations or find users..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400/50"
           />
+          {isSearchingUsers && (
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full"
+              />
+            </div>
+          )}
         </div>
 
         {/* Archive Toggle */}
@@ -261,7 +332,64 @@ export default function MessageInbox({
       {/* Conversations List */}
       <div className="flex-1 overflow-y-auto">
         <AnimatePresence>
-          {filteredConversations.length === 0 ? (
+          {/* User Search Results */}
+          {showUserSearch && searchQuery.length >= 2 && (
+            <div className="border-b border-white/10 mb-2">
+              <div className="px-4 py-2">
+                <h3 className="text-sm font-semibold text-white/80 mb-2">Find Users</h3>
+                {userSearchResults.length === 0 && !isSearchingUsers ? (
+                  <p className="text-sm text-white/60">No users found</p>
+                ) : (
+                  userSearchResults
+                    .filter((user) => user._id) // Ensure user has an ID
+                    .map((user) => (
+                    <motion.button
+                      key={`user-${user._id}`} // Add prefix to ensure uniqueness
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      onClick={() => startConversationWithUser(user)}
+                      className="w-full p-3 flex items-center space-x-3 hover:bg-white/5 transition-all text-left rounded-lg mb-1"
+                    >
+                      {/* Avatar */}
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-green-500 to-blue-500 flex-shrink-0">
+                        {user.avatar ? (
+                          <Image
+                            src={user.avatar}
+                            alt={user.fullName}
+                            width={40}
+                            height={40}
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-white text-sm font-bold">
+                            {user.fullName.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* User Info */}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-white truncate">
+                          {user.fullName}
+                        </h4>
+                        <p className="text-sm text-white/60 truncate">
+                          {user.email}
+                        </p>
+                      </div>
+
+                      {/* Start Chat Indicator */}
+                      <div className="text-green-400 text-xs">
+                        Start Chat
+                      </div>
+                    </motion.button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Existing Conversations */}
+          {filteredConversations.length === 0 && !showUserSearch ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -279,27 +407,43 @@ export default function MessageInbox({
                   Start a conversation
                 </button>
               )}
+              {searchQuery && (
+                <p className="mt-1 text-xs text-white/50">
+                  Try searching for users above
+                </p>
+              )}
             </motion.div>
           ) : (
-            filteredConversations.map((conversation) => {
-              const otherParticipant = getOtherParticipant(conversation);
-              const unreadCount = getUnreadCount(conversation);
-              const isSelected = selectedConversationId === otherParticipant?._id;
+            <>
+              {/* Show section header if both user results and conversations exist */}
+              {showUserSearch && filteredConversations.length > 0 && (
+                <div className="px-4 py-2 border-t border-white/10">
+                  <h3 className="text-sm font-semibold text-white/80">Your Conversations</h3>
+                </div>
+              )}
+              
+              {filteredConversations
+                .filter((conversation) => {
+                  const otherParticipant = getOtherParticipant(conversation);
+                  return otherParticipant && conversation._id; // Ensure both exist
+                })
+                .map((conversation) => {
+                const otherParticipant = getOtherParticipant(conversation);
+                const unreadCount = getUnreadCount(conversation);
+                const isSelected = selectedConversationId === otherParticipant?._id;
 
-              if (!otherParticipant) return null;
-
-              return (
-                <motion.button
-                  key={conversation._id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  onClick={() => handleConversationSelect(conversation)}
-                  className={`
-                    w-full p-4 flex items-center space-x-3 hover:bg-white/5 transition-all text-left
-                    ${isSelected ? 'bg-blue-500/20 border-r-2 border-blue-400' : ''}
-                  `}
-                >
+                return (
+                  <motion.button
+                    key={`conversation-${conversation._id}`} // Add prefix to ensure uniqueness
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    onClick={() => handleConversationSelect(conversation)}
+                    className={`
+                      w-full p-4 flex items-center space-x-3 hover:bg-white/5 transition-all text-left
+                      ${isSelected ? 'bg-blue-500/20 border-r-2 border-blue-400' : ''}
+                    `}
+                  >
                   {/* Avatar */}
                   <div className="relative flex-shrink-0">
                     <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-500">
@@ -332,13 +476,13 @@ export default function MessageInbox({
                         {otherParticipant.fullName}
                       </h3>
                       <span className="text-xs text-white/50 flex-shrink-0">
-                        {formatTimestamp(conversation.lastMessage?.timestamp || conversation.updatedAt)}
+                        {formatTimestamp(conversation.lastMessage?.timestamp || conversation.lastMessageAt)}
                       </span>
                     </div>
                     
                     {conversation.lastMessage && (
                       <div className="flex items-center space-x-1">
-                        {conversation.lastMessage.senderId === session?.user?.id && (
+                        {conversation.lastMessage.isFromMe && (
                           <CheckIcon className="h-3 w-3 text-white/50 flex-shrink-0" />
                         )}
                         <p className={`text-sm truncate ${unreadCount > 0 ? 'text-white/90' : 'text-white/60'}`}>
@@ -361,8 +505,9 @@ export default function MessageInbox({
                     </button>
                   </div>
                 </motion.button>
-              );
-            })
+                );
+              })}
+            </>
           )}
         </AnimatePresence>
       </div>
