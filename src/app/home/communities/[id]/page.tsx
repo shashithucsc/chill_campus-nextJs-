@@ -13,11 +13,13 @@ import {
   UserGroupIcon,
   ArrowLeftIcon,
   PlusIcon,
+  DocumentTextIcon,
 } from '@heroicons/react/24/outline';
 import Navbar from '../../navbar/Navbar';
 import Sidebar from '../../sidebar/Sidebar';
 import Post from '../../components/Post';
 import CreateCommunityPostModal from '../components/CreateCommunityPostModal';
+import DualMessaging from '../../components/DualMessaging';
 
 // Utility function to format date
 const formatDate = (dateString: string | Date) => {
@@ -82,6 +84,7 @@ export default function CommunityPage() {
   const [joinLoading, setJoinLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [showDeleteWarning, setShowDeleteWarning] = useState(false);
+  const [activeTab, setActiveTab] = useState<'posts' | 'chat'>('posts');
 
   // Simple animation variants without transitions
   const fadeIn = {
@@ -363,8 +366,45 @@ export default function CommunityPage() {
           </div>
         )}
         
-        {/* Post Creation and Feed */}
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Navigation Tabs */}
+        {community?.isMember && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4"
+          >
+            <div className="flex space-x-1 bg-black/20 backdrop-blur-md rounded-xl p-1 border border-white/10">
+              <button
+                onClick={() => setActiveTab('posts')}
+                className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg transition-all duration-300 ${
+                  activeTab === 'posts'
+                    ? 'bg-white/20 text-white shadow-lg'
+                    : 'text-white/60 hover:text-white/80 hover:bg-white/10'
+                }`}
+              >
+                <DocumentTextIcon className="h-5 w-5" />
+                <span className="font-medium">Posts</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('chat')}
+                className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg transition-all duration-300 ${
+                  activeTab === 'chat'
+                    ? 'bg-white/20 text-white shadow-lg'
+                    : 'text-white/60 hover:text-white/80 hover:bg-white/10'
+                }`}
+              >
+                <ChatBubbleLeftIcon className="h-5 w-5" />
+                <span className="font-medium">Chat</span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+        
+        {/* Tab Content */}
+        {activeTab === 'posts' ? (
+          // Post Creation and Feed
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Create Post Button */}
           {community?.isMember && (
             <motion.div 
@@ -467,7 +507,20 @@ export default function CommunityPage() {
               ))
             )}
           </motion.div>
-        </div>
+          </div>
+        ) : (
+          // Chat Tab Content
+          <div className="h-[calc(100vh-200px)]">
+            <DualMessaging 
+              community={community ? {
+                _id: community._id,
+                name: community.name,
+                banner: community.coverImage || '',
+                description: community.description
+              } : undefined}
+            />
+          </div>
+        )}
 
         {/* Create Community Post Modal */}
         {showCreatePost && community && (
