@@ -63,6 +63,7 @@ export default function ChatSidebar() {
                 <MessageInbox 
                   onConversationSelect={setSelectedConversation}
                   onNewMessage={() => setShowNewMessageModal(true)}
+                  onClose={closeChat}
                   selectedConversationId={selectedConversation || undefined}
                 />
               )}

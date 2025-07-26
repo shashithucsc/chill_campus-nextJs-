@@ -10,7 +10,8 @@ import {
   PlusIcon,
   ArchiveBoxIcon,
   CheckIcon,
-  EllipsisVerticalIcon
+  EllipsisVerticalIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 import { ChatBubbleLeftIcon as ChatBubbleLeftSolid } from '@heroicons/react/24/solid';
 
@@ -42,6 +43,7 @@ interface Conversation {
 interface MessageInboxProps {
   onConversationSelect: (recipientId: string) => void;
   onNewMessage: () => void;
+  onClose?: () => void; // Optional close handler
   selectedConversationId?: string;
   className?: string;
   refreshTrigger?: number;
@@ -50,6 +52,7 @@ interface MessageInboxProps {
 export default function MessageInbox({ 
   onConversationSelect, 
   onNewMessage, 
+  onClose,
   selectedConversationId,
   className = '',
   refreshTrigger = 0
@@ -274,12 +277,25 @@ export default function MessageInbox({
             )}
           </div>
           
-          <button
-            onClick={onNewMessage}
-            className="p-2 rounded-xl bg-blue-500 hover:bg-blue-600 transition-all"
-          >
-            <PlusIcon className="h-5 w-5 text-white" />
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={onNewMessage}
+              className="p-2 rounded-xl bg-blue-500 hover:bg-blue-600 transition-all"
+              title="Start new conversation"
+            >
+              <PlusIcon className="h-5 w-5 text-white" />
+            </button>
+            
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-all"
+                title="Close messages"
+              >
+                <XMarkIcon className="h-5 w-5 text-white/70 hover:text-white" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Search */}

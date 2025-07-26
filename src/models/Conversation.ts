@@ -45,8 +45,12 @@ const ConversationSchema = new Schema<IConversation>(
   }
 );
 
-// Ensure unique conversations between two users
-ConversationSchema.index({ participants: 1 }, { unique: true });
+// Index for efficient querying by last message date
 ConversationSchema.index({ lastMessageAt: -1 });
+
+// Note: We handle conversation uniqueness at the application level
+// rather than using a database unique index on the participants array
+// because MongoDB's unique index on array fields works element-wise
+// which can cause unexpected conflicts
 
 export default models.Conversation || model<IConversation>('Conversation', ConversationSchema);

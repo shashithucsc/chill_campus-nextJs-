@@ -27,17 +27,25 @@ interface Community {
 interface DualMessagingProps {
   community?: Community;
   className?: string;
+  onClose?: () => void; // Optional close handler
 }
 
 type MessagingMode = 'group' | 'direct' | 'inbox';
 
-export default function DualMessaging({ community, className = '' }: DualMessagingProps) {
+export default function DualMessaging({ community, className = '', onClose }: DualMessagingProps) {
   const { data: session } = useSession();
   const [mode, setMode] = useState<MessagingMode>('inbox');
   const [selectedRecipientId, setSelectedRecipientId] = useState<string | null>(null);
   const [showNewMessageModal, setShowNewMessageModal] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Close handler
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    }
+  };
 
   // Check if mobile
   useEffect(() => {
@@ -59,9 +67,11 @@ export default function DualMessaging({ community, className = '' }: DualMessagi
 
   // Handle new conversation start
   const handleNewConversation = (recipientId: string) => {
+    console.log('handleNewConversation called with recipientId:', recipientId);
     setSelectedRecipientId(recipientId);
     setMode('direct');
     setShowNewMessageModal(false);
+    console.log('State updated - selectedRecipientId:', recipientId, 'mode: direct');
   };
 
   // Handle message sent - refresh conversations
@@ -141,6 +151,7 @@ export default function DualMessaging({ community, className = '' }: DualMessagi
               <MessageInbox
                 onConversationSelect={handleConversationSelect}
                 onNewMessage={() => setShowNewMessageModal(true)}
+                onClose={handleClose}
                 selectedConversationId={selectedRecipientId}
                 className="flex-1"
                 refreshTrigger={refreshTrigger}
@@ -252,6 +263,7 @@ export default function DualMessaging({ community, className = '' }: DualMessagi
             <MessageInbox
               onConversationSelect={handleConversationSelect}
               onNewMessage={() => setShowNewMessageModal(true)}
+              onClose={handleClose}
               selectedConversationId={selectedRecipientId}
               refreshTrigger={refreshTrigger}
             />
