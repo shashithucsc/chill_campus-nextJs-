@@ -340,6 +340,7 @@ export default function HomePage() {
                 <MessageInbox
                   onConversationSelect={handleConversationSelect}
                   onNewMessage={() => setShowNewMessageModal(true)}
+                  onClose={() => setShowMessaging(false)}
                   selectedConversationId={selectedRecipientId || undefined}
                 />
               )}

@@ -39,6 +39,7 @@ export default function NewMessageModal({ isOpen, onClose, onConversationStart }
 
   // Search users
   const searchUsers = async (query: string) => {
+    console.log('searchUsers called with query:', query);
     if (!query.trim()) {
       setSearchResults([]);
       return;
@@ -46,10 +47,13 @@ export default function NewMessageModal({ isOpen, onClose, onConversationStart }
 
     setIsSearching(true);
     try {
+      console.log('Fetching users from API...');
       const response = await fetch(`/api/users/search?q=${encodeURIComponent(query)}&limit=20`);
+      console.log('User search response status:', response.status);
       if (!response.ok) throw new Error('Failed to search users');
       
       const data = await response.json();
+      console.log('User search results:', data);
       setSearchResults(data.users || []);
     } catch (error) {
       console.error('Error searching users:', error);
@@ -70,6 +74,7 @@ export default function NewMessageModal({ isOpen, onClose, onConversationStart }
 
   // Focus search input when modal opens
   useEffect(() => {
+    console.log('NewMessageModal isOpen changed:', isOpen);
     if (isOpen && searchInputRef.current) {
       setTimeout(() => {
         searchInputRef.current?.focus();
@@ -96,6 +101,7 @@ export default function NewMessageModal({ isOpen, onClose, onConversationStart }
 
   // Handle user selection
   const handleUserSelect = (user: User) => {
+    console.log('User selected:', user);
     setSelectedUser(user);
     setSearchQuery('');
     setSearchResults([]);
@@ -103,10 +109,12 @@ export default function NewMessageModal({ isOpen, onClose, onConversationStart }
 
   // Send message and start conversation
   const handleSendMessage = async () => {
+    console.log('handleSendMessage called', { selectedUser, message: message.trim(), isSending });
     if (!selectedUser || !message.trim() || isSending) return;
 
     setIsSending(true);
     try {
+      console.log('Sending message to API...');
       const response = await fetch('/api/direct-messages/send', {
         method: 'POST',
         headers: {
@@ -118,7 +126,15 @@ export default function NewMessageModal({ isOpen, onClose, onConversationStart }
         })
       });
 
-      if (!response.ok) throw new Error('Failed to send message');
+      console.log('API response status:', response.status);
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('API error:', errorData);
+        throw new Error('Failed to send message');
+      }
+
+      const responseData = await response.json();
+      console.log('Message sent successfully:', responseData);
 
       // Close modal and start conversation
       onConversationStart(selectedUser._id);
@@ -305,6 +321,12 @@ export default function NewMessageModal({ isOpen, onClose, onConversationStart }
                   <textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
                     placeholder="Type your message..."
                     rows={4}
                     className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400/50"

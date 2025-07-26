@@ -94,13 +94,37 @@ export async function POST(req: NextRequest) {
     await message.save();
 
     // Find or create conversation
+    // Sort participants to ensure consistent ordering for unique index
+    // Convert to ObjectIds for proper database querying
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+    const recipientObjectId = new mongoose.Types.ObjectId(recipientId);
+    const sortedParticipants = [userObjectId, recipientObjectId].sort((a, b) => a.toString().localeCompare(b.toString()));
+    console.log('Looking for conversation with participants:', sortedParticipants.map(p => p.toString()));
+    
+    // First, try to find conversation with exact sorted participants array
     let conversation = await Conversation.findOne({
-      participants: { $all: [userId, recipientId] }
+      participants: sortedParticipants
     });
 
+    console.log('Found conversation with exact match:', conversation?._id);
+
+    // If not found with exact match, try with $all and $size to ensure exactly 2 participants
     if (!conversation) {
+      conversation = await Conversation.findOne({
+        participants: { 
+          $all: [userObjectId, recipientObjectId],
+          $size: 2
+        }
+      });
+      console.log('Found conversation with $all match:', conversation?._id);
+    }
+
+    if (!conversation) {
+      console.log('Creating new conversation with participants:', sortedParticipants.map(p => p.toString()));
+      
+      // Create new conversation
       conversation = new Conversation({
-        participants: [userId, recipientId],
+        participants: sortedParticipants,
         lastMessage: message._id,
         lastMessageAt: new Date(),
         unreadCount: new Map([
@@ -112,20 +136,48 @@ export async function POST(req: NextRequest) {
           [recipientId, false]
         ])
       });
-    } else {
-      // Update existing conversation
-      conversation.lastMessage = message._id;
-      conversation.lastMessageAt = new Date();
       
-      // Increment unread count for recipient
-      const currentUnread = conversation.unreadCount?.get(recipientId) || 0;
-      conversation.unreadCount?.set(recipientId, currentUnread + 1);
-      
-      // Reset sender's unread count
-      conversation.unreadCount?.set(userId, 0);
+      try {
+        await conversation.save();
+        console.log('Successfully created conversation:', conversation._id);
+      } catch (saveError: any) {
+        console.log('Error saving conversation:', saveError);
+        
+        // If there's any error, try to find existing conversation again
+        // This handles race conditions where multiple requests try to create the same conversation
+        const existingConv = await Conversation.findOne({
+          participants: { 
+            $all: [userObjectId, recipientObjectId],
+            $size: 2
+          }
+        });
+        
+        if (existingConv) {
+          console.log('Found existing conversation after save error:', existingConv._id);
+          conversation = existingConv;
+        } else {
+          // If we still can't find or create the conversation, throw the error
+          throw saveError;
+        }
+      }
     }
+    
+    // Update conversation for both new and existing cases
+    conversation.lastMessage = message._id;
+    conversation.lastMessageAt = new Date();
+    
+    // Increment unread count for recipient
+    const currentUnread = conversation.unreadCount?.get(recipientId) || 0;
+    conversation.unreadCount?.set(recipientId, currentUnread + 1);
+    
+    // Reset sender's unread count
+    conversation.unreadCount?.set(userId, 0);
 
     await conversation.save();
+
+    // Update message with conversation reference
+    message.conversation = conversation._id;
+    await message.save();
 
     // Populate message for response
     await message.populate({
@@ -176,10 +228,18 @@ export async function POST(req: NextRequest) {
       success: true
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error sending direct message:', error);
+    console.error('Error code:', error.code);
+    console.error('Error keyPattern:', error.keyPattern);
+    console.error('Error keyValue:', error.keyValue);
+    
     return NextResponse.json(
-      { error: 'Failed to send message' },
+      { 
+        error: 'Failed to send message. Please try again.',
+        details: error.message,
+        code: error.code
+      },
       { status: 500 }
     );
   }
