@@ -281,7 +281,8 @@ export default function DirectMessageUI({ recipientId, onBack, onNewMessage }: D
             {onBack && (
               <button
                 onClick={onBack}
-                className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-all md:hidden"
+                className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-all"
+                title="Back to conversations"
               >
                 <ArrowLeftIcon className="h-5 w-5 text-white" />
               </button>

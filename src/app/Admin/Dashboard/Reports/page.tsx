@@ -842,40 +842,18 @@ const ReportDetailModal = ({ report, onClose }: { report: Report | null, onClose
 
 // Main Component
 export default function ReportsPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("All");
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [sortOrder, setSortOrder] = useState<string>("newest");
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [filteredReports, setFilteredReports] = useState<Report[]>(mockReports);
-  const [isMobile, setIsMobile] = useState(false);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   
   // Count reports by status
   const pendingCount = mockReports.filter(r => r.status === 'Pending').length;
   const resolvedCount = mockReports.filter(r => r.status === 'Resolved').length;
   const ignoredCount = mockReports.filter(r => r.status === 'Ignored').length;
-  
-  // Check if screen is mobile
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth < 768) {
-        setViewMode('cards');
-      }
-    };
-    
-    if (typeof window !== 'undefined') {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth < 768) {
-        setViewMode('cards');
-      }
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
-    }
-  }, []);
   
   // Filter reports
   useEffect(() => {
@@ -943,80 +921,7 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 font-sans">
-      {/* Glassy Top Navbar */}
-      <nav className="fixed top-0 left-0 w-full z-30 bg-black/30 backdrop-blur-xl shadow-xl border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 flex items-center justify-between h-16">
-          <div className="flex items-center space-x-4">
-            <Link href="/Admin/Dashboard">
-              <Image src="/logo.png" alt="Logo" width={36} height={36} className="rounded-xl" />
-            </Link>
-            <span className="text-2xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent tracking-tight">Admin Dashboard</span>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <button
-                className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all"
-                onClick={() => setProfileOpen((v) => !v)}
-              >
-                <UserIcon className="h-7 w-7 text-white" />
-              </button>
-              <AnimatePresence>
-                {profileOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute right-0 mt-2 w-48 bg-black/60 backdrop-blur-xl rounded-2xl shadow-xl border border-white/10 py-2 z-50"
-                  >
-                    <button className="w-full flex items-center px-4 py-3 text-white/90 hover:bg-white/10 transition-all">
-                      <Cog6ToothIcon className="h-5 w-5 mr-2" /> Settings
-                    </button>
-                    <button className="w-full flex items-center px-4 py-3 text-red-400 hover:bg-red-500/20 transition-all">
-                      <ArrowRightOnRectangleIcon className="h-5 w-5 mr-2" /> Logout
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-            <button className="md:hidden p-2 rounded-xl bg-white/10 hover:bg-white/20" onClick={() => setSidebarOpen((v) => !v)}>
-              <svg className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* Sidebar */}
-      <AnimatePresence>
-        {(sidebarOpen || typeof window === "undefined" || window.innerWidth >= 768) && (
-          <motion.aside
-            initial={{ x: -60, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -60, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className={`fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-black/30 backdrop-blur-xl border-r border-white/10 shadow-xl z-20 ${isMobile ? 'block' : 'hidden md:block'}`}
-          >
-            <nav className="flex flex-col py-8 space-y-2">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  className={`flex items-center px-6 py-3 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all font-medium text-lg ${
-                    link.name === "Reports" ? "bg-white/10 text-white" : ""
-                  }`}
-                >
-                  <link.icon className="h-6 w-6 mr-3" />
-                  {link.name}
-                </Link>
-              ))}
-            </nav>
-          </motion.aside>
-        )}
-      </AnimatePresence>
-
-      {/* Main Content */}
-      <main className="md:ml-64 pt-24 px-4 sm:px-8 pb-8 transition-all">
+    <main className="pt-8 px-4 sm:px-8 pb-8 transition-all">
         {/* Page Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -1154,7 +1059,7 @@ export default function ReportsPage() {
         </motion.div>
 
         {/* Reports Table View (Desktop) */}
-        {viewMode === 'table' && !isMobile && (
+        {viewMode === 'table' && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1195,7 +1100,7 @@ export default function ReportsPage() {
         )}
 
         {/* Reports Card View (Mobile or optional) */}
-        {(viewMode === 'cards' || isMobile) && (
+        {viewMode === 'cards' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredReports.map((report, index) => (
               <ReportCard
@@ -1244,7 +1149,6 @@ export default function ReportsPage() {
             </div>
           </motion.div>
         )}
-      </main>
       
       {/* Report Detail Modal */}
       <AnimatePresence>
@@ -1255,6 +1159,6 @@ export default function ReportsPage() {
           />
         )}
       </AnimatePresence>
-    </div>
+    </main>
   );
 }
