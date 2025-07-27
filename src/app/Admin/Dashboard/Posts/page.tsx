@@ -7,14 +7,11 @@ import {
   UsersIcon,
   ChatBubbleLeftRightIcon,
   ExclamationTriangleIcon,
-  ChartBarIcon,
   Cog6ToothIcon,
-  ArrowRightOnRectangleIcon,
   HomeIcon,
   RectangleGroupIcon,
   MagnifyingGlassIcon,
   DocumentTextIcon,
-  PlusCircleIcon,
   EyeIcon,
   TrashIcon,
   XCircleIcon,
@@ -29,9 +26,9 @@ import {
   HeartIcon,
   TableCellsIcon,
   Squares2X2Icon,
+  PlayIcon,
 } from "@heroicons/react/24/outline";
 import Image from "next/image";
-import Link from "next/link";
 
 // Define types
 interface Post {
@@ -61,17 +58,12 @@ const mockCommunities: Community[] = [
   { id: '2', name: 'Art & Design Studio' },
   { id: '3', name: 'Sports Enthusiasts' },
   { id: '4', name: 'Mathematics Forum' },
-  { id: '5', name: 'Music Production' },
-  { id: '6', name: 'Entrepreneurship Network' },
-  { id: '7', name: 'Literature Club' },
-  { id: '8', name: 'Psychology Society' },
+  { id: '5', name: 'Music Production' }
 ];
-
-// Mock posts data
 const mockPosts: Post[] = [
   {
     id: '1',
-    content: 'Just finished my final project for the semester! Check out this web application I built using React and Node.js. It includes real-time chat, file sharing, and collaborative features.',
+    content: 'Check out this new algorithm I implemented for data compression. It shows promising results compared to existing methods.',
     authorName: 'Alice Johnson',
     authorAvatar: '/uploads/683f0d865a3fc6817b6ca1cf-avatar.jpg',
     communityName: 'Computer Science Club',
@@ -154,7 +146,7 @@ const mockPosts: Post[] = [
   },
   {
     id: '7',
-    content: 'Looking for team members for my startup idea. We\'re working on an AI-powered study assistant for students. DM if interested!',
+    content: 'Looking for team members for my startup idea. We&apos;re working on an AI-powered study assistant for students. DM if interested!',
     authorName: 'George Brown',
     authorAvatar: '',
     communityName: 'Entrepreneurship Network',
@@ -167,7 +159,7 @@ const mockPosts: Post[] = [
   },
   {
     id: '8',
-    content: 'I\'m organizing a book club meeting this Friday at the campus library. We\'ll be discussing "The Alchemist" by Paulo Coelho. Everyone is welcome!',
+    content: 'I&apos;m organizing a book club meeting this Friday at the campus library. We&apos;ll be discussing "The Alchemist" by Paulo Coelho. Everyone is welcome!',
     authorName: 'Hannah Lee',
     authorAvatar: '',
     communityName: 'Literature Club',
@@ -209,197 +201,66 @@ const mockPosts: Post[] = [
   }
 ];
 
-const navLinks = [
-  { name: "Overview", icon: HomeIcon, href: "/Admin/Dashboard" },
-  { name: "Users", icon: UsersIcon, href: "/Admin/Dashboard/Users" },
-  { name: "Communities", icon: RectangleGroupIcon, href: "/Admin/Dashboard/Communities" },
-  { name: "Posts", icon: DocumentTextIcon, href: "/Admin/Dashboard/Posts" },
-  { name: "Reports", icon: ExclamationTriangleIcon, href: "#" },
-  { name: "Settings", icon: Cog6ToothIcon, href: "#" },
-];
+export default function PostsPage() {
+  const [search, setSearch] = useState("");
+  const [communityFilter, setCommunityFilter] = useState<string>("All");
+  const [statusFilter, setStatusFilter] = useState<string>("All");
+  const [sortOrder, setSortOrder] = useState<string>("newest");
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
+  const [filteredPosts, setFilteredPosts] = useState<Post[]>(mockPosts);
 
-// Status badge component
-const StatusBadge = ({ status }: { status: string }) => {
-  let bgColor = '';
-  let textColor = '';
-  let icon = null;
+  // Calculate reported posts count
+  const reportedPostsCount = mockPosts.filter(post => post.status === 'Reported').length;
 
-  switch (status) {
-    case 'Published':
-      bgColor = 'bg-green-500/20';
-      textColor = 'text-green-300';
-      icon = <CheckCircleIcon className="h-4 w-4 mr-1" />;
-      break;
-    case 'Reported':
-      bgColor = 'bg-red-500/20';
-      textColor = 'text-red-300';
-      icon = <FlagIcon className="h-4 w-4 mr-1" />;
-      break;
-    case 'Deleted':
-      bgColor = 'bg-gray-500/20';
-      textColor = 'text-gray-300';
-      icon = <TrashIcon className="h-4 w-4 mr-1" />;
-      break;
-    default:
-      bgColor = 'bg-blue-500/20';
-      textColor = 'text-blue-300';
-      icon = <DocumentTextIcon className="h-4 w-4 mr-1" />;
-  }
+  // Status badge component
+  const StatusBadge = ({ status }: { status: string }) => {
+    let bgColor = '';
+    let textColor = '';
+    let icon = null;
 
-  return (
-    <span className={`flex items-center px-2 py-1 rounded-full text-sm ${bgColor} ${textColor} border border-${textColor.replace('text-', '')}/40`}>
-      {icon}
-      {status}
-    </span>
-  );
-};
+    switch (status) {
+      case 'Published':
+        bgColor = 'bg-green-500/20';
+        textColor = 'text-green-300';
+        icon = <CheckCircleIcon className="h-4 w-4 mr-1" />;
+        break;
+      case 'Reported':
+        bgColor = 'bg-red-500/20';
+        textColor = 'text-red-300';
+        icon = <FlagIcon className="h-4 w-4 mr-1" />;
+        break;
+      case 'Deleted':
+        bgColor = 'bg-gray-500/20';
+        textColor = 'text-gray-300';
+        icon = <TrashIcon className="h-4 w-4 mr-1" />;
+        break;
+      default:
+        bgColor = 'bg-blue-500/20';
+        textColor = 'text-blue-300';
+        icon = <DocumentTextIcon className="h-4 w-4 mr-1" />;
+    }
 
-// Post Card Component for Grid View
-const PostCard = ({ post, index }: { post: Post, index: number }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05, duration: 0.3 }}
-      className={`bg-black/30 backdrop-blur-md rounded-xl border ${
-        post.status === 'Reported' ? 'border-red-500/30' : 'border-white/10'
-      } shadow-lg p-4 hover:shadow-xl transition-all`}
-    >
-      {/* Author Info */}
-      <div className="flex items-center mb-3">
-        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-400/30 to-blue-400/30 flex items-center justify-center overflow-hidden mr-3">
-          {post.authorAvatar ? (
-            <Image src={post.authorAvatar} alt={post.authorName} width={40} height={40} className="h-full w-full object-cover" />
-          ) : (
-            <UserIcon className="h-6 w-6 text-white/70" />
-          )}
-        </div>
-        <div>
-          <div className="font-medium text-white">{post.authorName}</div>
-          <div className="text-white/60 text-xs">
-            {new Date(post.createdAt).toLocaleDateString('en-US', { 
-              year: 'numeric', 
-              month: 'short', 
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            })}
-          </div>
-        </div>
-        <div className="ml-auto">
-          <StatusBadge status={post.status} />
-        </div>
-      </div>
+    return (
+      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${bgColor} ${textColor}`}>
+        {icon}
+        {status}
+      </span>
+    );
+  };
 
-      {/* Post Content */}
-      <div className="mb-3">
-        <p className="text-white/90 text-sm line-clamp-2">
-          {post.content}
-        </p>
-      </div>
-
-      {/* Post Media (if any) */}
-      {post.hasMedia && post.mediaUrl && (
-        <div className="mb-3 h-32 w-full relative rounded-lg overflow-hidden">
-          {post.mediaUrl.endsWith('.mp4') ? (
-            <div className="bg-black/50 h-full w-full flex items-center justify-center">
-              <PlayIcon className="h-12 w-12 text-white/70" />
-            </div>
-          ) : (
-            <Image 
-              src={post.mediaUrl} 
-              alt="Post media" 
-              fill
-              className="object-cover"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-              }} 
-            />
-          )}
-        </div>
-      )}
-
-      {/* Report Reason */}
-      {post.status === 'Reported' && post.reportReason && (
-        <div className="mb-3 p-2 rounded-lg bg-red-500/10 text-red-300 text-xs">
-          <strong>Report reason:</strong> {post.reportReason}
-        </div>
-      )}
-
-      {/* Community & Stats */}
-      <div className="flex justify-between items-center text-white/60 text-xs mb-4">
-        <div className="flex items-center">
-          <RectangleGroupIcon className="h-4 w-4 mr-1" />
-          {post.communityName}
-        </div>
-        <div className="flex items-center space-x-3">
-          <span className="flex items-center">
-            <HeartIcon className="h-4 w-4 mr-1" />
-            {post.likes}
-          </span>
-          <span className="flex items-center">
-            <ChatBubbleLeftRightIcon className="h-4 w-4 mr-1" />
-            {post.comments}
-          </span>
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex justify-between border-t border-white/10 pt-3">
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="flex items-center px-2 py-1 bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 rounded-lg transition-all text-xs"
-        >
-          <EyeIcon className="h-3.5 w-3.5 mr-1" /> View
-        </motion.button>
-
-        {post.status === 'Reported' && (
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex items-center px-2 py-1 bg-green-500/20 hover:bg-green-500/40 text-green-300 rounded-lg transition-all text-xs"
-          >
-            <CheckBadgeIcon className="h-3.5 w-3.5 mr-1" /> Review
-          </motion.button>
-        )}
-
-        {post.status !== 'Deleted' && (
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex items-center px-2 py-1 bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 rounded-lg transition-all text-xs"
-          >
-            <XCircleIcon className="h-3.5 w-3.5 mr-1" /> Disable
-          </motion.button>
-        )}
-
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="flex items-center px-2 py-1 bg-red-500/20 hover:bg-red-500/40 text-red-300 rounded-lg transition-all text-xs"
-        >
-          <TrashIcon className="h-3.5 w-3.5 mr-1" /> Delete
-        </motion.button>
-      </div>
-    </motion.div>
-  );
-};
-
-// Post Table Row Component
-const PostRow = ({ post, index }: { post: Post, index: number }) => {
-  return (
-    <motion.tr
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05, duration: 0.3 }}
-      className={`${index % 2 === 0 ? 'bg-black/20' : 'bg-black/10'} ${
-        post.status === 'Reported' ? 'border-l-2 border-red-500/50' : ''
-      } hover:bg-white/5 transition-all`}
-    >
-      <td className="py-4 px-4">
-        <div className="flex items-center">
+  // Post Card Component for Grid View
+  const PostCard = ({ post, index }: { post: Post, index: number }) => {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.05, duration: 0.3 }}
+        className={`bg-black/30 backdrop-blur-md rounded-xl border ${
+          post.status === 'Reported' ? 'border-red-500/30' : 'border-white/10'
+        } shadow-lg p-4 hover:shadow-xl transition-all`}
+      >
+        {/* Author Info */}
+        <div className="flex items-center mb-3">
           <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-400/30 to-blue-400/30 flex items-center justify-center overflow-hidden mr-3">
             {post.authorAvatar ? (
               <Image src={post.authorAvatar} alt={post.authorName} width={40} height={40} className="h-full w-full object-cover" />
@@ -409,241 +270,248 @@ const PostRow = ({ post, index }: { post: Post, index: number }) => {
           </div>
           <div>
             <div className="font-medium text-white">{post.authorName}</div>
-            <div className="text-white/60 text-xs">{post.communityName}</div>
+            <div className="text-white/60 text-xs">
+              {new Date(post.createdAt).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </div>
+          </div>
+          <div className="ml-auto">
+            <StatusBadge status={post.status} />
           </div>
         </div>
-      </td>
-      <td className="py-4 px-4 text-white/80">
-        <p className="line-clamp-2 text-sm max-w-xs">
-          {post.content}
-        </p>
-        {post.status === 'Reported' && post.reportReason && (
-          <div className="mt-1 p-1 px-2 rounded bg-red-500/10 text-red-300 text-xs inline-block">
-            {post.reportReason}
+
+        {/* Post Content */}
+        <div className="mb-3">
+          <p className="text-white/90 text-sm line-clamp-2">
+            {post.content}
+          </p>
+        </div>
+
+        {/* Post Media (if any) */}
+        {post.hasMedia && post.mediaUrl && (
+          <div className="mb-3 h-32 w-full relative rounded-lg overflow-hidden">
+            {post.mediaUrl.endsWith('.mp4') ? (
+              <div className="bg-black/50 h-full w-full flex items-center justify-center">
+                <PlayIcon className="h-12 w-12 text-white/70" />
+              </div>
+            ) : (
+              <Image 
+                src={post.mediaUrl} 
+                alt="Post media" 
+                fill
+                className="object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                }} 
+              />
+            )}
           </div>
         )}
-      </td>
-      <td className="py-4 px-4">
-        <div className="flex flex-col">
-          <div className="text-white/70 text-sm">
-            {new Date(post.createdAt).toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric'
-            })}
+
+        {/* Report Reason */}
+        {post.status === 'Reported' && post.reportReason && (
+          <div className="mb-3 p-2 rounded-lg bg-red-500/10 text-red-300 text-xs">
+            <strong>Report reason:</strong> {post.reportReason}
           </div>
-          <div className="text-white/50 text-xs">
-            {new Date(post.createdAt).toLocaleTimeString('en-US', {
-              hour: '2-digit',
-              minute: '2-digit'
-            })}
+        )}
+
+        {/* Community & Stats */}
+        <div className="flex justify-between items-center text-white/60 text-xs mb-4">
+          <div className="flex items-center">
+            <RectangleGroupIcon className="h-4 w-4 mr-1" />
+            {post.communityName}
           </div>
-        </div>
-      </td>
-      <td className="py-4 px-4">
-        <div className="flex space-x-2">
-          <div className="flex items-center text-white/70 text-sm">
-            <HeartIcon className="h-4 w-4 mr-1 text-pink-400/70" /> {post.likes}
-          </div>
-          <div className="flex items-center text-white/70 text-sm">
-            <ChatBubbleLeftRightIcon className="h-4 w-4 mr-1 text-blue-400/70" /> {post.comments}
+          <div className="flex items-center space-x-3">
+            <span className="flex items-center">
+              <HeartIcon className="h-4 w-4 mr-1" />
+              {post.likes}
+            </span>
+            <span className="flex items-center">
+              <ChatBubbleLeftRightIcon className="h-4 w-4 mr-1" />
+              {post.comments}
+            </span>
           </div>
         </div>
-      </td>
-      <td className="py-4 px-4">
-        <StatusBadge status={post.status} />
-      </td>
-      <td className="py-4 px-4">
-        <div className="flex space-x-1">
+
+        {/* Action Buttons */}
+        <div className="flex justify-between border-t border-white/10 pt-3">
           <motion.button
-            whileHover={{ scale: 1.1 }}
+            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="p-1.5 rounded-full bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 transition-all"
+            className="flex items-center px-2 py-1 bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 rounded-lg transition-all text-xs"
           >
-            <EyeIcon className="h-4 w-4" />
+            <EyeIcon className="h-3.5 w-3.5 mr-1" /> View
           </motion.button>
-          
+
           {post.status === 'Reported' && (
             <motion.button
-              whileHover={{ scale: 1.1 }}
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="p-1.5 rounded-full bg-green-500/20 hover:bg-green-500/40 text-green-300 transition-all"
+              className="flex items-center px-2 py-1 bg-green-500/20 hover:bg-green-500/40 text-green-300 rounded-lg transition-all text-xs"
             >
-              <CheckBadgeIcon className="h-4 w-4" />
+              <CheckBadgeIcon className="h-3.5 w-3.5 mr-1" /> Review
             </motion.button>
           )}
-          
+
           {post.status !== 'Deleted' && (
             <motion.button
-              whileHover={{ scale: 1.1 }}
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="p-1.5 rounded-full bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 transition-all"
+              className="flex items-center px-2 py-1 bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 rounded-lg transition-all text-xs"
             >
-              <XCircleIcon className="h-4 w-4" />
+              <XCircleIcon className="h-3.5 w-3.5 mr-1" /> Disable
             </motion.button>
           )}
-          
+
           <motion.button
-            whileHover={{ scale: 1.1 }}
+            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="p-1.5 rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-300 transition-all"
+            className="flex items-center px-2 py-1 bg-red-500/20 hover:bg-red-500/40 text-red-300 rounded-lg transition-all text-xs"
           >
-            <TrashIcon className="h-4 w-4" />
+            <TrashIcon className="h-3.5 w-3.5 mr-1" /> Delete
           </motion.button>
         </div>
-      </td>
-    </motion.tr>
-  );
-};
+      </motion.div>
+    );
+  };
 
-// Main component
-export default function PostsPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [communityFilter, setCommunityFilter] = useState<string>("All");
-  const [statusFilter, setStatusFilter] = useState<string>("All");
-  const [sortOrder, setSortOrder] = useState<string>("newest");
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
-  const [filteredPosts, setFilteredPosts] = useState<Post[]>(mockPosts);
-  const [isMobile, setIsMobile] = useState(false);
-  
-  // Reported posts count
-  const reportedPostsCount = mockPosts.filter(p => p.status === 'Reported').length;
-
-  // Check if screen is mobile
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-      // Switch to grid view on mobile automatically
-      if (window.innerWidth < 768) {
-        setViewMode('grid');
-      }
-    };
-    
-    if (typeof window !== 'undefined') {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth < 768) {
-        setViewMode('grid');
-      }
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
-    }
-  }, []);
+  // Post Table Row Component
+  const PostRow = ({ post, index }: { post: Post, index: number }) => {
+    return (
+      <motion.tr
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.05, duration: 0.3 }}
+        className={`${index % 2 === 0 ? 'bg-black/20' : 'bg-black/10'} ${
+          post.status === 'Reported' ? 'border-l-2 border-red-500/50' : ''
+        } hover:bg-white/5 transition-all`}
+      >
+        <td className="py-4 px-4">
+          <div className="flex items-center">
+            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-400/30 to-blue-400/30 flex items-center justify-center overflow-hidden mr-3">
+              {post.authorAvatar ? (
+                <Image src={post.authorAvatar} alt={post.authorName} width={40} height={40} className="h-full w-full object-cover" />
+              ) : (
+                <UserIcon className="h-6 w-6 text-white/70" />
+              )}
+            </div>
+            <div>
+              <div className="font-medium text-white">{post.authorName}</div>
+              <div className="text-white/60 text-xs">{post.communityName}</div>
+            </div>
+          </div>
+        </td>
+        <td className="py-4 px-4 text-white/80">
+          <p className="line-clamp-2 text-sm max-w-xs">
+            {post.content}
+          </p>
+          {post.status === 'Reported' && post.reportReason && (
+            <div className="mt-1 p-1 px-2 rounded bg-red-500/10 text-red-300 text-xs inline-block">
+              {post.reportReason}
+            </div>
+          )}
+        </td>
+        <td className="py-4 px-4">
+          <div className="flex flex-col">
+            <div className="text-white/70 text-sm">
+              {new Date(post.createdAt).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+              })}
+            </div>
+            <div className="text-white/50 text-xs">
+              {new Date(post.createdAt).toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </div>
+          </div>
+        </td>
+        <td className="py-4 px-4">
+          <div className="flex items-center space-x-2 text-white/60 text-sm">
+            <span className="flex items-center">
+              <HeartIcon className="h-4 w-4 mr-1" />
+              {post.likes}
+            </span>
+            <span className="flex items-center">
+              <ChatBubbleLeftRightIcon className="h-4 w-4 mr-1" />
+              {post.comments}
+            </span>
+          </div>
+        </td>
+        <td className="py-4 px-4">
+          <StatusBadge status={post.status} />
+        </td>
+        <td className="py-4 px-4">
+          <div className="flex items-center space-x-2">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-1 bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 rounded transition-all"
+            >
+              <EyeIcon className="h-4 w-4" />
+            </motion.button>
+            {post.status === 'Reported' && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="p-1 bg-green-500/20 hover:bg-green-500/40 text-green-300 rounded transition-all"
+              >
+                <CheckBadgeIcon className="h-4 w-4" />
+              </motion.button>
+            )}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-1 bg-red-500/20 hover:bg-red-500/40 text-red-300 rounded transition-all"
+            >
+              <TrashIcon className="h-4 w-4" />
+            </motion.button>
+          </div>
+        </td>
+      </motion.tr>
+    );
+  };
 
   // Filter and sort posts
   useEffect(() => {
-    let results = [...mockPosts];
-    
-    // Apply search filter
-    if (search) {
-      results = results.filter(post => 
-        post.content.toLowerCase().includes(search.toLowerCase()) || 
-        post.authorName.toLowerCase().includes(search.toLowerCase()) ||
-        post.communityName.toLowerCase().includes(search.toLowerCase())
-      );
-    }
-    
-    // Apply community filter
-    if (communityFilter !== 'All') {
-      results = results.filter(post => post.communityId === communityFilter);
-    }
-    
-    // Apply status filter
-    if (statusFilter !== 'All') {
-      results = results.filter(post => post.status === statusFilter);
-    }
-    
-    // Apply sorting
-    results.sort((a, b) => {
-      const dateA = new Date(a.createdAt).getTime();
-      const dateB = new Date(b.createdAt).getTime();
+    const results = mockPosts.filter(post => {
+      const matchesSearch = post.content.toLowerCase().includes(search.toLowerCase()) ||
+                           post.authorName.toLowerCase().includes(search.toLowerCase()) ||
+                           post.communityName.toLowerCase().includes(search.toLowerCase());
       
-      if (sortOrder === 'newest') {
-        return dateB - dateA;
-      } else {
-        return dateA - dateB;
-      }
+      const matchesCommunity = communityFilter === "All" || post.communityName === communityFilter;
+      const matchesStatus = statusFilter === "All" || post.status === statusFilter;
+      
+      return matchesSearch && matchesCommunity && matchesStatus;
     });
-    
+
+    // Sort posts
+    results.sort((a, b) => {
+      if (sortOrder === "newest") {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      } else if (sortOrder === "oldest") {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      } else if (sortOrder === "mostLikes") {
+        return b.likes - a.likes;
+      } else if (sortOrder === "mostComments") {
+        return b.comments - a.comments;
+      }
+      return 0;
+    });
+
     setFilteredPosts(results);
   }, [search, communityFilter, statusFilter, sortOrder]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 font-sans">
-      {/* Glassy Top Navbar */}
-      <nav className="fixed top-0 left-0 w-full z-30 bg-black/30 backdrop-blur-xl shadow-xl border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 flex items-center justify-between h-16">
-          <div className="flex items-center space-x-4">
-            <Link href="/Admin/Dashboard">
-              <Image src="/logo.png" alt="Logo" width={36} height={36} className="rounded-xl" />
-            </Link>
-            <span className="text-2xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent tracking-tight">Admin Dashboard</span>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <button
-                className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all"
-                onClick={() => setProfileOpen((v) => !v)}
-              >
-                <UserIcon className="h-7 w-7 text-white" />
-              </button>
-              <AnimatePresence>
-                {profileOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute right-0 mt-2 w-48 bg-black/60 backdrop-blur-xl rounded-2xl shadow-xl border border-white/10 py-2 z-50"
-                  >
-                    <button className="w-full flex items-center px-4 py-3 text-white/90 hover:bg-white/10 transition-all">
-                      <Cog6ToothIcon className="h-5 w-5 mr-2" /> Settings
-                    </button>
-                    <button className="w-full flex items-center px-4 py-3 text-red-400 hover:bg-red-500/20 transition-all">
-                      <ArrowRightOnRectangleIcon className="h-5 w-5 mr-2" /> Logout
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-            <button className="md:hidden p-2 rounded-xl bg-white/10 hover:bg-white/20" onClick={() => setSidebarOpen((v) => !v)}>
-              <svg className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* Sidebar */}
-      <AnimatePresence>
-        {(sidebarOpen || typeof window === "undefined" || window.innerWidth >= 768) && (
-          <motion.aside
-            initial={{ x: -60, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -60, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className={`fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-black/30 backdrop-blur-xl border-r border-white/10 shadow-xl z-20 ${isMobile ? 'block' : 'hidden md:block'}`}
-          >
-            <nav className="flex flex-col py-8 space-y-2">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  className={`flex items-center px-6 py-3 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all font-medium text-lg ${
-                    link.name === "Posts" ? "bg-white/10 text-white" : ""
-                  }`}
-                >
-                  <link.icon className="h-6 w-6 mr-3" />
-                  {link.name}
-                </Link>
-              ))}
-            </nav>
-          </motion.aside>
-        )}
-      </AnimatePresence>
-
-      {/* Main Content */}
-      <main className="md:ml-64 pt-24 px-4 sm:px-8 pb-8 transition-all">
+    <main className="pt-8 px-4 sm:px-8 pb-8 transition-all">
         {/* Page Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -699,7 +567,7 @@ export default function PostsPage() {
               >
                 <option value="All">All Communities</option>
                 {mockCommunities.map(community => (
-                  <option key={community.id} value={community.id}>{community.name}</option>
+                  <option key={community.id} value={community.name}>{community.name}</option>
                 ))}
               </select>
               <RectangleGroupIcon className="h-5 w-5 text-white/60 absolute right-3 top-3.5 pointer-events-none" />
@@ -727,6 +595,8 @@ export default function PostsPage() {
               >
                 <option value="newest">Newest First</option>
                 <option value="oldest">Oldest First</option>
+                <option value="mostLikes">Most Likes</option>
+                <option value="mostComments">Most Comments</option>
               </select>
               <CalendarIcon className="h-5 w-5 text-white/60 absolute right-3 top-3.5 pointer-events-none" />
             </div>
@@ -796,7 +666,7 @@ export default function PostsPage() {
         )}
 
         {/* Posts Content - Grid View */}
-        {(viewMode === 'grid' || isMobile) && (
+        {viewMode === 'grid' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPosts.map((post, index) => (
               <PostCard key={post.id} post={post} index={index} />
@@ -809,7 +679,7 @@ export default function PostsPage() {
               >
                 <DocumentTextIcon className="h-16 w-16 text-white/30 mx-auto mb-4" />
                 <h3 className="text-xl text-white font-medium mb-2">No posts found</h3>
-                <p className="text-white/60">Try adjusting your search or filters to find what you're looking for.</p>
+                <p className="text-white/60">Try adjusting your search or filters to find what you&apos;re looking for.</p>
               </motion.div>
             )}
           </div>
@@ -841,14 +711,5 @@ export default function PostsPage() {
           </motion.div>
         )}
       </main>
-    </div>
   );
 }
-
-// This component is needed due to previous reference but not defined
-// Adding it here to avoid errors
-const PlayIcon = ({ className }: { className: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clipRule="evenodd" />
-  </svg>
-);

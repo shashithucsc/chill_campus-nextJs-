@@ -306,6 +306,7 @@ export default function DualMessaging({ community, className = '', onClose }: Du
             >
               <DirectMessageUI 
                 recipientId={selectedRecipientId} 
+                onBack={handleBack}
                 onNewMessage={handleMessageSent}
               />
             </motion.div>
