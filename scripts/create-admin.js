@@ -40,7 +40,8 @@ const User = mongoose.models.User || mongoose.model('User', userSchema);
 async function createAdmin() {
   try {
     // Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URI);
+    const mongoUri = 'mongodb+srv://chillcampus:1234@chillcampuscluster.xryax7f.mongodb.net/chillCampus?retryWrites=true&w=majority&appName=chillCampusCluster';
+    await mongoose.connect(mongoUri);
     console.log('Connected to MongoDB');
 
     // Check if admin already exists

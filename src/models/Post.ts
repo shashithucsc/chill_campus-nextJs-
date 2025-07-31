@@ -15,6 +15,10 @@ export interface IPost extends Document {
   mediaType?: 'image' | 'video' | null;
   comments?: IComment[];
   likes?: mongoose.Types.ObjectId[]; // Array of user IDs who liked the post
+  disabled?: boolean; // Admin can disable posts
+  disabledBy?: mongoose.Types.ObjectId; // Admin who disabled
+  disabledAt?: Date; // When it was disabled
+  disableReason?: string; // Reason for disabling
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,6 +39,10 @@ const PostSchema = new Schema<IPost>(
     mediaType: { type: String, enum: ['image', 'video', null], default: null },
     comments: { type: [CommentSchema], default: [] },
     likes: [{ type: Schema.Types.ObjectId, ref: 'User' }], // Array of user IDs who liked the post
+    disabled: { type: Boolean, default: false },
+    disabledBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    disabledAt: { type: Date },
+    disableReason: { type: String }
   },
   { timestamps: true }
 );
