@@ -5,19 +5,22 @@ import User from '@/models/User';
 import { getSession } from '@/lib/session';
 
 // GET: fetch all comments for a post
-export async function GET(req: NextRequest, { params }: { params?: { id?: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await dbConnect();
     
+    // Await params for Next.js 15 compatibility
+    const resolvedParams = await params;
+    
     // Validate that params and id exist
-    if (!params || !params.id) {
+    if (!resolvedParams || !resolvedParams.id) {
       return NextResponse.json(
         { error: "Post ID is required" },
         { status: 400 }
       );
     }
     
-    const id = params.id;
+    const id = resolvedParams.id;
     const post = await Post.findById(id).populate({
       path: 'comments.user',
       select: 'fullName avatar',
@@ -46,7 +49,7 @@ export async function GET(req: NextRequest, { params }: { params?: { id?: string
 }
 
 // POST: add a comment to a post
-export async function POST(req: NextRequest, { params }: { params?: { id?: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await dbConnect();
     
@@ -56,15 +59,18 @@ export async function POST(req: NextRequest, { params }: { params?: { id?: strin
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
+    // Await params for Next.js 15 compatibility
+    const resolvedParams = await params;
+    
     // Validate params
-    if (!params || !params.id) {
+    if (!resolvedParams || !resolvedParams.id) {
       return NextResponse.json(
         { error: "Post ID is required" },
         { status: 400 }
       );
     }
     
-    const id = params.id;
+    const id = resolvedParams.id;
     const { content } = await req.json();
     if (!content || !content.trim()) {
       return NextResponse.json({ error: 'Empty comment' }, { status: 400 });

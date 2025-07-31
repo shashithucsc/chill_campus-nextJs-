@@ -13,9 +13,12 @@ import {
   PencilIcon,
   TrashIcon,
   XMarkIcon,
-  PaperAirplaneIcon
+  PaperAirplaneIcon,
+  FlagIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolid } from '@heroicons/react/24/solid';
+import ReportModal from './ReportModal';
+import Toast from './Toast';
 
 interface Comment {
   _id: string;
@@ -81,6 +84,10 @@ export default function Post({
   // Editing state
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(content);
+  // Report state
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [hasReported, setHasReported] = useState(false);
+  const [showToast, setShowToast] = useState(false);
   
   // Debug log for post ownership
   console.log('Post props in Post component:', { id, authorId: author?.id });
@@ -108,7 +115,16 @@ export default function Post({
       .then(data => {
         setCommentList(data.comments || []);
       });
-  }, [id]);
+    // Check if user has reported this post
+    if (session?.user?.id) {
+      fetch(`/api/posts/${id}/reports`)
+        .then(res => res.json())
+        .then(data => {
+          setHasReported(data.hasUserReported || false);
+        })
+        .catch(err => console.error('Error fetching report status:', err));
+    }
+  }, [id, session?.user?.id]);
 
   const handleLike = async () => {
     const newLiked = !isLiked;
@@ -173,6 +189,11 @@ export default function Post({
         setEditMediaType(null);
       }
     }
+  };
+
+  const handleReportSubmitted = () => {
+    setHasReported(true);
+    setShowToast(true);
   };
 
   return (
@@ -365,6 +386,26 @@ export default function Post({
             </svg>
             <span className="font-medium">{commentList.length}</span>
           </button>
+          
+          {/* Report Button - Only show if user is not the post author */}
+          {session?.user?.id && author && author.id !== session.user.id && (
+            <button
+              onClick={() => setShowReportModal(true)}
+              disabled={hasReported}
+              className={`flex items-center space-x-2 transition-colors ${
+                hasReported 
+                  ? 'text-red-400 cursor-not-allowed' 
+                  : 'text-white/70 hover:text-red-400'
+              }`}
+              title={hasReported ? 'You have already reported this post' : 'Report this post'}
+            >
+              <FlagIcon className="h-6 w-6" />
+              <span className="font-medium text-sm">
+                {hasReported ? 'Reported' : 'Report'}
+              </span>
+            </button>
+          )}
+          
           {/* ...existing share button... */}
         </div>
         {/* Comments Section */}
@@ -426,6 +467,22 @@ export default function Post({
           </div>
         </div>
       )}
+      
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        postId={id}
+        onReportSubmitted={handleReportSubmitted}
+      />
+      
+      {/* Success Toast */}
+      <Toast
+        show={showToast}
+        message="Report submitted successfully"
+        type="success"
+        onClose={() => setShowToast(false)}
+      />
     </div>
   );
 }

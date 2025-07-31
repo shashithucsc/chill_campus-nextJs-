@@ -14,6 +14,7 @@ export interface IPost extends Document {
   media?: string[]; // URLs to images/videos
   mediaType?: 'image' | 'video' | null;
   comments?: IComment[];
+  likes?: mongoose.Types.ObjectId[]; // Array of user IDs who liked the post
   createdAt: Date;
   updatedAt: Date;
 }
@@ -33,6 +34,7 @@ const PostSchema = new Schema<IPost>(
     media: [{ type: String }],
     mediaType: { type: String, enum: ['image', 'video', null], default: null },
     comments: { type: [CommentSchema], default: [] },
+    likes: [{ type: Schema.Types.ObjectId, ref: 'User' }], // Array of user IDs who liked the post
   },
   { timestamps: true }
 );
