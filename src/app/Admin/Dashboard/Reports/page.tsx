@@ -29,9 +29,12 @@ import {
   XMarkIcon,
   PhotoIcon,
   ChatBubbleBottomCenterIcon,
+  ShieldExclamationIcon,
+  ExclamationCircleIcon,
 } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 // Define report types
 type ReportType = 'Post' | 'User' | 'Comment';
@@ -63,221 +66,28 @@ interface Report {
     };
   };
   createdAt: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  adminNotes?: string;
 }
 
-// Mock report data
-const mockReports: Report[] = [
-  {
-    id: '1',
-    type: 'Post',
-    status: 'Pending',
-    reason: 'Inappropriate Content',
-    description: 'This post contains offensive material that violates community standards.',
-    reportedBy: {
-      id: '101',
-      name: 'Sarah Johnson',
-      avatar: '/uploads/683f0d865a3fc6817b6ca1cf-avatar.jpg'
-    },
-    reportedContent: {
-      id: 'p1',
-      text: 'This is a post containing inappropriate language and offensive content that should not be allowed according to community guidelines.',
-      image: '/uploads/1752133976371-io0.png',
-      community: {
-        id: 'c1',
-        name: 'Computer Science Club'
-      },
-      author: {
-        id: 'u1',
-        name: 'Bob Smith',
-        avatar: '/uploads/6846aec43f81033dbb04da7b-avatar.jpg'
-      }
-    },
-    createdAt: '2025-07-18T09:15:00'
-  },
-  {
-    id: '2',
-    type: 'User',
-    status: 'Pending',
-    reason: 'Harassment',
-    description: 'This user has been sending threatening messages to multiple community members.',
-    reportedBy: {
-      id: '102',
-      name: 'Michael Brown',
-      avatar: ''
-    },
-    reportedContent: {
-      id: 'u2',
-      text: 'Profile repeatedly harassing other users across multiple communities.',
-      community: {
-        id: 'c2',
-        name: 'Psychology Society'
-      },
-      author: {
-        id: 'u2',
-        name: 'Jack Wilson',
-        avatar: ''
-      }
-    },
-    createdAt: '2025-07-17T14:30:00'
-  },
-  {
-    id: '3',
-    type: 'Comment',
-    status: 'Pending',
-    reason: 'Spam',
-    description: 'This comment appears to be advertising unrelated products with suspicious links.',
-    reportedBy: {
-      id: '103',
-      name: 'Emily Davis',
-      avatar: '/uploads/6857d2c9c069b2b51f421993-avatar.jpg'
-    },
-    reportedContent: {
-      id: 'c1',
-      text: 'Check out these amazing products at www.suspicious-link.com! Best deals guaranteed with 90% discount! Click now before offer expires!',
-      community: {
-        id: 'c3',
-        name: 'Entrepreneurship Network'
-      },
-      author: {
-        id: 'u3',
-        name: 'Emma White',
-        avatar: ''
-      }
-    },
-    createdAt: '2025-07-16T16:45:00'
-  },
-  {
-    id: '4',
-    type: 'Post',
-    status: 'Resolved',
-    reason: 'Copyright Violation',
-    description: 'This post contains copyrighted material posted without permission.',
-    reportedBy: {
-      id: '104',
-      name: 'Daniel Lee',
-      avatar: ''
-    },
-    reportedContent: {
-      id: 'p2',
-      text: 'Check out this amazing artwork I made!',
-      image: '/uploads/1751788489853-ip3vxz.jpg',
-      community: {
-        id: 'c4',
-        name: 'Art & Design Studio'
-      },
-      author: {
-        id: 'u4',
-        name: 'Chris Taylor',
-        avatar: '/uploads/687606e956d069cefd283ca1-avatar.jpg'
-      }
-    },
-    createdAt: '2025-07-15T10:20:00'
-  },
-  {
-    id: '5',
-    type: 'Comment',
-    status: 'Ignored',
-    reason: 'Misinformation',
-    description: 'This comment contains factually incorrect information that may mislead others.',
-    reportedBy: {
-      id: '105',
-      name: 'Olivia Martin',
-      avatar: ''
-    },
-    reportedContent: {
-      id: 'c2',
-      text: 'Studies show that drinking cold water causes cancer and heart disease. Everyone should only drink warm water to stay healthy.',
-      community: {
-        id: 'c5',
-        name: 'Health & Wellness'
-      },
-      author: {
-        id: 'u5',
-        name: 'Sophia Rodriguez',
-        avatar: ''
-      }
-    },
-    createdAt: '2025-07-14T13:50:00'
-  },
-  {
-    id: '6',
-    type: 'User',
-    status: 'Resolved',
-    reason: 'Impersonation',
-    description: 'This user is pretending to be a faculty member and spreading false information.',
-    reportedBy: {
-      id: '106',
-      name: 'James Wilson',
-      avatar: ''
-    },
-    reportedContent: {
-      id: 'u6',
-      text: 'User profile claiming to be Dr. Robert Johnson, Department Chair.',
-      community: {
-        id: 'c1',
-        name: 'Computer Science Club'
-      },
-      author: {
-        id: 'u6',
-        name: 'Fake Professor',
-        avatar: ''
-      }
-    },
-    createdAt: '2025-07-13T09:10:00'
-  },
-  {
-    id: '7',
-    type: 'Post',
-    status: 'Pending',
-    reason: 'Hate Speech',
-    description: 'This post contains language targeting specific groups based on ethnicity.',
-    reportedBy: {
-      id: '107',
-      name: 'Ava Thompson',
-      avatar: ''
-    },
-    reportedContent: {
-      id: 'p3',
-      text: 'This post contains harmful language targeting specific ethnic groups that violates community guidelines.',
-      community: {
-        id: 'c6',
-        name: 'Cultural Exchange Group'
-      },
-      author: {
-        id: 'u7',
-        name: 'Anonymous User',
-        avatar: ''
-      }
-    },
-    createdAt: '2025-07-12T15:30:00'
-  },
-  {
-    id: '8',
-    type: 'Comment',
-    status: 'Pending',
-    reason: 'Bullying',
-    description: 'This comment specifically targets and mocks another student.',
-    reportedBy: {
-      id: '108',
-      name: 'Noah Garcia',
-      avatar: '/uploads/68551cbb981126d63000ced3-avatar.jpg'
-    },
-    reportedContent: {
-      id: 'c3',
-      text: "You\\'re so stupid, nobody likes your ideas. Everyone laughs at you behind your back.",
-      community: {
-        id: 'c7',
-        name: 'Student Council'
-      },
-      author: {
-        id: 'u8',
-        name: 'Ryan Baker',
-        avatar: ''
-      }
-    },
-    createdAt: '2025-07-11T11:25:00'
-  }
-];
+interface ReportsResponse {
+  success: boolean;
+  reports: Report[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalReports: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+  stats: {
+    pending: number;
+    resolved: number;
+    ignored: number;
+  };
+  error?: string;
+}
 
 // Navigation links
 const navLinks = [
@@ -487,6 +297,26 @@ const ReportCard = ({ report, index, onActionClick }: { report: Report, index: n
             <NoSymbolIcon className="h-4 w-4 mr-1.5" /> Block User
           </motion.button>
         )}
+
+        {report.type !== 'User' && (
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => onActionClick('suspend', report)}
+            className="flex items-center justify-center px-3 py-1.5 bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-300 rounded-lg transition-all text-sm"
+          >
+            <ShieldExclamationIcon className="h-4 w-4 mr-1.5" /> Suspend User
+          </motion.button>
+        )}
+
+        <motion.button
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={() => onActionClick('warn', report)}
+          className="flex items-center justify-center px-3 py-1.5 bg-orange-500/20 hover:bg-orange-500/40 text-orange-300 rounded-lg transition-all text-sm"
+        >
+          <ExclamationTriangleIcon className="h-4 w-4 mr-1.5" /> Warn User
+        </motion.button>
       </div>
     </motion.div>
   );
@@ -842,43 +672,81 @@ const ReportDetailModal = ({ report, onClose }: { report: Report | null, onClose
 
 // Main Component
 export default function ReportsPage() {
+  const { data: session } = useSession();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("All");
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [sortOrder, setSortOrder] = useState<string>("newest");
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
-  const [filteredReports, setFilteredReports] = useState<Report[]>(mockReports);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [filteredReports, setFilteredReports] = useState<Report[]>([]);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState({ pending: 0, resolved: 0, ignored: 0 });
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalReports: 0,
+    hasNext: false,
+    hasPrev: false
+  });
   
   // Count reports by status
-  const pendingCount = mockReports.filter(r => r.status === 'Pending').length;
-  const resolvedCount = mockReports.filter(r => r.status === 'Resolved').length;
-  const ignoredCount = mockReports.filter(r => r.status === 'Ignored').length;
-  
-  // Filter reports
+  const pendingCount = stats.pending;
+  const resolvedCount = stats.resolved;
+  const ignoredCount = stats.ignored;
+
+  // Fetch reports from API
+  const fetchReports = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const params = new URLSearchParams({
+        page: pagination.currentPage.toString(),
+        limit: '50',
+        ...(statusFilter !== 'All' && { status: statusFilter }),
+        ...(typeFilter !== 'All' && { type: typeFilter }),
+        ...(search && { search })
+      });
+
+      console.log('Fetching reports with params:', params.toString());
+
+      const response = await fetch(`/api/reports?${params}`);
+      const data: ReportsResponse = await response.json();
+
+      console.log('Reports API response:', data);
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch reports');
+      }
+
+      if (data.success) {
+        setReports(data.reports);
+        setStats(data.stats);
+        setPagination(data.pagination);
+      } else {
+        throw new Error('Failed to fetch reports');
+      }
+    } catch (err) {
+      console.error('Error fetching reports:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch reports');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial fetch
   useEffect(() => {
-    let results = [...mockReports];
-    
-    // Apply search filter
-    if (search) {
-      results = results.filter(report => 
-        report.reportedContent.text.toLowerCase().includes(search.toLowerCase()) ||
-        report.reportedContent.author.name.toLowerCase().includes(search.toLowerCase()) ||
-        report.reportedContent.community.name.toLowerCase().includes(search.toLowerCase()) ||
-        report.reportedBy.name.toLowerCase().includes(search.toLowerCase()) ||
-        report.reason.toLowerCase().includes(search.toLowerCase())
-      );
+    if (session?.user?.id) {
+      fetchReports();
     }
-    
-    // Apply type filter
-    if (typeFilter !== 'All') {
-      results = results.filter(report => report.type === typeFilter);
-    }
-    
-    // Apply status filter
-    if (statusFilter !== 'All') {
-      results = results.filter(report => report.status === statusFilter);
-    }
+  }, [session, statusFilter, typeFilter, search, pagination.currentPage]);
+  
+  // Filter reports (local filtering on already fetched data)
+  useEffect(() => {
+    let results = [...reports];
     
     // Apply sorting
     results.sort((a, b) => {
@@ -893,35 +761,137 @@ export default function ReportsPage() {
     });
     
     setFilteredReports(results);
-  }, [search, typeFilter, statusFilter, sortOrder]);
+  }, [reports, sortOrder]);
   
   // Handle report actions
-  const handleActionClick = (action: string, report: Report) => {
+  const handleActionClick = async (action: string, report: Report) => {
     if (action === 'view') {
       setSelectedReport(report);
-    } else {
-      // In a real app, we would handle these actions with API calls
-      console.log(`${action} action on report ${report.id}`);
+      return;
+    }
+
+    try {
+      console.log(`Performing ${action} on report ${report.id}`);
       
-      // For demonstration purposes, show we would update the UI
-      let updatedReports = [...filteredReports];
-      const reportIndex = updatedReports.findIndex(r => r.id === report.id);
-      
-      if (reportIndex !== -1) {
-        if (action === 'resolve' && report.status === 'Pending') {
-          updatedReports[reportIndex] = { ...report, status: 'Resolved' };
-        }
-        else if (action === 'ignore' && report.status === 'Pending') {
-          updatedReports[reportIndex] = { ...report, status: 'Ignored' };
-        }
-        
-        setFilteredReports(updatedReports);
+      let apiAction = action;
+      let adminNotes = '';
+
+      // Map UI actions to API actions
+      switch (action) {
+        case 'resolve':
+          apiAction = 'resolve';
+          adminNotes = 'Report resolved by admin';
+          break;
+        case 'ignore':
+          apiAction = 'ignore';
+          adminNotes = 'Report ignored by admin';
+          break;
+        case 'delete':
+          apiAction = 'delete_content';
+          adminNotes = 'Content deleted due to policy violation';
+          break;
+        case 'block':
+          apiAction = 'block_user';
+          adminNotes = 'User blocked due to policy violation';
+          break;
+        case 'suspend':
+          apiAction = 'suspend_user';
+          adminNotes = 'User suspended due to policy violation';
+          break;
+        case 'warn':
+          apiAction = 'warn_user';
+          adminNotes = 'User warned about policy violation';
+          break;
+        default:
+          throw new Error('Invalid action');
       }
+
+      const response = await fetch(`/api/reports/${report.id}/actions`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: apiAction,
+          adminNotes
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || `Failed to ${action} report`);
+      }
+
+      if (data.success) {
+        console.log(`${action} successful:`, data);
+        
+        // Update local state
+        setReports(prevReports => 
+          prevReports.map(r => 
+            r.id === report.id 
+              ? { ...r, status: data.report.status, adminNotes: data.report.adminNotes }
+              : r
+          )
+        );
+
+        // Show success message (you can implement a toast notification here)
+        alert(`Report ${action} successful: ${data.message}`);
+
+        // Refresh data from server
+        await fetchReports();
+      } else {
+        throw new Error('Action failed');
+      }
+    } catch (error) {
+      console.error(`Error performing ${action}:`, error);
+      alert(`Failed to ${action} report: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
   return (
     <main className="pt-8 px-4 sm:px-8 pb-8 transition-all">
+      {/* Loading State */}
+      {loading && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center"
+        >
+          <div className="bg-black/70 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl p-8 text-center">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"
+            />
+            <p className="text-white text-lg">Loading reports...</p>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 rounded-2xl bg-red-500/10 backdrop-blur-xl border border-red-500/20 p-6 shadow-xl"
+        >
+          <div className="flex items-center">
+            <ExclamationCircleIcon className="h-8 w-8 text-red-400 mr-3" />
+            <div>
+              <h3 className="text-red-300 font-bold text-lg">Error Loading Reports</h3>
+              <p className="text-red-200 mt-1">{error}</p>
+              <button
+                onClick={fetchReports}
+                className="mt-3 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg transition-all"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+      
         {/* Page Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -1133,7 +1103,7 @@ export default function ReportsPage() {
             className="flex justify-between items-center mt-8 text-white/80"
           >
             <div className="text-sm">
-              Showing <span className="font-medium">{filteredReports.length}</span> of <span className="font-medium">{mockReports.length}</span> reports
+              Showing <span className="font-medium">{filteredReports.length}</span> of <span className="font-medium">{pagination.totalReports}</span> reports
             </div>
             <div className="flex items-center space-x-2">
               <button className="p-2 rounded-lg bg-black/30 backdrop-blur-md hover:bg-white/10 transition-all">
