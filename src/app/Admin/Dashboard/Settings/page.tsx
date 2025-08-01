@@ -20,8 +20,12 @@ import {
   CreditCardIcon,
   CheckCircleIcon,
   ArrowTopRightOnSquareIcon,
+  PhotoIcon,
+  ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import Image from "next/image";
 
 // Settings sections data
 const settingsSections = [
@@ -201,8 +205,84 @@ const Toast = ({ message, onClose }: { message: string; onClose: () => void }) =
 };
 
 // Setting Card Component
-const SettingCard = ({ section, index }: { section: any; index: number }) => {
+const SettingCard = ({ 
+  section, 
+  index, 
+  settings, 
+  onSettingChange, 
+  onLogoUpload, 
+  uploadingLogo, 
+  fileInputRef 
+}: { 
+  section: any; 
+  index: number;
+  settings: Record<string, any>;
+  onSettingChange: (key: string, value: any) => void;
+  onLogoUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  uploadingLogo: boolean;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+}) => {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const getSettingValue = (settingId: string) => {
+    // Map UI setting IDs to backend setting keys
+    const keyMap: Record<string, string> = {
+      'maintenance': 'maintenance_mode',
+      'theme': 'theme_mode',
+      'language': 'default_language',
+      'logo': 'site_logo',
+      'registration': 'allow_registration',
+      'verification': 'account_verification',
+      'default_role': 'default_user_role',
+      'password_length': 'password_min_length',
+      'password_complexity': 'password_requirements',
+      'two_factor': 'require_2fa',
+      'session_timeout': 'session_timeout',
+      'email_notifications': 'email_notifications',
+      'push_notifications': 'push_notifications',
+      'notification_events': 'notification_events',
+      'auto_backup': 'auto_backup',
+      'backup_retention': 'backup_retention',
+      'export_format': 'export_format'
+    };
+
+    const backendKey = keyMap[settingId] || settingId;
+    return settings[backendKey];
+  };
+
+  const handleSettingChange = (settingId: string, value: any) => {
+    // Map UI setting IDs to backend setting keys
+    const keyMap: Record<string, string> = {
+      'maintenance': 'maintenance_mode',
+      'theme': 'theme_mode',
+      'language': 'default_language',
+      'logo': 'site_logo',
+      'registration': 'allow_registration',
+      'verification': 'account_verification',
+      'default_role': 'default_user_role',
+      'password_length': 'password_min_length',
+      'password_complexity': 'password_requirements',
+      'two_factor': 'require_2fa',
+      'session_timeout': 'session_timeout',
+      'email_notifications': 'email_notifications',
+      'push_notifications': 'push_notifications',
+      'notification_events': 'notification_events',
+      'auto_backup': 'auto_backup',
+      'backup_retention': 'backup_retention',
+      'export_format': 'export_format'
+    };
+
+    const backendKey = keyMap[settingId] || settingId;
+    onSettingChange(backendKey, value);
+  };
+
+  const handleMultiselectChange = (settingId: string, option: string) => {
+    const currentValue = getSettingValue(settingId) || [];
+    const newValue = currentValue.includes(option)
+      ? currentValue.filter((item: string) => item !== option)
+      : [...currentValue, option];
+    handleSettingChange(settingId, newValue);
+  };
 
   return (
     <motion.div
@@ -252,14 +332,19 @@ const SettingCard = ({ section, index }: { section: any; index: number }) => {
                         <input
                           type="checkbox"
                           className="sr-only peer"
-                          onChange={() => console.log(`Toggle ${setting.id}`)}
+                          checked={getSettingValue(setting.id) || false}
+                          onChange={(e) => handleSettingChange(setting.id, e.target.checked)}
                         />
                         <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500/30"></div>
                       </div>
                     ) : setting.type === "select" ? (
-                      <select className="bg-black/30 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40">
+                      <select 
+                        className="bg-black/30 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                        value={getSettingValue(setting.id) || setting.options[0].toLowerCase().replace(' ', '_')}
+                        onChange={(e) => handleSettingChange(setting.id, e.target.value)}
+                      >
                         {setting.options.map((option: string) => (
-                          <option key={option} value={option.toLowerCase()}>
+                          <option key={option} value={option.toLowerCase().replace(' ', '_')}>
                             {option}
                           </option>
                         ))}
@@ -270,21 +355,68 @@ const SettingCard = ({ section, index }: { section: any; index: number }) => {
                         min={setting.min}
                         max={setting.max}
                         className="bg-black/30 border border-white/20 rounded-lg px-3 py-2 text-white w-24 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                        value={getSettingValue(setting.id) || setting.min || 8}
+                        onChange={(e) => handleSettingChange(setting.id, parseInt(e.target.value))}
                       />
                     ) : setting.type === "file" ? (
-                      <button className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/80 transition-all">
-                        Upload
-                      </button>
+                      <div className="flex items-center space-x-3">
+                        {getSettingValue(setting.id) && (
+                          <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-white/20">
+                            <Image
+                              src={getSettingValue(setting.id)}
+                              alt="Current logo"
+                              fill
+                              className="object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        )}
+                        <button 
+                          className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/80 transition-all flex items-center disabled:opacity-50"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploadingLogo}
+                        >
+                          {uploadingLogo ? (
+                            <>
+                              <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin" />
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <PhotoIcon className="h-4 w-4 mr-2" />
+                              Upload
+                            </>
+                          )}
+                        </button>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={onLogoUpload}
+                          className="hidden"
+                        />
+                      </div>
                     ) : setting.type === "multiselect" ? (
                       <div className="flex flex-wrap gap-2">
-                        {setting.options.map((option: string) => (
-                          <button
-                            key={option}
-                            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-white/80 text-sm transition-all"
-                          >
-                            {option}
-                          </button>
-                        ))}
+                        {setting.options.map((option: string) => {
+                          const isSelected = (getSettingValue(setting.id) || []).includes(option.toLowerCase());
+                          return (
+                            <button
+                              key={option}
+                              onClick={() => handleMultiselectChange(setting.id, option.toLowerCase())}
+                              className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
+                                isSelected 
+                                  ? 'bg-blue-500/30 text-blue-300 border border-blue-500/50' 
+                                  : 'bg-white/10 hover:bg-white/20 text-white/80'
+                              }`}
+                            >
+                              {option}
+                            </button>
+                          );
+                        })}
                       </div>
                     ) : null}
                   </div>
@@ -301,16 +433,156 @@ const SettingCard = ({ section, index }: { section: any; index: number }) => {
 
 // Main Component
 export default function SettingsPage() {
+  const { data: session } = useSession();
   const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
   const [hasChanges, setHasChanges] = useState(false);
   const [activeSection, setActiveSection] = useState("system");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  
+  // Settings state
+  const [settings, setSettings] = useState<Record<string, any>>({});
+  const [originalSettings, setOriginalSettings] = useState<Record<string, any>>({});
+  
+  // File upload states
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSave = () => {
-    // In a real app, this would save to the backend
-    console.log("Saving settings...");
-    setShowToast(true);
-    setHasChanges(false);
+  // Fetch settings on component mount
+  useEffect(() => {
+    if (session?.user) {
+      fetchSettings();
+    }
+  }, [session]);
+
+  // Check for changes
+  useEffect(() => {
+    const changed = JSON.stringify(settings) !== JSON.stringify(originalSettings);
+    setHasChanges(changed);
+  }, [settings, originalSettings]);
+
+  const fetchSettings = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/admin/settings');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch settings');
+      }
+      
+      const data = await response.json();
+      if (data.success) {
+        const settingsValues = Object.keys(data.settings).reduce((acc: any, key) => {
+          acc[key] = data.settings[key].value;
+          return acc;
+        }, {});
+        
+        setSettings(settingsValues);
+        setOriginalSettings(settingsValues);
+      }
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+      showToastMessage('Failed to load settings');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const showToastMessage = (message: string) => {
+    setToastMessage(message);
+    setShowToast(true);
+  };
+
+  const handleSettingChange = (key: string, value: any) => {
+    setSettings(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      
+      // Only send changed settings
+      const changedSettings: Record<string, any> = {};
+      Object.keys(settings).forEach(key => {
+        if (settings[key] !== originalSettings[key]) {
+          changedSettings[key] = settings[key];
+        }
+      });
+
+      const response = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ settings: changedSettings }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save settings');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setOriginalSettings(settings);
+        setHasChanges(false);
+        showToastMessage('Settings saved successfully!');
+      }
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      showToastMessage('Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingLogo(true);
+      
+      const formData = new FormData();
+      formData.append('logo', file);
+
+      const response = await fetch('/api/admin/settings/upload-logo', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload logo');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        handleSettingChange('site_logo', data.url);
+        showToastMessage('Logo uploaded successfully!');
+      }
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      showToastMessage('Failed to upload logo');
+    } finally {
+      setUploadingLogo(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <main className="pt-8 px-4 sm:px-8 pb-8 transition-all">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400"></div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <>
@@ -318,7 +590,7 @@ export default function SettingsPage() {
       <AnimatePresence>
         {showToast && (
           <Toast
-            message="Settings saved successfully!"
+            message={toastMessage}
             onClose={() => setShowToast(false)}
           />
         )}
@@ -348,10 +620,20 @@ export default function SettingsPage() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={handleSave}
-                className="px-6 py-2.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-xl font-medium transition-all flex items-center shadow-lg border border-blue-500/30"
+                disabled={saving}
+                className="px-6 py-2.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-xl font-medium transition-all flex items-center shadow-lg border border-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <CheckCircleIcon className="h-5 w-5 mr-2" />
-                Save Changes
+                {saving ? (
+                  <>
+                    <ArrowPathIcon className="h-5 w-5 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircleIcon className="h-5 w-5 mr-2" />
+                    Save Changes
+                  </>
+                )}
               </motion.button>
             )}
           </div>
@@ -360,7 +642,16 @@ export default function SettingsPage() {
         {/* Settings Grid */}
         <div className="grid grid-cols-1 gap-6">
           {settingsSections.map((section, index) => (
-            <SettingCard key={section.id} section={section} index={index} />
+            <SettingCard 
+              key={section.id} 
+              section={section} 
+              index={index}
+              settings={settings}
+              onSettingChange={handleSettingChange}
+              onLogoUpload={handleLogoUpload}
+              uploadingLogo={uploadingLogo}
+              fileInputRef={fileInputRef}
+            />
           ))}
         </div>
 
