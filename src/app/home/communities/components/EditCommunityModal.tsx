@@ -451,9 +451,10 @@ export default function EditCommunityModal({ isOpen, onClose, community, onUpdat
                   onClick={() => setFormData({ ...formData, visibility: 'Public' })}
                   className={`flex-1 flex items-center justify-center px-4 py-3 rounded-xl border ${
                     formData.visibility === 'Public'
-                      ? 'bg-blue-500/20 border-blue-500/40'
+                      ? 'text-white border border-white/20'
                       : 'bg-white/10 border-white/20'
                   } backdrop-blur-md transition-all duration-300`}
+                  style={formData.visibility === 'Public' ? {background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'} : undefined}
                   disabled={isLoading}
                 >
                   <GlobeAltIcon className="h-5 w-5 mr-2 text-white/70" />
@@ -464,9 +465,10 @@ export default function EditCommunityModal({ isOpen, onClose, community, onUpdat
                   onClick={() => setFormData({ ...formData, visibility: 'Private' })}
                   className={`flex-1 flex items-center justify-center px-4 py-3 rounded-xl border ${
                     formData.visibility === 'Private'
-                      ? 'bg-blue-500/20 border-blue-500/40'
+                      ? 'text-white border border-white/20'
                       : 'bg-white/10 border-white/20'
                   } backdrop-blur-md transition-all duration-300`}
+                  style={formData.visibility === 'Private' ? {background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'} : undefined}
                   disabled={isLoading}
                 >
                   <LockClosedIcon className="h-5 w-5 mr-2 text-white/70" />
@@ -494,7 +496,8 @@ export default function EditCommunityModal({ isOpen, onClose, community, onUpdat
                   {formData.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="px-3 py-1 bg-blue-500/20 border border-blue-400/30 rounded-full text-sm text-blue-200 flex items-center"
+                      className="px-3 py-1 border border-white/30 rounded-full text-sm text-white flex items-center"
+                      style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}
                     >
                       {tag}
                       <button
@@ -537,7 +540,8 @@ export default function EditCommunityModal({ isOpen, onClose, community, onUpdat
                 whileTap={{ scale: 0.98 }}
                 type="submit"
                 disabled={isLoading || isImageUploading}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-xl font-medium shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-6 py-3 text-white rounded-xl font-medium shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border border-white/20"
+                style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}
               >
                 {isLoading ? (
                   <div className="flex items-center justify-center">

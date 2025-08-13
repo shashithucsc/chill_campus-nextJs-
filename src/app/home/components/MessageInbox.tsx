@@ -280,7 +280,8 @@ export default function MessageInbox({
           <div className="flex items-center space-x-2">
             <button
               onClick={onNewMessage}
-              className="p-2 rounded-xl bg-blue-500 hover:bg-blue-600 transition-all"
+              className="p-2 rounded-xl transition-all border border-white/20"
+              style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}}
               title="Start new conversation"
             >
               <PlusIcon className="h-5 w-5 text-white" />
@@ -323,21 +324,23 @@ export default function MessageInbox({
         <div className="flex items-center mt-3">
           <button
             onClick={() => setShowArchived(false)}
-            className={`px-3 py-1 rounded-lg text-sm transition-all ${
+            className={`px-3 py-1 rounded-lg text-sm transition-all border border-white/20 ${
               !showArchived 
-                ? 'bg-blue-500 text-white' 
+                ? 'text-white' 
                 : 'text-white/60 hover:text-white hover:bg-white/10'
             }`}
+            style={!showArchived ? {background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'} : undefined}
           >
             Active
           </button>
           <button
             onClick={() => setShowArchived(true)}
-            className={`px-3 py-1 rounded-lg text-sm transition-all ml-2 ${
+            className={`px-3 py-1 rounded-lg text-sm transition-all ml-2 border border-white/20 ${
               showArchived 
-                ? 'bg-blue-500 text-white' 
+                ? 'text-white' 
                 : 'text-white/60 hover:text-white hover:bg-white/10'
             }`}
+            style={showArchived ? {background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'} : undefined}
           >
             <ArchiveBoxIcon className="h-4 w-4 inline mr-1" />
             Archived
@@ -367,7 +370,10 @@ export default function MessageInbox({
                       className="w-full p-3 flex items-center space-x-3 hover:bg-white/5 transition-all text-left rounded-lg mb-1"
                     >
                       {/* Avatar */}
-                      <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-green-500 to-blue-500 flex-shrink-0">
+                      <div 
+                        className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0"
+                        style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}}
+                      >
                         {user.avatar ? (
                           <Image
                             src={user.avatar}
@@ -456,13 +462,16 @@ export default function MessageInbox({
                     exit={{ opacity: 0, x: -20 }}
                     onClick={() => handleConversationSelect(conversation)}
                     className={`
-                      w-full p-4 flex items-center space-x-3 hover:bg-white/5 transition-all text-left
-                      ${isSelected ? 'bg-blue-500/20 border-r-2 border-blue-400' : ''}
+                      w-full p-4 flex items-center space-x-3 hover:bg-white/5 transition-all text-left border-r-2
+                      ${isSelected ? 'bg-white/10 border-white/30' : 'border-transparent'}
                     `}
                   >
                   {/* Avatar */}
                   <div className="relative flex-shrink-0">
-                    <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-500">
+                    <div 
+                      className="w-12 h-12 rounded-full overflow-hidden"
+                      style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}}
+                    >
                       {otherParticipant.avatar ? (
                         <Image
                           src={otherParticipant.avatar}

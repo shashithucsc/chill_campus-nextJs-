@@ -84,7 +84,7 @@ export default function CreatePostModal({ open = true, onClose, onPostCreated, c
           <div className="min-h-screen relative">
             {/* Background video */}
             <div className="fixed inset-0 -z-20">
-              <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-purple-900/90 to-indigo-900/95"></div>
+              <div className="absolute inset-0" style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)', opacity: 0.95}}></div>
             </div>
 
             {/* Blurred existing posts background */}
@@ -115,10 +115,10 @@ export default function CreatePostModal({ open = true, onClose, onPostCreated, c
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Glow effect */}
-                <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl blur opacity-40" />
+                <div className="absolute -inset-1 rounded-2xl blur opacity-40" style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}} />
                 
                 {/* Main modal container */}
-                <div className="relative backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl shadow-2xl">
+                <div className="relative backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl" style={{background: 'rgba(15, 15, 35, 0.1)'}}>
                   {/* Animated gradient border */}
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-indigo-500/20 animate-pulse" />
                   

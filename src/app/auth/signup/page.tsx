@@ -152,7 +152,7 @@ export default function SignupPage() {
           <source src="/background.mp4" type="video/mp4" />
         </video>
         {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/90 via-purple-900/80 to-indigo-900/90"></div>
+        <div className="absolute inset-0" style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)', opacity: 0.9}}></div>
       </div>
 
       {/* Floating Background Elements */}
@@ -431,8 +431,9 @@ export default function SignupPage() {
                   className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-lg text-sm font-semibold text-white transition-all duration-300 ${
                     isLoading 
                       ? 'bg-gray-400 cursor-not-allowed' 
-                      : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+                      : 'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
                   }`}
+                  style={!isLoading ? {background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'} : undefined}
                 >
                   {isLoading ? (
                     <>

@@ -287,7 +287,7 @@ export default function Post({
               </div>
             )}
             <div className="flex space-x-3">
-              <button type="button" onClick={handleEdit} className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all">Save</button>
+              <button type="button" onClick={handleEdit} className="text-white px-4 py-2 rounded-lg font-medium transition-all border border-white/20" style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}>Save</button>
               <button type="button" onClick={() => { setIsEditing(false); setEditContent(contentState); setEditMedia(image || null); setEditMediaType(mediaType || null); }} className="bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-lg font-medium hover:bg-white/30 transition-all">Cancel</button>
             </div>
           </div>

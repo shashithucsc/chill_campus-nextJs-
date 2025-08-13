@@ -48,8 +48,8 @@ export default function LandingPage() {
         >
           <source src="/background.mp4" type="video/mp4" />
         </video>
-        {/* Gradient Overlay - Reduced opacity for elegant glass effect */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/60 via-purple-900/50 to-indigo-900/60 backdrop-blur-[2px]"></div>
+        {/* Gradient Overlay - Updated with new color theme */}
+        <div className="absolute inset-0 backdrop-blur-[2px]" style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)', opacity: 0.8}}></div>
       </div>
 
       {/* Floating Particles */}

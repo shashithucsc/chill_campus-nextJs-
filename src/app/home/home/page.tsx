@@ -180,7 +180,7 @@ export default function HomePage() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="mb-10 text-center"
           >
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent mb-3">
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-white to-blue-100 bg-clip-text text-transparent mb-3">
               Welcome to Your Feed
             </h1>
             <p className="text-xl text-white/80">Stay connected with your university community</p>
@@ -196,7 +196,7 @@ export default function HomePage() {
             onClick={() => setIsCreatePostOpen(true)}
           >
             <div className="flex items-center space-x-6">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full backdrop-blur-sm border border-white/20 flex items-center justify-center" style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}>
                 <span className="text-white font-bold text-2xl">+</span>
               </div>
               <div className="flex-1">
@@ -231,7 +231,7 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-center py-20"
               >
-                <div className="w-32 h-32 mx-auto mb-8 bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center">
+                <div className="w-32 h-32 mx-auto mb-8 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center" style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}>
                   <span className="text-5xl">📝</span>
                 </div>
                 <h3 className="text-2xl font-semibold text-white mb-3">No posts yet</h3>
@@ -240,7 +240,8 @@ export default function HomePage() {
                   whileHover={{ scale: 1.05, boxShadow: "0 15px 40px rgba(59, 130, 246, 0.4)" }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setIsCreatePostOpen(true)}
-                  className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-lg rounded-xl font-semibold shadow-2xl hover:shadow-xl transition-all duration-300 border border-white/20"
+                  className="px-8 py-4 text-white text-lg rounded-xl font-semibold shadow-2xl hover:shadow-xl transition-all duration-300 border border-white/30"
+                  style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}
                 >
                   Create Your First Post
                 </motion.button>
@@ -319,7 +320,8 @@ export default function HomePage() {
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setShowMessaging(true)}
-          className="fixed bottom-8 right-8 w-14 h-14 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-2xl flex items-center justify-center z-30 transition-all"
+          className="fixed bottom-8 right-8 w-14 h-14 text-white rounded-full shadow-2xl flex items-center justify-center z-30 transition-all border border-white/30"
+          style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}
         >
           <ChatBubbleLeftIcon className="h-6 w-6" />
         </motion.button>
@@ -343,7 +345,7 @@ export default function HomePage() {
           <div className="max-w-6xl mx-auto px-8 py-8">
             {/* Welcome Header */}
             <div className="mb-10 text-center">
-              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent mb-3">
+              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-white to-blue-100 bg-clip-text text-transparent mb-3">
                 Welcome to Your Feed
               </h1>
               <p className="text-xl text-white/80">Stay connected with your university community</p>
@@ -352,7 +354,8 @@ export default function HomePage() {
             {/* Quick Create Post Card */}
             <div className="mb-10 p-8 bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20">
               <div className="flex items-center space-x-6">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full backdrop-blur-sm border border-white/20 flex items-center justify-center"
+                     style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}}>
                   <span className="text-white font-bold text-2xl">+</span>
                 </div>
                 <div className="flex-1">

@@ -191,11 +191,11 @@ export default function CommunitiesPage() {
   });
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen relative overflow-hidden" style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}}>
       {/* Animated Background */}
       <div className="fixed inset-0">
         {/* Dark gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-purple-900/90 to-indigo-900/95"></div>
+        <div className="absolute inset-0" style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}}></div>
         
         {/* Client-side animated background component */}
         <AnimatedBackground />
@@ -223,7 +223,7 @@ export default function CommunitiesPage() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="mb-10 text-center"
           >
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-white to-blue-100 bg-clip-text text-transparent mb-4">
               Explore Communities
             </h1>
             <p className="text-xl text-white/80">Discover and join communities that match your interests</p>
@@ -253,9 +253,10 @@ export default function CommunitiesPage() {
               {session && (
                 <Link href="/home/communities/create">
                   <motion.button
-                    whileHover={{ scale: 1.05, boxShadow: "0 15px 40px rgba(59, 130, 246, 0.4)" }}
+                    whileHover={{ scale: 1.05, boxShadow: "0 15px 40px rgba(31, 31, 67, 0.6)" }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl font-semibold text-lg shadow-2xl hover:shadow-xl transition-all duration-300 border border-white/20"
+                    className="flex items-center px-8 py-4 text-white rounded-2xl font-semibold text-lg shadow-2xl hover:shadow-xl transition-all duration-300 border border-white/30"
+                    style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}
                   >
                     <PlusIcon className="h-6 w-6 mr-3" />
                     Create Community
@@ -274,9 +275,10 @@ export default function CommunitiesPage() {
                   onClick={() => setSelectedCategory(category)}
                   className={`px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300 ${
                     selectedCategory === category
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg border border-white/20'
+                      ? 'text-white shadow-lg border border-white/20'
                       : 'bg-white/10 backdrop-blur-sm text-white/80 hover:bg-white/20 border border-white/20'
                   }`}
+                  style={selectedCategory === category ? {background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'} : undefined}
                 >
                   {category}
                 </motion.button>
@@ -302,7 +304,8 @@ export default function CommunitiesPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="col-span-full text-center py-20"
               >
-                <div className="w-32 h-32 mx-auto mb-8 bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center">
+                <div className="w-32 h-32 mx-auto mb-8 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center"
+                     style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}}>
                   <UserGroupIcon className="w-16 h-16 text-white/60" />
                 </div>
                 <h3 className="text-2xl font-semibold text-white mb-3">No communities found</h3>
@@ -318,7 +321,8 @@ export default function CommunitiesPage() {
                 >
                   <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 overflow-hidden shadow-2xl hover:shadow-3xl hover:border-white/30 hover:bg-white/15 transition-all duration-300 relative">
                     {/* View indicator */}
-                    <div className="absolute top-4 left-4 z-10 bg-blue-500/80 text-white text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-sm flex items-center gap-1">
+                    <div className="absolute top-4 left-4 z-10 text-white text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-sm flex items-center gap-1 border border-white/20"
+                         style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}>
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -366,15 +370,17 @@ export default function CommunitiesPage() {
                             className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-300 ${
                               community.isJoined
                                 ? 'bg-white/20 text-white hover:bg-white/30'
-                                : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg'
+                                : 'text-white shadow-lg border border-white/20'
                             }`}
+                            style={!community.isJoined ? {background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'} : undefined}
                           >
                             {community.isJoined ? 'Leave' : 'Join'}
                           </motion.button>
                         ) : (
                           <Link 
                             href="/auth/login"
-                            className="px-4 py-2 rounded-lg font-medium text-sm bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg transition-all duration-300"
+                            className="px-4 py-2 rounded-lg font-medium text-sm text-white shadow-lg transition-all duration-300 border border-white/20"
+                            style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}
                           >
                             Sign in to Join
                           </Link>
