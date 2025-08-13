@@ -32,7 +32,8 @@ export default function Sidebar() {
           width: isCollapsed ? '0px' : '256px'
         }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
-        className={`bg-white/10 backdrop-blur-md h-screen fixed left-0 top-16 border-r border-white/20 shadow-2xl z-40 overflow-hidden`}
+        className={`backdrop-blur-md h-screen fixed left-0 top-16 border-r border-white/20 shadow-2xl z-40 overflow-hidden`}
+        style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}}
       >
         <AnimatePresence>
           {!isCollapsed && (
@@ -57,7 +58,10 @@ export default function Sidebar() {
                       >
                         <Link
                           href={item.href}
-                          className="flex items-center px-6 py-4 text-lg font-medium text-white/90 rounded-xl hover:bg-white/20 hover:text-white transition-all duration-300 group backdrop-blur-sm"
+                          className="flex items-center px-6 py-4 text-lg font-medium text-white/90 rounded-xl hover:text-white transition-all duration-300 group backdrop-blur-sm border border-white/10"
+                          style={{'--hover-bg': 'rgba(26, 26, 46, 0.4)'} as any}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(26, 26, 46, 0.4)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                         >
                           <IconComponent className="mr-4 h-6 w-6 text-white/70 group-hover:text-blue-400 transition-colors" />
                           {item.name}
@@ -75,11 +79,16 @@ export default function Sidebar() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5, delay: navigation.length * 0.1 }}
-                  className={`flex items-center w-full px-6 py-4 text-lg font-medium rounded-xl transition-all duration-300 group backdrop-blur-sm ${
+                  className={`flex items-center w-full px-6 py-4 text-lg font-medium rounded-xl transition-all duration-300 group backdrop-blur-sm border border-white/10 ${
                     isChatOpen 
-                      ? 'bg-blue-500/30 text-white border border-blue-400/30' 
-                      : 'text-white/90 hover:bg-white/20 hover:text-white'
+                      ? 'text-white border-white/30' 
+                      : 'text-white/90 hover:text-white'
                   }`}
+                  style={isChatOpen 
+                    ? {background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'} 
+                    : undefined}
+                  onMouseEnter={(e) => !isChatOpen && (e.currentTarget.style.background = 'rgba(26, 26, 46, 0.4)')}
+                  onMouseLeave={(e) => !isChatOpen && (e.currentTarget.style.background = 'transparent')}
                 >
                   <ChatBubbleLeftIcon className={`mr-4 h-6 w-6 transition-colors ${
                     isChatOpen 
@@ -119,7 +128,10 @@ export default function Sidebar() {
           left: isCollapsed ? '16px' : '272px' // 16px margin from left when collapsed, 256px (sidebar width) + 16px margin when expanded
         }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="fixed top-20 z-50 w-10 h-10 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/20 transition-all duration-300 shadow-lg"
+        className="fixed top-20 z-50 w-10 h-10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center text-white/70 hover:text-white transition-all duration-300 shadow-lg"
+        style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}}
+        onMouseEnter={(e) => e.currentTarget.style.background = 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}
+        onMouseLeave={(e) => e.currentTarget.style.background = 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}
       >
         {isCollapsed ? (
           <ChevronRightIcon className="h-5 w-5" />

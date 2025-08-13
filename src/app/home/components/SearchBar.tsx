@@ -214,7 +214,8 @@ export default function SearchBar() {
                       />
                     </div>
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center border border-white/20"
+                         style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}>
                       {(() => {
                         const Icon = getResultIcon(suggestion.type);
                         return <Icon className="w-4 h-4 text-white" />;
@@ -234,7 +235,8 @@ export default function SearchBar() {
                   onClick={() => performFullSearch(query)}
                   className="flex items-center space-x-3 p-3 rounded-xl cursor-pointer transition-all border-t border-white/10 mt-2"
                 >
-                  <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center border border-white/10"
+                       style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}}>
                     <MagnifyingGlassIcon className="w-4 h-4 text-blue-400" />
                   </div>
                   <div className="text-blue-400 font-medium">

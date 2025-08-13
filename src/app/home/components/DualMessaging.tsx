@@ -119,22 +119,24 @@ export default function DualMessaging({ community, className = '', onClose }: Du
                     <div className="flex items-center bg-black/20 rounded-xl p-1">
                       <button
                         onClick={() => handleModeSwitch('inbox')}
-                        className={`p-2 rounded-lg transition-all ${
+                        className={`p-2 rounded-lg transition-all border ${
                           mode === 'inbox' 
-                            ? 'bg-blue-500 text-white' 
-                            : 'text-white/60 hover:text-white'
+                            ? 'text-white border-white/20' 
+                            : 'text-white/60 hover:text-white border-transparent'
                         }`}
+                        style={mode === 'inbox' ? {background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'} : undefined}
                       >
                         <ChatBubbleLeftIcon className="h-5 w-5" />
                       </button>
                       {community && (
                         <button
                           onClick={() => handleModeSwitch('group')}
-                          className={`p-2 rounded-lg transition-all ${
+                          className={`p-2 rounded-lg transition-all border ${
                             mode === 'group' 
-                              ? 'bg-blue-500 text-white' 
-                              : 'text-white/60 hover:text-white'
+                              ? 'text-white border-white/20' 
+                              : 'text-white/60 hover:text-white border-transparent'
                           }`}
+                          style={mode === 'group' ? {background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'} : undefined}
                         >
                           <UserGroupIcon className="h-5 w-5" />
                         </button>
@@ -232,11 +234,12 @@ export default function DualMessaging({ community, className = '', onClose }: Du
           <div className="flex items-center bg-black/20 rounded-xl p-1">
             <button
               onClick={() => handleModeSwitch('inbox')}
-              className={`flex-1 flex items-center justify-center space-x-2 py-2 px-3 rounded-lg transition-all ${
+              className={`flex-1 flex items-center justify-center space-x-2 py-2 px-3 rounded-lg transition-all border ${
                 mode === 'inbox' || mode === 'direct'
-                  ? 'bg-blue-500 text-white' 
-                  : 'text-white/60 hover:text-white hover:bg-white/10'
+                  ? 'text-white border-white/20' 
+                  : 'text-white/60 hover:text-white hover:bg-white/10 border-transparent'
               }`}
+              style={(mode === 'inbox' || mode === 'direct') ? {background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'} : undefined}
             >
               <ChatBubbleLeftIcon className="h-4 w-4" />
               <span className="text-sm font-medium">Direct</span>
@@ -244,11 +247,12 @@ export default function DualMessaging({ community, className = '', onClose }: Du
             {community && (
               <button
                 onClick={() => handleModeSwitch('group')}
-                className={`flex-1 flex items-center justify-center space-x-2 py-2 px-3 rounded-lg transition-all ${
+                className={`flex-1 flex items-center justify-center space-x-2 py-2 px-3 rounded-lg transition-all border ${
                   mode === 'group' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'text-white/60 hover:text-white hover:bg-white/10'
+                    ? 'text-white border-white/20' 
+                    : 'text-white/60 hover:text-white hover:bg-white/10 border-transparent'
                 }`}
+                style={mode === 'group' ? {background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'} : undefined}
               >
                 <UserGroupIcon className="h-4 w-4" />
                 <span className="text-sm font-medium">Group</span>
@@ -316,7 +320,8 @@ export default function DualMessaging({ community, className = '', onClose }: Du
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="h-full flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900"
+              className="h-full flex items-center justify-center"
+              style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}}
             >
               <div className="text-center">
                 <ChatBubbleLeftSolid className="h-16 w-16 text-white/20 mx-auto mb-4" />
@@ -328,7 +333,8 @@ export default function DualMessaging({ community, className = '', onClose }: Du
                 </p>
                 <button
                   onClick={() => setShowNewMessageModal(true)}
-                  className="mt-4 px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all"
+                  className="mt-4 px-6 py-2 text-white rounded-xl transition-all border border-white/20"
+                  style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}}
                 >
                   Start New Conversation
                 </button>

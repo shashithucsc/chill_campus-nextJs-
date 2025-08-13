@@ -259,7 +259,8 @@ export default function CommunityPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900">
+    <div className="min-h-screen"
+         style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}}>
       {/* Animated background elements */}
       <AnimatedBackground 
         particleCount={8} 
@@ -313,7 +314,7 @@ export default function CommunityPage() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.3 }}
-                      className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent"
+                      className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-white via-white to-blue-100 bg-clip-text text-transparent"
                     >
                       {community.name}
                     </motion.h1>
@@ -349,7 +350,8 @@ export default function CommunityPage() {
                     {isCreator && (
                       <button
                         onClick={() => setShowEditCommunity(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-purple-600/20 text-purple-300 rounded-lg border border-purple-500/30 hover:bg-purple-500/20 hover:border-purple-400/50 transition-all duration-300 backdrop-blur-sm"
+                        className="flex items-center gap-2 px-4 py-2 text-white rounded-lg border border-white/20 transition-all duration-300 backdrop-blur-sm hover:opacity-90"
+                        style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}
                       >
                         <PencilIcon className="w-4 h-4" />
                         <span className="text-sm font-medium">Edit</span>
@@ -376,7 +378,8 @@ export default function CommunityPage() {
                       <button
                         onClick={handleJoinCommunity}
                         disabled={joinLoading}
-                        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-4 py-2 text-white rounded-lg shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border border-white/20"
+                        style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}
                       >
                         {joinLoading ? 'Joining...' : 'Join Community'}
                       </button>
@@ -387,7 +390,8 @@ export default function CommunityPage() {
             </div>
           </motion.div>
         ) : (
-          <div className="h-64 md:h-80 w-full bg-gradient-to-r from-blue-900/50 to-purple-900/50 animate-pulse">
+          <div className="h-64 md:h-80 w-full animate-pulse border border-white/10"
+               style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}}>
             <div className="max-w-6xl mx-auto h-full flex items-end p-8">
               <div className="w-full">
                 <div className="h-8 w-64 bg-white/20 rounded-lg animate-pulse"></div>
@@ -410,9 +414,10 @@ export default function CommunityPage() {
                 onClick={() => setActiveTab('posts')}
                 className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg transition-all duration-300 ${
                   activeTab === 'posts'
-                    ? 'bg-white/20 text-white shadow-lg'
+                    ? 'text-white shadow-lg border border-white/20'
                     : 'text-white/60 hover:text-white/80 hover:bg-white/10'
                 }`}
+                style={activeTab === 'posts' ? {background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'} : undefined}
               >
                 <DocumentTextIcon className="h-5 w-5" />
                 <span className="font-medium">Posts</span>
@@ -421,9 +426,10 @@ export default function CommunityPage() {
                 onClick={() => setActiveTab('chat')}
                 className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-lg transition-all duration-300 ${
                   activeTab === 'chat'
-                    ? 'bg-white/20 text-white shadow-lg'
+                    ? 'text-white shadow-lg border border-white/20'
                     : 'text-white/60 hover:text-white/80 hover:bg-white/10'
                 }`}
+                style={activeTab === 'chat' ? {background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'} : undefined}
               >
                 <ChatBubbleLeftIcon className="h-5 w-5" />
                 <span className="font-medium">Chat</span>
@@ -446,7 +452,8 @@ export default function CommunityPage() {
               onClick={() => setShowCreatePost(true)}
             >
               <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full backdrop-blur-sm border border-white/20 flex items-center justify-center" 
+                     style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}>
                   <PlusIcon className="h-6 w-6 text-white" />
                 </div>
                 <div>
@@ -500,7 +507,8 @@ export default function CommunityPage() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setShowCreatePost(true)}
-                    className="mt-4 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-medium shadow-lg"
+                    className="mt-4 px-6 py-3 text-white rounded-xl font-medium shadow-lg border border-white/20"
+                    style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}
                   >
                     Create First Post
                   </motion.button>

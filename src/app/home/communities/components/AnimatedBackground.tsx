@@ -60,10 +60,11 @@ export default function AnimatedBackground({
             ease: [0.25, 0.1, 0.25, 1],
             delay: particle.delay
           }}
-          className="absolute w-32 h-32 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"
+          className="absolute w-32 h-32 rounded-full blur-3xl opacity-30"
           style={{
             left: `${particle.left}%`,
             top: `${particle.top}%`,
+            background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'
           }}
         />
       ))}

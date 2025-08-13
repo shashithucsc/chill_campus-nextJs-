@@ -27,44 +27,43 @@ export default function CreateCommunityPage() {
 
   // Show loading state
   if (isLoading || status === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
-      </div>
-    );
+      return (
+        <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}}>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+        </div>
+      );
   }
 
-  return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      {/* Animated Background */}
-      <div className="fixed inset-0">
-        {/* Dark gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-purple-900/90 to-indigo-900/95"></div>
-        
-        {/* Floating Background Elements */}
-        <AnimatedBackground 
-          particleCount={8} 
-          glassParticleCount={12}
-          className="absolute inset-0 overflow-hidden pointer-events-none"
-        />
+    return (
+      <div className="min-h-screen relative overflow-hidden" style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}}>
+        {/* Animated Background */}
+        <div className="fixed inset-0">
+          {/* Dark gradient background */}
+          <div className="absolute inset-0" style={{background: 'linear-gradient(135deg, #0f0f23F2 0%, #1a1a2eE6 50%, #16213eF2 100%)'}}></div>
+          {/* Floating Background Elements */}
+          <AnimatedBackground 
+            particleCount={8} 
+            glassParticleCount={12}
+            className="absolute inset-0 overflow-hidden pointer-events-none"
+          />
+        </div>
+
+        <Navbar />
+        <Sidebar />
+
+        {/* Main Content */}
+        <motion.main
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ 
+            opacity: 1, 
+            y: 0,
+            paddingLeft: isCollapsed ? '0px' : '256px'
+          }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="relative z-10 pt-24 px-6 pb-16"
+        >
+          <CreateCommunityForm />
+        </motion.main>
       </div>
-
-      <Navbar />
-      <Sidebar />
-
-      {/* Main Content */}
-      <motion.main
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ 
-          opacity: 1, 
-          y: 0,
-          paddingLeft: isCollapsed ? '0px' : '256px'
-        }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        className="relative z-10 pt-24 px-6 pb-16"
-      >
-        <CreateCommunityForm />
-      </motion.main>
-    </div>
-  );
+    );
 }

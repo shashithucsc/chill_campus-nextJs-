@@ -157,10 +157,11 @@ export default function CreateCommunityPostModal({
                       <motion.div
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className="flex items-center justify-center gap-2 p-3 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 rounded-xl transition-colors duration-200"
+                        className="flex items-center justify-center gap-2 p-3 border border-white/20 rounded-xl transition-colors duration-200 text-white"
+                        style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}
                       >
-                        <PhotoIcon className="h-5 w-5 text-blue-300" />
-                        <span className="text-blue-300 font-medium">Add Photo</span>
+                        <PhotoIcon className="h-5 w-5 text-white" />
+                        <span className="text-white font-medium">Add Photo</span>
                       </motion.div>
                     </label>
                     
@@ -174,10 +175,11 @@ export default function CreateCommunityPostModal({
                       <motion.div
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className="flex items-center justify-center gap-2 p-3 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 rounded-xl transition-colors duration-200"
+                        className="flex items-center justify-center gap-2 p-3 border border-white/20 rounded-xl transition-colors duration-200 text-white"
+                        style={{background: 'linear-gradient(135deg, #16213e 0%, #1a1a2e 50%, #0f0f23 100%)'}}
                       >
-                        <VideoCameraIcon className="h-5 w-5 text-purple-300" />
-                        <span className="text-purple-300 font-medium">Add Video</span>
+                        <VideoCameraIcon className="h-5 w-5 text-white" />
+                        <span className="text-white font-medium">Add Video</span>
                       </motion.div>
                     </label>
                   </div>
@@ -248,7 +250,8 @@ export default function CreateCommunityPostModal({
                     disabled={loading || (!content.trim() && !media)}
                     whileHover={{ scale: loading ? 1 : 1.02 }}
                     whileTap={{ scale: loading ? 1 : 0.98 }}
-                    className="flex-1 py-3 px-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed rounded-xl text-white font-medium shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
+                    className="flex-1 py-3 px-6 text-white font-medium shadow-lg transition-all duration-200 flex items-center justify-center gap-2 rounded-xl border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={loading ? undefined : {background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}
                   >
                     {loading ? (
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

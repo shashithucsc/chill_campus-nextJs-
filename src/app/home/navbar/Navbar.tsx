@@ -39,7 +39,8 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.8, ease: "easeOut" }}
-      className="bg-white/10 backdrop-blur-md shadow-2xl border-b border-white/20 fixed w-full z-50"
+      className="backdrop-blur-md shadow-2xl border-b border-white/20 fixed w-full z-50"
+      style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
@@ -58,7 +59,7 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
                     className="object-contain"
                   />
                 </div>
-                <span className="text-2xl font-bold bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent">
+                <span className="text-2xl font-bold bg-gradient-to-r from-white via-white to-blue-100 bg-clip-text text-transparent">
                   Chill Campus
                 </span>
               </Link>
@@ -72,9 +73,10 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
           <div className="flex items-center space-x-4">
             {/* Create Post Button */}
             <motion.button
-              whileHover={{ scale: 1.05, boxShadow: "0 15px 40px rgba(59, 130, 246, 0.4)" }}
+              whileHover={{ scale: 1.05, boxShadow: "0 15px 40px rgba(31, 31, 67, 0.6)" }}
               whileTap={{ scale: 0.95 }}
-              className="hidden md:flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold text-sm shadow-2xl hover:shadow-xl transition-all duration-300 border border-white/20"
+              className="hidden md:flex items-center px-6 py-3 text-white rounded-xl font-semibold text-sm shadow-2xl hover:shadow-xl transition-all duration-300 border border-white/30"
+              style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}
               onClick={onCreatePost}
             >
               <PlusIcon className="h-5 w-5 mr-2" />
@@ -117,7 +119,8 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 className="flex items-center space-x-3 p-2 rounded-xl hover:bg-white/20 focus:outline-none transition-all duration-300 backdrop-blur-sm"
               >
-                <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 p-0.5 shadow-lg">
+                <div className="h-10 w-10 rounded-full border border-white/20 p-0.5 shadow-lg"
+                     style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}>
                   <div className="h-full w-full rounded-full bg-white/10 backdrop-blur-sm p-0.5 border border-white/20">
                     <Image
                       src={session?.user?.image || '/default-avatar.png'}
@@ -140,7 +143,8 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute right-0 mt-2 w-56 bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 py-2 z-50"
+                  className="absolute right-0 mt-2 w-56 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 py-2 z-50"
+                  style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}}
                 >
                   <motion.div whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }}>
                     <Link href="/home/profile" className="flex items-center px-6 py-3 text-sm text-white/90 hover:text-white font-medium transition-colors">
@@ -148,12 +152,12 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
                       Your Profile
                     </Link>
                   </motion.div>
-                  <motion.div whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }}>
+                  {/* <motion.div whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }}>
                     <Link href="/home/settings" className="flex items-center px-6 py-3 text-sm text-white/90 hover:text-white font-medium transition-colors">
                       <Cog6ToothIcon className="w-5 h-5 mr-3 text-blue-400" />
                       Settings
                     </Link>
-                  </motion.div>
+                  </motion.div> */}
                   <div className="border-t border-white/20 mt-2 pt-2">
                     <motion.button 
                       whileHover={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}

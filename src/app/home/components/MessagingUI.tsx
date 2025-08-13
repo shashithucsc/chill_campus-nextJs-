@@ -351,7 +351,10 @@ export default function MessagingUI({ community, onLeaveGroup, onBack }: Messagi
   const currentUserId = session?.user?.id;
 
   return (
-    <div className="flex flex-col h-full max-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900">
+    <div 
+      className="flex flex-col h-full max-h-screen"
+      style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}}
+    >
       {/* Chat Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -470,7 +473,7 @@ export default function MessagingUI({ community, onLeaveGroup, onBack }: Messagi
                     <div className={`flex items-end space-x-2 max-w-xs md:max-w-md lg:max-w-lg ${isOwnMessage ? 'flex-row-reverse space-x-reverse' : ''}`}>
                       {/* Avatar */}
                       {showAvatar && !isOwnMessage && (
-                        <div className="relative w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-500 flex-shrink-0">
+                        <div className="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0" style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}>
                           {message.sender.avatar ? (
                             <Image
                               src={message.sender.avatar}
@@ -512,10 +515,11 @@ export default function MessagingUI({ community, onLeaveGroup, onBack }: Messagi
                           className={`
                             relative px-4 py-3 rounded-2xl backdrop-blur-sm border
                             ${isOwnMessage 
-                              ? 'bg-blue-500/30 border-blue-400/30 text-white' 
+                              ? 'border-white/30 text-white' 
                               : 'bg-black/30 border-white/10 text-white/90'
                             }
                           `}
+                          style={isOwnMessage ? {background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'} : undefined}
                         >
                           <div className="whitespace-pre-wrap break-words">
                             {message.content}
@@ -667,12 +671,13 @@ export default function MessagingUI({ community, onLeaveGroup, onBack }: Messagi
             onClick={sendMessage}
             disabled={!newMessage.trim() || isSending}
             className={`
-              p-3 rounded-2xl transition-all
+              p-3 rounded-2xl transition-all border border-white/20
               ${newMessage.trim() && !isSending
-                ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-lg shadow-blue-500/25' 
+                ? 'text-white shadow-lg' 
                 : 'bg-white/10 text-white/40 cursor-not-allowed'
               }
             `}
+            style={newMessage.trim() && !isSending ? {background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'} : undefined}
           >
             {isSending ? (
               <motion.div

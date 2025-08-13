@@ -222,8 +222,9 @@ export default function Comments({ postId, isVisible, onCommentUpdate }: Comment
             className={`m-1 px-4 py-2 rounded-full font-medium transition-all duration-200 flex items-center space-x-2 ${
               !commentInput.trim() || submitting
                 ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
+                : 'text-white shadow-lg hover:shadow-xl transform hover:scale-105 border border-white/20'
             }`}
+            style={!commentInput.trim() || submitting ? undefined : {background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}
           >
             {submitting ? (
               <>
