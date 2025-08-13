@@ -10,6 +10,7 @@ import CreatePostModal from '../components/CreatePostModal';
 import MessageInbox from '../components/MessageInbox';
 import DirectMessageUI from '../components/DirectMessageUI';
 import NewMessageModal from '../components/NewMessageModal';
+import AnimatedBackground from '../communities/components/AnimatedBackground';
 import { useSidebar } from '../context/SidebarContext';
 import { useChat } from '../context/ChatContext';
 import { 
@@ -130,51 +131,11 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-purple-900/90 to-indigo-900/95"></div>
         
         {/* Floating Background Elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(8)].map((_, i) => (
-            <motion.div
-              key={i}
-              animate={{
-                y: [-20, 20, -20],
-                x: [-10, 10, -10],
-              }}
-              transition={{
-                duration: 6,
-                repeat: Infinity,
-                ease: [0.25, 0.1, 0.25, 1] as any,
-                delay: Math.random() * 3
-              }}
-              className="absolute w-32 h-32 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-              }}
-            />
-          ))}
-          
-          {/* Glass particles */}
-          {[...Array(12)].map((_, i) => (
-            <motion.div
-              key={`particle-${i}`}
-              animate={{
-                y: [-15, 15, -15],
-                x: [-8, 8, -8],
-                opacity: [0.3, 0.7, 0.3]
-              }}
-              transition={{
-                duration: 4,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: Math.random() * 2
-              }}
-              className="absolute w-2 h-2 bg-white/20 rounded-full"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-              }}
-            />
-          ))}
-        </div>
+        <AnimatedBackground 
+          particleCount={8} 
+          glassParticleCount={12}
+          className="absolute inset-0 overflow-hidden pointer-events-none"
+        />
       </div>
 
       <Navbar onCreatePost={() => setIsCreatePostOpen(true)} />

@@ -229,13 +229,13 @@ export default function ProfilePage() {
           }}
         />
       )}
-      <div className="pl-64 pt-16 relative z-10">
+      <div className="pl-64 pt-24 relative z-10">
         {/* Profile Header - Enhanced with modern glassmorphism design */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="bg-gradient-to-r from-blue-900/30 via-indigo-900/30 to-purple-900/30 backdrop-blur-xl border border-white/20 shadow-2xl rounded-2xl mb-8 overflow-hidden"
+          className="bg-gradient-to-r from-blue-900/30 via-indigo-900/30 to-purple-900/30 backdrop-blur-xl border border-white/20 shadow-2xl rounded-2xl mb-8 mt-6 mx-6 overflow-hidden"
         >
           {/* Background elements */}
           <div className="absolute top-0 left-0 w-full h-full overflow-hidden">

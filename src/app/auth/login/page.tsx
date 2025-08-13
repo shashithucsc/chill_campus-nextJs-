@@ -29,10 +29,28 @@ export default function LoginPage() {
   // Flag to track if user has explicitly attempted login
   const [hasAttemptedLogin, setHasAttemptedLogin] = useState(false);
   
+  // Animation states for consistent positioning
+  const [floatingElements, setFloatingElements] = useState<Array<{left: number, top: number, delay: number}>>([]);
+  const [isClient, setIsClient] = useState(false);
+  
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
+
+  // Initialize animation positions on client-side only
+  useEffect(() => {
+    setIsClient(true);
+    
+    // Generate floating elements positions
+    const floatingElementsData = Array.from({ length: 6 }, () => ({
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      delay: Math.random() * 2
+    }));
+    
+    setFloatingElements(floatingElementsData);
+  }, []);
 
   // No more automatic redirects when the page loads
   // The redirection will only happen after successful login
@@ -157,7 +175,7 @@ export default function LoginPage() {
 
       {/* Floating Background Elements */}
       <div className="absolute inset-0 z-10 pointer-events-none">
-        {[...Array(6)].map((_, i) => (
+        {isClient && floatingElements.map((element, i) => (
           <motion.div
             key={i}
             animate={{
@@ -168,12 +186,12 @@ export default function LoginPage() {
               duration: 4,
               repeat: Infinity,
               ease: [0.25, 0.1, 0.25, 1] as any,
-              delay: Math.random() * 2
+              delay: element.delay
             }}
             className="absolute w-24 h-24 bg-gradient-to-br from-blue-200/20 to-purple-200/20 rounded-full blur-2xl"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
+              left: `${element.left}%`,
+              top: `${element.top}%`,
             }}
           />
         ))}

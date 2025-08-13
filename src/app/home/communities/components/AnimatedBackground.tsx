@@ -3,21 +3,34 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
-export default function AnimatedBackground() {
+interface AnimatedBackgroundProps {
+  particleCount?: number;
+  glassParticleCount?: number;
+  className?: string;
+}
+
+export default function AnimatedBackground({ 
+  particleCount = 10, 
+  glassParticleCount = 15,
+  className = "absolute inset-0"
+}: AnimatedBackgroundProps) {
   const [particles, setParticles] = useState<Array<{left: number, top: number, delay: number}>>([]);
   const [glassParticles, setGlassParticles] = useState<Array<{left: number, top: number, delay: number}>>([]);
+  const [isClient, setIsClient] = useState(false);
   
   // Only generate random positions after component has mounted on client
   useEffect(() => {
+    setIsClient(true);
+    
     // Generate large particles
-    const newParticles = Array.from({ length: 10 }, () => ({
+    const newParticles = Array.from({ length: particleCount }, () => ({
       left: Math.random() * 100,
       top: Math.random() * 100,
       delay: Math.random() * 4
     }));
     
     // Generate small glass particles
-    const newGlassParticles = Array.from({ length: 15 }, () => ({
+    const newGlassParticles = Array.from({ length: glassParticleCount }, () => ({
       left: Math.random() * 100,
       top: Math.random() * 100,
       delay: Math.random() * 3
@@ -25,10 +38,14 @@ export default function AnimatedBackground() {
     
     setParticles(newParticles);
     setGlassParticles(newGlassParticles);
-  }, []);
+  }, [particleCount, glassParticleCount]);
+
+  if (!isClient) {
+    return <div className={className}></div>;
+  }
 
   return (
-    <div className="absolute inset-0">
+    <div className={className}>
       {/* Gradient blobs */}
       {particles.map((particle, i) => (
         <motion.div

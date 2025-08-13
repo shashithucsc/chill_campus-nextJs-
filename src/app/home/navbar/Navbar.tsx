@@ -9,13 +9,13 @@ import { useSession, signOut } from 'next-auth/react';
 import { 
   PlusIcon, 
   BellIcon, 
-  MagnifyingGlassIcon,
   UserIcon,
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline';
 import { useNotifications } from '../hooks/useNotifications';
 import NotificationDropdown from '../components/NotificationDropdown';
+import SearchBar from '../components/SearchBar';
 
 export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) {
   const router = useRouter();
@@ -64,20 +64,7 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
               </Link>
             </motion.div>
             <div className="hidden md:block ml-8">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search posts, communities, or events..."
-                  className="w-96 px-4 py-3 pl-12 rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 focus:bg-white/20 transition-all duration-300 shadow-lg hover:shadow-xl"
-                />
-                <motion.button 
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  className="absolute left-3 top-3.5"
-                >
-                  <MagnifyingGlassIcon className="h-5 w-5 text-white/70" />
-                </motion.button>
-              </div>
+              <SearchBar />
             </div>
           </div>
 
