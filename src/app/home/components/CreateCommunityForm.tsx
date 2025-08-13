@@ -20,7 +20,7 @@ interface FormData {
   category: string;
   description: string;
   visibility: 'Public' | 'Private';
-  imageUrl?: string;
+  coverImage?: string;
   submit?: string;
 }
 
@@ -78,7 +78,7 @@ export default function CreateCommunityForm() {
     category: '',
     description: '',
     visibility: 'Public',
-    imageUrl: ''
+    coverImage: ''
   });
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,7 +133,7 @@ export default function CreateCommunityForm() {
       }
 
       // Update form data with the new image URL
-      setFormData(prev => ({ ...prev, imageUrl: response.url }));
+      setFormData(prev => ({ ...prev, coverImage: response.url }));
     } catch (error: any) {
       console.error('Error uploading image:', error);
       setErrors(prev => ({
@@ -144,7 +144,7 @@ export default function CreateCommunityForm() {
       // Clear preview on error
       setImagePreview('');
       setImageFile(null);
-      setFormData(prev => ({ ...prev, imageUrl: '' }));
+      setFormData(prev => ({ ...prev, coverImage: '' }));
     } finally {
       setIsLoading(false);
     }
@@ -195,7 +195,7 @@ export default function CreateCommunityForm() {
           category: formData.category,
           description: formData.description.trim(),
           visibility: formData.visibility,
-          imageUrl: formData.imageUrl // This was set during image upload
+          coverImage: formData.coverImage // This was set during image upload
         }),
       });
 
@@ -213,7 +213,7 @@ export default function CreateCommunityForm() {
         category: '',
         description: '',
         visibility: 'Public',
-        imageUrl: ''
+        coverImage: ''
       });
       setImagePreview('');
       setImageFile(null);
@@ -366,7 +366,7 @@ export default function CreateCommunityForm() {
                         e.preventDefault();
                         setImagePreview('');
                         setImageFile(null);
-                        setFormData(prev => ({ ...prev, imageUrl: '' }));
+                        setFormData(prev => ({ ...prev, coverImage: '' }));
                       }}
                       className="absolute top-2 right-2 p-1 bg-black/50 rounded-full hover:bg-black/70 transition-all"
                     >

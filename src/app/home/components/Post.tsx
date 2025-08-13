@@ -19,17 +19,7 @@ import {
 import { HeartIcon as HeartSolid } from '@heroicons/react/24/solid';
 import ReportModal from './ReportModal';
 import Toast from './Toast';
-
-interface Comment {
-  _id: string;
-  user: {
-    id: string;
-    name: string;
-    avatar: string;
-  };
-  content: string;
-  createdAt: string;
-}
+import Comments from './Comments';
 
 interface PostProps {
   id: string;
@@ -68,13 +58,10 @@ export default function Post({
 }: PostProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(likes);
+  const [commentCount, setCommentCount] = useState(comments);
   // Get session directly from useSession hook
   const { data: session } = useSession();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  // Comments state
-  const [commentList, setCommentList] = useState<Comment[]>([]);
-  const [commentInput, setCommentInput] = useState('');
-  const [commentLoading, setCommentLoading] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [contentState, setContentState] = useState(content);
@@ -103,18 +90,17 @@ export default function Post({
   }, [session]);
 
   useEffect(() => {
-    // Fetch like state and comments from backend
+    // Fetch like state from backend
     fetch(`/api/posts/${id}/reactions`)
       .then(res => res.json())
       .then(data => {
         setIsLiked(data.likedByCurrentUser || false);
         setLikeCount(data.likeCount || 0);
       });
-    fetch(`/api/posts/${id}/comments`)
-      .then(res => res.json())
-      .then(data => {
-        setCommentList(data.comments || []);
-      });
+    
+    // Fetch comment count from backend
+    fetchCommentCount();
+    
     // Check if user has reported this post
     if (session?.user?.id) {
       fetch(`/api/posts/${id}/reports`)
@@ -126,6 +112,18 @@ export default function Post({
     }
   }, [id, session?.user?.id]);
 
+  const fetchCommentCount = async () => {
+    try {
+      const response = await fetch(`/api/posts/${id}/comments`);
+      if (response.ok) {
+        const data = await response.json();
+        setCommentCount(data.comments?.length || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching comment count:', error);
+    }
+  };
+
   const handleLike = async () => {
     const newLiked = !isLiked;
     setIsLiked(newLiked);
@@ -136,23 +134,6 @@ export default function Post({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ like: newLiked }),
     });
-  };
-
-  const handleCommentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!commentInput.trim()) return;
-    setCommentLoading(true);
-    const res = await fetch(`/api/posts/${id}/comments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: commentInput }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setCommentList([data.comment, ...commentList]);
-      setCommentInput('');
-    }
-    setCommentLoading(false);
   };
 
   const handleDelete = async () => {
@@ -374,7 +355,13 @@ export default function Post({
           </button>
           <button
             className="flex items-center space-x-2 text-white/70 hover:text-white transition-colors"
-            onClick={() => setShowComments((v) => !v)}
+            onClick={() => {
+              setShowComments((v) => !v);
+              // Refresh comment count when toggling comments
+              if (!showComments) {
+                fetchCommentCount();
+              }
+            }}
           >
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
@@ -384,7 +371,7 @@ export default function Post({
                 d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
               />
             </svg>
-            <span className="font-medium">{commentList.length}</span>
+            <span className="font-medium">{commentCount}</span>
           </button>
           
           {/* Report Button - Only show if user is not the post author */}
@@ -408,50 +395,9 @@ export default function Post({
           
           {/* ...existing share button... */}
         </div>
-        {/* Comments Section */}
-        {showComments && (
-          <div className="mt-4">
-            <form onSubmit={handleCommentSubmit} className="flex items-center space-x-3 mb-4">
-              <input
-                type="text"
-                className="flex-1 border border-white/20 bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Write a comment..."
-                value={commentInput}
-                onChange={e => setCommentInput(e.target.value)}
-                disabled={commentLoading}
-              />
-              <button
-                type="submit"
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50"
-                disabled={commentLoading || !commentInput.trim()}
-              >
-                {commentLoading ? '...' : 'Post'}
-              </button>
-            </form>
-            <div className="space-y-3 max-h-48 overflow-y-auto">
-              {commentList.length === 0 ? (
-                <div className="text-white/60 text-sm">No comments yet.</div>
-              ) : (
-                commentList.map((c) => (
-                  <div key={c._id} className="flex items-start space-x-3">
-                    <Image
-                      src={c.user.avatar || '/default-avatar.png'}
-                      alt={c.user.name}
-                      width={32}
-                      height={32}
-                      className="rounded-full object-cover border border-white/20"
-                    />
-                    <div>
-                      <span className="font-medium text-white text-sm">{c.user.name}</span>
-                      <span className="ml-2 text-xs text-white/60">{new Date(c.createdAt).toLocaleString()}</span>
-                      <div className="text-white/90 text-sm mt-1">{c.content}</div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
+        
+        {/* Enhanced Comments Section */}
+        <Comments postId={id} isVisible={showComments} onCommentUpdate={fetchCommentCount} />
       </div>
       {/* Delete Confirmation Popup */}
       {showDeleteConfirm && (

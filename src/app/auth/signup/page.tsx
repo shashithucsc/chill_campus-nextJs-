@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -85,6 +85,24 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Animation states for consistent positioning
+  const [floatingElements, setFloatingElements] = useState<Array<{left: number, top: number, delay: number}>>([]);
+  const [isClient, setIsClient] = useState(false);
+
+  // Initialize animation positions on client-side only
+  useEffect(() => {
+    setIsClient(true);
+    
+    // Generate floating elements positions
+    const floatingElementsData = Array.from({ length: 6 }, () => ({
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      delay: Math.random() * 2
+    }));
+    
+    setFloatingElements(floatingElementsData);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,7 +157,7 @@ export default function SignupPage() {
 
       {/* Floating Background Elements */}
       <div className="absolute inset-0 z-10 pointer-events-none">
-        {[...Array(8)].map((_, i) => (
+        {isClient && floatingElements.map((element, i) => (
           <motion.div
             key={i}
             animate={{
@@ -150,12 +168,12 @@ export default function SignupPage() {
               duration: 4,
               repeat: Infinity,
               ease: [0.25, 0.1, 0.25, 1] as any,
-              delay: Math.random() * 2
+              delay: element.delay
             }}
             className="absolute w-24 h-24 bg-gradient-to-br from-blue-200/20 to-purple-200/20 rounded-full blur-2xl"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
+              left: `${element.left}%`,
+              top: `${element.top}%`,
             }}
           />
         ))}

@@ -10,7 +10,9 @@ import {
   ArrowLeftIcon,
   EllipsisVerticalIcon,
   FaceSmileIcon,
-  ArrowUturnLeftIcon
+  ArrowUturnLeftIcon,
+  TrashIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon, HandThumbUpIcon } from '@heroicons/react/24/solid';
 import EmojiPicker from './EmojiPicker';
@@ -76,11 +78,17 @@ export default function MessagingUI({ community, onLeaveGroup, onBack }: Messagi
   const [isSending, setIsSending] = useState(false);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
+  const [showConversationDeleteModal, setShowConversationDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
+  const optionsMenuRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom
   const scrollToBottom = () => {
@@ -143,6 +151,75 @@ export default function MessagingUI({ community, onLeaveGroup, onBack }: Messagi
     } finally {
       setIsSending(false);
     }
+  };
+
+  // Delete individual message
+  const deleteMessage = async (messageId: string) => {
+    setIsDeleting(true);
+    try {
+      const response = await fetch('/api/messages/delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          messageId,
+          communityId: community._id
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete message');
+      }
+
+      // Remove message from state
+      setMessages(prev => prev.filter(msg => msg._id !== messageId));
+      setShowDeleteModal(false);
+      setMessageToDelete(null);
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      alert('Failed to delete message. You can only delete your own messages.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Delete entire conversation
+  const deleteConversation = async () => {
+    setIsDeleting(true);
+    try {
+      const response = await fetch('/api/messages/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          communityId: community._id,
+          deleteType: 'all'
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete conversation');
+      }
+
+      // Clear all messages
+      setMessages([]);
+      setShowConversationDeleteModal(false);
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      alert('Failed to delete conversation. Only admins and moderators can delete entire conversations.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Handle delete message click
+  const handleDeleteMessage = (messageId: string) => {
+    setMessageToDelete(messageId);
+    setShowDeleteModal(true);
   };
 
   // Handle textarea key events
@@ -238,22 +315,25 @@ export default function MessagingUI({ community, onLeaveGroup, onBack }: Messagi
     adjustTextareaHeight();
   }, [newMessage]);
 
-  // Handle click outside emoji picker
+  // Handle click outside emoji picker and options menu
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
         setShowEmojiPicker(false);
       }
+      if (optionsMenuRef.current && !optionsMenuRef.current.contains(event.target as Node)) {
+        setShowOptionsMenu(false);
+      }
     };
 
-    if (showEmojiPicker) {
+    if (showEmojiPicker || showOptionsMenu) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showEmojiPicker]);
+  }, [showEmojiPicker, showOptionsMenu]);
 
   if (isLoading) {
     return (
@@ -319,9 +399,35 @@ export default function MessagingUI({ community, onLeaveGroup, onBack }: Messagi
               </button>
             )}
             
-            <button className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-all">
-              <EllipsisVerticalIcon className="h-5 w-5 text-white" />
-            </button>
+            <div className="relative" ref={optionsMenuRef}>
+              <button 
+                onClick={() => setShowOptionsMenu(!showOptionsMenu)}
+                className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-all"
+              >
+                <EllipsisVerticalIcon className="h-5 w-5 text-white" />
+              </button>
+
+              {/* Options Dropdown */}
+              {showOptionsMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute right-0 top-full mt-2 w-48 bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden z-50"
+                >
+                  <button
+                    onClick={() => {
+                      setShowConversationDeleteModal(true);
+                      setShowOptionsMenu(false);
+                    }}
+                    className="w-full px-4 py-3 text-left text-red-300 hover:bg-red-500/20 transition-all flex items-center space-x-2"
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                    <span>Delete Conversation</span>
+                  </button>
+                </motion.div>
+              )}
+            </div>
           </div>
         </div>
       </motion.div>
@@ -428,18 +534,32 @@ export default function MessagingUI({ community, onLeaveGroup, onBack }: Messagi
                           {/* Message Actions (on hover) */}
                           <div className={`
                             absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity
-                            ${isOwnMessage ? '-left-12' : '-right-12'}
+                            ${isOwnMessage ? '-left-16' : '-right-16'}
                           `}>
                             <div className="flex items-center space-x-1">
                               <button
                                 onClick={() => setReplyingTo(message)}
                                 className="p-1.5 rounded-lg bg-black/40 hover:bg-black/60 transition-all"
+                                title="Reply"
                               >
                                 <ArrowUturnLeftIcon className="h-4 w-4 text-white/80" />
                               </button>
-                              <button className="p-1.5 rounded-lg bg-black/40 hover:bg-black/60 transition-all">
+                              <button 
+                                className="p-1.5 rounded-lg bg-black/40 hover:bg-black/60 transition-all"
+                                title="Add reaction"
+                              >
                                 <FaceSmileIcon className="h-4 w-4 text-white/80" />
                               </button>
+                              {/* Delete button - only show for own messages */}
+                              {isOwnMessage && (
+                                <button
+                                  onClick={() => handleDeleteMessage(message._id)}
+                                  className="p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/40 transition-all"
+                                  title="Delete message"
+                                >
+                                  <TrashIcon className="h-4 w-4 text-red-300" />
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -566,6 +686,103 @@ export default function MessagingUI({ community, onLeaveGroup, onBack }: Messagi
           </motion.button>
         </div>
       </motion.div>
+
+      {/* Delete Message Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-6 max-w-md w-full"
+            >
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="p-2 bg-red-500/20 rounded-lg">
+                  <ExclamationTriangleIcon className="h-6 w-6 text-red-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white">Delete Message</h3>
+              </div>
+              
+              <p className="text-white/70 mb-6">
+                Are you sure you want to delete this message? This action cannot be undone.
+              </p>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setMessageToDelete(null);
+                  }}
+                  className="flex-1 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all"
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => messageToDelete && deleteMessage(messageToDelete)}
+                  className="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-all disabled:opacity-50"
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Conversation Confirmation Modal */}
+      <AnimatePresence>
+        {showConversationDeleteModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-6 max-w-md w-full"
+            >
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="p-2 bg-red-500/20 rounded-lg">
+                  <ExclamationTriangleIcon className="h-6 w-6 text-red-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white">Delete Entire Conversation</h3>
+              </div>
+              
+              <p className="text-white/70 mb-6">
+                Are you sure you want to delete this entire conversation? This will remove all messages for all members and cannot be undone. Only admins and moderators can perform this action.
+              </p>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowConversationDeleteModal(false)}
+                  className="flex-1 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all"
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={deleteConversation}
+                  className="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-all disabled:opacity-50"
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete All'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -14,12 +14,15 @@ import {
   ArrowLeftIcon,
   PlusIcon,
   DocumentTextIcon,
+  PencilIcon,
 } from '@heroicons/react/24/outline';
 import Navbar from '../../navbar/Navbar';
 import Sidebar from '../../sidebar/Sidebar';
 import Post from '../../components/Post';
 import CreateCommunityPostModal from '../components/CreateCommunityPostModal';
+import EditCommunityModal from '../components/EditCommunityModal';
 import DualMessaging from '../../components/DualMessaging';
+import AnimatedBackground from '../components/AnimatedBackground';
 
 // Utility function to format date
 const formatDate = (dateString: string | Date) => {
@@ -53,6 +56,14 @@ interface Community {
   createdAt: string;
   memberCount: number;
   isMember: boolean;
+  createdBy: {
+    _id: string;
+    fullName: string;
+    email: string;
+  };
+  category: string;
+  visibility: 'Public' | 'Private';
+  tags: string[];
 }
 
 interface Post {
@@ -81,6 +92,7 @@ export default function CommunityPage() {
   const [loading, setLoading] = useState(true);
   const [postLoading, setPostLoading] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(false);
+  const [showEditCommunity, setShowEditCommunity] = useState(false);
   const [joinLoading, setJoinLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [showDeleteWarning, setShowDeleteWarning] = useState(false);
@@ -135,6 +147,29 @@ export default function CommunityPage() {
   const handlePostCreated = () => {
     fetchPosts();
   };
+
+  // Handle community update
+  const handleCommunityUpdate = (updatedCommunity: {
+    _id: string;
+    name: string;
+    description: string;
+    category: string;
+    visibility: 'Public' | 'Private';
+    coverImage: string;
+    tags: string[];
+  }) => {
+    if (community) {
+      setCommunity({
+        ...community,
+        ...updatedCommunity
+      });
+      setMessage({ text: 'Community updated successfully!', type: 'success' });
+      setTimeout(() => setMessage(null), 3000);
+    }
+  };
+
+  // Check if current user is the creator
+  const isCreator = session?.user?.id === community?.createdBy?._id;
 
   const handleLeaveCommunity = async () => {
     // Check if this is the last member
@@ -226,28 +261,11 @@ export default function CommunityPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900">
       {/* Animated background elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        {[...Array(8)].map((_, i) => (
-          <motion.div
-            key={i}
-            animate={{
-              y: [-20, 20, -20],
-              x: [-10, 10, -10],
-            }}
-            transition={{
-              duration: 6,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: Math.random() * 3
-            }}
-            className="absolute w-32 h-32 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-          />
-        ))}
-      </div>
+      <AnimatedBackground 
+        particleCount={8} 
+        glassParticleCount={12}
+        className="fixed inset-0 overflow-hidden pointer-events-none"
+      />
 
       <Navbar />
       <Sidebar />
@@ -325,7 +343,20 @@ export default function CommunityPage() {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.5 }}
+                    className="flex items-center gap-3"
                   >
+                    {/* Edit Button - Only for creators */}
+                    {isCreator && (
+                      <button
+                        onClick={() => setShowEditCommunity(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-purple-600/20 text-purple-300 rounded-lg border border-purple-500/30 hover:bg-purple-500/20 hover:border-purple-400/50 transition-all duration-300 backdrop-blur-sm"
+                      >
+                        <PencilIcon className="w-4 h-4" />
+                        <span className="text-sm font-medium">Edit</span>
+                      </button>
+                    )}
+
+                    {/* Join/Leave Button */}
                     {community.isMember ? (
                       <button
                         onClick={handleLeaveCommunity}
@@ -610,6 +641,24 @@ export default function CommunityPage() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Edit Community Modal */}
+        {community && (
+          <EditCommunityModal
+            isOpen={showEditCommunity}
+            onClose={() => setShowEditCommunity(false)}
+            community={{
+              _id: community._id,
+              name: community.name,
+              description: community.description,
+              coverImage: community.coverImage,
+              category: community.category,
+              visibility: community.visibility,
+              tags: community.tags
+            }}
+            onUpdate={handleCommunityUpdate}
+          />
+        )}
       </div>
     </div>
   );

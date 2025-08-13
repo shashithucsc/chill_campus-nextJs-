@@ -1,0 +1,464 @@
+'use client';
+
+import { useState } from 'react';
+import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useSession } from 'next-auth/react';
+import {
+  HeartIcon,
+  FaceSmileIcon,
+  HandThumbUpIcon,
+  FaceFrownIcon,
+  ExclamationCircleIcon,
+  ChatBubbleOvalLeftIcon,
+  PaperAirplaneIcon
+} from '@heroicons/react/24/outline';
+import {
+  HeartIcon as HeartSolid,
+  FaceSmileIcon as FaceSmileSolid,
+  HandThumbUpIcon as HandThumbUpSolid,
+  FaceFrownIcon as FaceFrownSolid,
+  ExclamationCircleIcon as ExclamationCircleSolid
+} from '@heroicons/react/24/solid';
+
+export type ReactionType = 'like' | 'love' | 'laugh' | 'wow' | 'sad' | 'angry';
+
+interface Reaction {
+  user: {
+    id: string;
+    name: string;
+    avatar: string;
+  };
+  type: ReactionType;
+  createdAt: string;
+}
+
+interface Reply {
+  _id: string;
+  user: {
+    id: string;
+    name: string;
+    avatar: string;
+  };
+  content: string;
+  reactions: Reaction[];
+  createdAt: string;
+}
+
+interface Comment {
+  _id: string;
+  user: {
+    id: string;
+    name: string;
+    avatar: string;
+  };
+  content: string;
+  reactions: Reaction[];
+  replies: Reply[];
+  replyCount: number;
+  createdAt: string;
+}
+
+interface CommentItemProps {
+  comment: Comment;
+  onReact: (commentId: string, type: ReactionType, replyId?: string) => void;
+  onReply: (commentId: string, content: string) => void;
+}
+
+const reactionEmojis = {
+  like: '👍',
+  love: '❤️',
+  laugh: '😂',
+  wow: '😮',
+  sad: '😢',
+  angry: '😠'
+};
+
+const reactionIcons = {
+  like: { outline: HandThumbUpIcon, solid: HandThumbUpSolid },
+  love: { outline: HeartIcon, solid: HeartSolid },
+  laugh: { outline: FaceSmileIcon, solid: FaceSmileSolid },
+  wow: { outline: ExclamationCircleIcon, solid: ExclamationCircleSolid },
+  sad: { outline: FaceFrownIcon, solid: FaceFrownSolid },
+  angry: { outline: FaceFrownIcon, solid: FaceFrownSolid }
+};
+
+export default function CommentItem({ comment, onReact, onReply }: CommentItemProps) {
+  const { data: session } = useSession();
+  const [showReactions, setShowReactions] = useState(false);
+  const [showReplies, setShowReplies] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  const [showReplyInput, setShowReplyInput] = useState(false);
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    
+    if (minutes < 1) return 'just now';
+    if (minutes < 60) return `${minutes}m`;
+    if (hours < 24) return `${hours}h`;
+    return `${days}d`;
+  };
+
+  const getUserReaction = (reactions: Reaction[], userId: string) => {
+    return reactions.find(r => r.user.id === userId);
+  };
+
+  const getReactionCount = (reactions: Reaction[], type: ReactionType) => {
+    return reactions.filter(r => r.type === type).length;
+  };
+
+  const getTotalReactions = (reactions: Reaction[]) => {
+    return reactions.length;
+  };
+
+  const getTopReactions = (reactions: Reaction[]) => {
+    const counts: { [key in ReactionType]: number } = {
+      like: 0, love: 0, laugh: 0, wow: 0, sad: 0, angry: 0
+    };
+    
+    reactions.forEach(r => counts[r.type]++);
+    
+    return Object.entries(counts)
+      .filter(([_, count]) => count > 0)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([type]) => type as ReactionType);
+  };
+
+  const handleReaction = (type: ReactionType, replyId?: string) => {
+    onReact(comment._id, type, replyId);
+    setShowReactions(false);
+  };
+
+  const handleReplySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (replyText.trim()) {
+      onReply(comment._id, replyText);
+      setReplyText('');
+      setShowReplyInput(false);
+      setShowReplies(true);
+    }
+  };
+
+  const userReaction = getUserReaction(comment.reactions, session?.user?.id || '');
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10"
+    >
+      {/* Comment Header */}
+      <div className="flex items-start space-x-3">
+        <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-white/20">
+          <Image
+            src={comment.user.avatar || '/default-avatar.png'}
+            alt={comment.user.name}
+            fill
+            className="object-cover"
+          />
+        </div>
+        
+        <div className="flex-1">
+          {/* User info and content */}
+          <div className="bg-white/10 rounded-2xl px-4 py-3">
+            <h4 className="text-white font-medium text-sm">{comment.user.name}</h4>
+            <p className="text-white/90 text-sm mt-1">{comment.content}</p>
+          </div>
+          
+          {/* Reactions display */}
+          {getTotalReactions(comment.reactions) > 0 && (
+            <div className="flex items-center mt-2 mb-2">
+              <div className="flex items-center bg-white/10 rounded-full px-3 py-1">
+                {getTopReactions(comment.reactions).map((type, index) => (
+                  <span key={type} className="text-sm mr-1">
+                    {reactionEmojis[type]}
+                  </span>
+                ))}
+                <span className="text-white/70 text-xs ml-1">
+                  {getTotalReactions(comment.reactions)}
+                </span>
+              </div>
+            </div>
+          )}
+          
+          {/* Action buttons */}
+          <div className="flex items-center space-x-4 mt-2">
+            <div className="relative">
+              <button
+                onMouseEnter={() => setShowReactions(true)}
+                onMouseLeave={() => setShowReactions(false)}
+                className={`flex items-center space-x-1 text-xs py-1 px-2 rounded-lg transition-all ${
+                  userReaction 
+                    ? 'text-blue-400 bg-blue-500/20' 
+                    : 'text-white/60 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                {userReaction ? (
+                  <span className="text-sm">{reactionEmojis[userReaction.type]}</span>
+                ) : (
+                  <HandThumbUpIcon className="w-4 h-4" />
+                )}
+                <span>{userReaction ? userReaction.type : 'Like'}</span>
+              </button>
+              
+              {/* Reaction picker */}
+              <AnimatePresence>
+                {showReactions && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                    className="absolute bottom-full left-0 mb-2 bg-black/80 backdrop-blur-md rounded-full p-2 flex space-x-1 shadow-xl border border-white/20"
+                    onMouseEnter={() => setShowReactions(true)}
+                    onMouseLeave={() => setShowReactions(false)}
+                  >
+                    {Object.entries(reactionEmojis).map(([type, emoji]) => (
+                      <button
+                        key={type}
+                        onClick={() => handleReaction(type as ReactionType)}
+                        className="text-xl hover:scale-125 transition-transform p-1 rounded-full hover:bg-white/20"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            
+            <button
+              onClick={() => setShowReplyInput(!showReplyInput)}
+              className="flex items-center space-x-1 text-xs text-white/60 hover:text-white py-1 px-2 rounded-lg hover:bg-white/10 transition-all"
+            >
+              <ChatBubbleOvalLeftIcon className="w-4 h-4" />
+              <span>Reply</span>
+            </button>
+            
+            <span className="text-white/40 text-xs">{formatTimeAgo(comment.createdAt)}</span>
+          </div>
+          
+          {/* Reply input */}
+          <AnimatePresence>
+            {showReplyInput && (
+              <motion.form
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                onSubmit={handleReplySubmit}
+                className="flex items-center space-x-3 mt-3"
+              >
+                <div className="relative w-8 h-8 rounded-full overflow-hidden border border-white/20">
+                  <Image
+                    src={session?.user?.image || '/default-avatar.png'}
+                    alt="Your avatar"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div className="flex-1 flex items-center bg-white/10 rounded-full">
+                  <input
+                    type="text"
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    placeholder="Write a reply..."
+                    className="flex-1 bg-transparent text-white placeholder-white/50 px-4 py-2 focus:outline-none text-sm"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!replyText.trim()}
+                    className={`m-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 flex items-center space-x-1 ${
+                      !replyText.trim()
+                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg transform hover:scale-105'
+                    }`}
+                  >
+                    <PaperAirplaneIcon className="w-3 h-3" />
+                    <span>Send</span>
+                  </button>
+                </div>
+              </motion.form>
+            )}
+          </AnimatePresence>
+          
+          {/* Replies */}
+          {comment.replyCount > 0 && (
+            <div className="mt-3">
+              <button
+                onClick={() => setShowReplies(!showReplies)}
+                className="text-white/60 hover:text-white text-xs mb-2 flex items-center space-x-1"
+              >
+                <span>{showReplies ? 'Hide' : 'View'} {comment.replyCount} replies</span>
+              </button>
+              
+              <AnimatePresence>
+                {showReplies && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-3 pl-4 border-l border-white/20"
+                  >
+                    {comment.replies.map((reply) => (
+                      <ReplyItem
+                        key={reply._id}
+                        reply={reply}
+                        commentId={comment._id}
+                        onReact={onReact}
+                      />
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// Reply component
+interface ReplyItemProps {
+  reply: Reply;
+  commentId: string;
+  onReact: (commentId: string, type: ReactionType, replyId?: string) => void;
+}
+
+function ReplyItem({ reply, commentId, onReact }: ReplyItemProps) {
+  const { data: session } = useSession();
+  const [showReactions, setShowReactions] = useState(false);
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    
+    if (minutes < 1) return 'just now';
+    if (minutes < 60) return `${minutes}m`;
+    if (hours < 24) return `${hours}h`;
+    return `${days}d`;
+  };
+
+  const getUserReaction = (reactions: Reaction[], userId: string) => {
+    return reactions.find(r => r.user.id === userId);
+  };
+
+  const getTotalReactions = (reactions: Reaction[]) => {
+    return reactions.length;
+  };
+
+  const getTopReactions = (reactions: Reaction[]) => {
+    const counts: { [key in ReactionType]: number } = {
+      like: 0, love: 0, laugh: 0, wow: 0, sad: 0, angry: 0
+    };
+    
+    reactions.forEach(r => counts[r.type]++);
+    
+    return Object.entries(counts)
+      .filter(([_, count]) => count > 0)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([type]) => type as ReactionType);
+  };
+
+  const handleReaction = (type: ReactionType) => {
+    onReact(commentId, type, reply._id);
+    setShowReactions(false);
+  };
+
+  const userReaction = getUserReaction(reply.reactions, session?.user?.id || '');
+
+  return (
+    <div className="flex items-start space-x-2">
+      <div className="relative w-8 h-8 rounded-full overflow-hidden border border-white/20">
+        <Image
+          src={reply.user.avatar || '/default-avatar.png'}
+          alt={reply.user.name}
+          fill
+          className="object-cover"
+        />
+      </div>
+      
+      <div className="flex-1">
+        <div className="bg-white/5 rounded-xl px-3 py-2">
+          <h5 className="text-white font-medium text-xs">{reply.user.name}</h5>
+          <p className="text-white/90 text-xs mt-1">{reply.content}</p>
+        </div>
+        
+        {/* Reactions display */}
+        {getTotalReactions(reply.reactions) > 0 && (
+          <div className="flex items-center mt-1 mb-1">
+            <div className="flex items-center bg-white/10 rounded-full px-2 py-0.5">
+              {getTopReactions(reply.reactions).map((type, index) => (
+                <span key={type} className="text-xs mr-1">
+                  {reactionEmojis[type]}
+                </span>
+              ))}
+              <span className="text-white/70 text-xs ml-1">
+                {getTotalReactions(reply.reactions)}
+              </span>
+            </div>
+          </div>
+        )}
+        
+        <div className="flex items-center space-x-3 mt-1">
+          <div className="relative">
+            <button
+              onMouseEnter={() => setShowReactions(true)}
+              onMouseLeave={() => setShowReactions(false)}
+              className={`flex items-center space-x-1 text-xs py-0.5 px-1 rounded transition-all ${
+                userReaction 
+                  ? 'text-blue-400' 
+                  : 'text-white/60 hover:text-white'
+              }`}
+            >
+              {userReaction ? (
+                <span className="text-xs">{reactionEmojis[userReaction.type]}</span>
+              ) : (
+                <HandThumbUpIcon className="w-3 h-3" />
+              )}
+              <span>{userReaction ? userReaction.type : 'Like'}</span>
+            </button>
+            
+            {/* Reaction picker */}
+            <AnimatePresence>
+              {showReactions && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                  className="absolute bottom-full left-0 mb-1 bg-black/80 backdrop-blur-md rounded-full p-1 flex space-x-1 shadow-xl border border-white/20"
+                  onMouseEnter={() => setShowReactions(true)}
+                  onMouseLeave={() => setShowReactions(false)}
+                >
+                  {Object.entries(reactionEmojis).map(([type, emoji]) => (
+                    <button
+                      key={type}
+                      onClick={() => handleReaction(type as ReactionType)}
+                      className="text-sm hover:scale-125 transition-transform p-1 rounded-full hover:bg-white/20"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+          
+          <span className="text-white/40 text-xs">{formatTimeAgo(reply.createdAt)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
