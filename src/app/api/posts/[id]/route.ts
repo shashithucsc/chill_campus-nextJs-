@@ -5,6 +5,44 @@ import { getSession } from '@/lib/session';
 import path from 'path';
 import fs from 'fs/promises';
 
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    await dbConnect();
+
+    const { id } = params;
+
+    // Find the post by ID and populate the user and community data
+    const post = await Post.findById(id)
+      .populate('user', 'fullName avatar role')
+      .populate('community', 'name coverImage')
+      .populate('comments.user', 'fullName avatar')
+      .lean();
+
+    if (!post) {
+      return NextResponse.json(
+        { error: 'Post not found' },
+        { status: 404 }
+      );
+    }
+
+    // Check if post is disabled
+    if ((post as any).disabled) {
+      return NextResponse.json(
+        { error: 'This post has been disabled' },
+        { status: 403 }
+      );
+    }
+
+    return NextResponse.json(post);
+  } catch (error) {
+    console.error('Error fetching post:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   await dbConnect();
   

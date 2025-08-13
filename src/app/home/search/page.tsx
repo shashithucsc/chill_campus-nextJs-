@@ -146,6 +146,9 @@ export default function SearchPage() {
                       {formatTimeAgo(result.createdAt)}
                     </span>
                   </div>
+                  <div className="mt-2 text-xs text-blue-400">
+                    Click to view individual post
+                  </div>
                 </div>
               </div>
             </Link>
@@ -158,7 +161,7 @@ export default function SearchPage() {
             whileHover={{ scale: 1.02 }}
             className="bg-black/20 backdrop-blur-sm rounded-2xl p-6 border border-white/10"
           >
-            <Link href={`/home/profile/${result._id}`}>
+            <Link href="/home/profile">
               <div className="flex items-center space-x-4">
                 <div className="w-12 h-12 rounded-full overflow-hidden">
                   {result.avatar ? (
@@ -181,6 +184,9 @@ export default function SearchPage() {
                   {result.bio && (
                     <p className="text-white/50 text-sm mt-1 line-clamp-2">{result.bio}</p>
                   )}
+                  <div className="mt-2 text-xs text-green-400">
+                    Click to view profile page
+                  </div>
                 </div>
                 <UserIcon className="w-6 h-6 text-blue-400" />
               </div>
@@ -244,6 +250,9 @@ export default function SearchPage() {
                       <ClockIcon className="w-4 h-4 mr-1" />
                       {formatTimeAgo(result.timestamp)}
                     </span>
+                  </div>
+                  <div className="mt-2 text-xs text-green-400">
+                    Click to view in community
                   </div>
                 </div>
               </div>
