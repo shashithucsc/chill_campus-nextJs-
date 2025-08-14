@@ -169,21 +169,22 @@ export default function NewMessageModal({ isOpen, onClose, onConversationStart }
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
       >
         <motion.div
           ref={modalRef}
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 rounded-2xl border border-white/20 backdrop-blur-xl max-w-md w-full max-h-[80vh] overflow-hidden"
+          style={{ background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)' }}
+          className="rounded-2xl border border-white/20 backdrop-blur-xl max-w-md w-full max-h-[80vh] overflow-hidden shadow-2xl"
         >
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-white/10">
-            <h2 className="text-xl font-bold text-white">New Message</h2>
+            <h2 className="text-xl font-bold text-white drop-shadow">New Message</h2>
             <button
               onClick={handleClose}
-              className="p-2 rounded-xl hover:bg-white/10 transition-all"
+              className="p-2 rounded-xl hover:bg-white/20 transition-all border border-white/10"
             >
               <XMarkIcon className="h-5 w-5 text-white/60" />
             </button>
@@ -206,7 +207,7 @@ export default function NewMessageModal({ isOpen, onClose, onConversationStart }
                       placeholder="Search users by name or email..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400/50"
+                      className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400/50 shadow"
                     />
                   </div>
                 </div>
@@ -228,7 +229,7 @@ export default function NewMessageModal({ isOpen, onClose, onConversationStart }
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         onClick={() => handleUserSelect(user)}
-                        className="w-full p-3 flex items-center space-x-3 rounded-xl hover:bg-white/10 transition-all text-left"
+                        className="w-full p-3 flex items-center space-x-3 rounded-xl hover:bg-white/20 transition-all text-left border border-white/10"
                       >
                         <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-500 flex-shrink-0">
                           {user.avatar ? (
@@ -282,7 +283,7 @@ export default function NewMessageModal({ isOpen, onClose, onConversationStart }
                     To:
                   </label>
                   <div className="flex items-center space-x-3 p-3 bg-white/10 rounded-xl">
-                    <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-500 flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-blue-900 to-indigo-900 flex-shrink-0 border border-white/10">
                       {selectedUser.avatar ? (
                         <Image
                           src={selectedUser.avatar}
@@ -329,7 +330,7 @@ export default function NewMessageModal({ isOpen, onClose, onConversationStart }
                     }}
                     placeholder="Type your message..."
                     rows={4}
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400/50"
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400/50 shadow"
                   />
                 </div>
 
@@ -337,7 +338,7 @@ export default function NewMessageModal({ isOpen, onClose, onConversationStart }
                 <div className="flex items-center justify-end space-x-3">
                   <button
                     onClick={() => setSelectedUser(null)}
-                    className="px-4 py-2 text-white/80 hover:text-white transition-all"
+                    className="px-4 py-2 text-white/80 hover:text-white transition-all border border-white/10 rounded-xl bg-white/10"
                   >
                     Back
                   </button>
@@ -348,10 +349,10 @@ export default function NewMessageModal({ isOpen, onClose, onConversationStart }
                     onClick={handleSendMessage}
                     disabled={!message.trim() || isSending}
                     className={`
-                      px-6 py-2 rounded-xl font-medium transition-all flex items-center space-x-2
+                      px-6 py-2 rounded-xl font-medium transition-all flex items-center space-x-2 border shadow
                       ${message.trim() && !isSending
-                        ? 'bg-blue-500 hover:bg-blue-600 text-white' 
-                        : 'bg-white/10 text-white/40 cursor-not-allowed'
+                        ? 'bg-gradient-to-r from-blue-900 via-indigo-900 to-blue-800 hover:from-blue-800 hover:via-indigo-800 hover:to-blue-700 text-white border-white/20' 
+                        : 'bg-white/10 text-white/40 cursor-not-allowed border-white/10'
                       }
                     `}
                   >
