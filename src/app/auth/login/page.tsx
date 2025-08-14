@@ -355,12 +355,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* Admin Credentials Hint */}
-              <div className="bg-blue-500/10 border border-blue-400/20 rounded-xl p-3">
-                <p className="text-xs text-blue-300/90 text-center">
-                  <span className="font-semibold">Admin Access:</span> admin@gmail.com / admin123
-                </p>
-              </div>
+            
 
               {/* Submit Button */}
               <div>
