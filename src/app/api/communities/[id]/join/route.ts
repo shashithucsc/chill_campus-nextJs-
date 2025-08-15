@@ -4,7 +4,7 @@ import Community from '@/models/Community';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, context: any) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -15,7 +15,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     }
 
     await dbConnect();
-    const communityId = params.id;
+  const communityId = context?.params?.id;
 
     const community = await Community.findById(communityId);
     if (!community) {

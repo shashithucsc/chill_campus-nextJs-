@@ -5,11 +5,11 @@ import { getSession } from '@/lib/session';
 import path from 'path';
 import fs from 'fs/promises';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, context: any) {
   try {
     await dbConnect();
 
-    const { id } = params;
+  const { id } = context?.params || {};
 
     // Find the post by ID and populate the user and community data
     const post = await Post.findById(id)
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, context: any) {
   await dbConnect();
   
   // Try to get session from custom session system
@@ -76,7 +76,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (!session || !session.user || !(session.user as any).id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  const { id } = params;
+  const { id } = context?.params || {};
   const form = await req.formData();
   const content = form.get('content') as string;
   const mediaType = form.get('mediaType') as string | null;
@@ -116,7 +116,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   return NextResponse.json({ post });
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, context: any) {
   await dbConnect();
   
   // Try to get session from custom session system
@@ -149,7 +149,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   if (!session || !session.user || !(session.user as any).id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  const { id } = params;
+  const { id } = context?.params || {};
   const post = await Post.findById(id);
   if (!post) return NextResponse.json({ error: 'Post not found' }, { status: 404 });
   if (post.user.toString() !== (session.user as any).id) {

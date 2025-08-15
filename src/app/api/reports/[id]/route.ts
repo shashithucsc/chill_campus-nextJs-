@@ -7,7 +7,7 @@ import User from '@/models/User';
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: any
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -23,8 +23,8 @@ export async function PUT(
 
     await connectDB();
 
-    const { status, adminNotes } = await req.json();
-    const { id } = params;
+  const { status, adminNotes } = await req.json();
+  const { id } = context?.params || {};
 
     // Validate status
     if (!['Pending', 'Resolved', 'Ignored'].includes(status)) {
@@ -58,7 +58,7 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: any
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -74,7 +74,7 @@ export async function DELETE(
 
     await connectDB();
 
-    const { id } = params;
+  const { id } = context?.params || {};
     const report = await Report.findByIdAndDelete(id);
 
     if (!report) {
