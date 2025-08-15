@@ -8,7 +8,7 @@ import mongoose from "mongoose";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: any
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -20,7 +20,7 @@ export async function POST(
       );
     }
 
-    const communityId = params.id;
+  const communityId = context?.params?.id;
     
     if (!mongoose.Types.ObjectId.isValid(communityId)) {
       return NextResponse.json(

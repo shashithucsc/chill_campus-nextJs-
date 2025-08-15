@@ -9,7 +9,7 @@ import Report from '@/models/Report';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: any
 ) {
   try {
     // Check admin authentication
@@ -21,7 +21,7 @@ export async function GET(
     // Connect to database
     await dbConnect();
 
-    const postId = params.id;
+  const postId = context?.params?.id;
 
     // Get post with detailed information
     const post = await Post.findById(postId)

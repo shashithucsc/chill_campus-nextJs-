@@ -7,7 +7,7 @@ import { authOptions } from '@/lib/auth';
 // PUT /api/notifications/[id] - Mark notification as read/unread
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: any
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -25,9 +25,9 @@ export async function PUT(
     const { isRead } = body;
 
     // Validate the notification belongs to the user
-    const notification = await Notification.findOneAndUpdate(
+  const notification = await Notification.findOneAndUpdate(
       { 
-        _id: params.id, 
+    _id: context?.params?.id, 
         recipient: session.user.id 
       },
       { isRead: isRead !== undefined ? isRead : true },
@@ -58,7 +58,7 @@ export async function PUT(
 // DELETE /api/notifications/[id] - Archive notification
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: any
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -73,9 +73,9 @@ export async function DELETE(
     await dbConnect();
 
     // Archive the notification (soft delete)
-    const notification = await Notification.findOneAndUpdate(
+  const notification = await Notification.findOneAndUpdate(
       { 
-        _id: params.id, 
+    _id: context?.params?.id, 
         recipient: session.user.id 
       },
       { isArchived: true },
