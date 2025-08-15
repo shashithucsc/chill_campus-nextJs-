@@ -9,11 +9,6 @@ import {
   ExclamationTriangleIcon,
   BellIcon,
   ShieldCheckIcon,
-  GlobeAltIcon,
-  ServerIcon,
-  CloudArrowDownIcon,
-  KeyIcon,
-  EnvelopeIcon,
   ChevronRightIcon,
   DocumentDuplicateIcon,
   PaintBrushIcon,
@@ -32,7 +27,7 @@ const settingsSections = [
   {
     id: "system",
     title: "System Configuration",
-    icon: ServerIcon,
+  icon: Cog6ToothIcon,
     description: "Configure core system settings and appearance",
     settings: [
       {
@@ -157,7 +152,7 @@ const settingsSections = [
   {
     id: "data",
     title: "Data Management",
-    icon: CloudArrowDownIcon,
+  icon: ArrowPathIcon,
     description: "Manage system data and exports",
     settings: [
       {
@@ -437,7 +432,6 @@ export default function SettingsPage() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [hasChanges, setHasChanges] = useState(false);
-  const [activeSection, setActiveSection] = useState("system");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   

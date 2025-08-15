@@ -244,7 +244,6 @@ export default function UsersPage() {
   const [filteredUsers, setFilteredUsers] = useState<DisplayUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
 
   // Fetch users from API
