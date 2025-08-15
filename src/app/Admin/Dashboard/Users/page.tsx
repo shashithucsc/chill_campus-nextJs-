@@ -245,6 +245,8 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
+  // Track responsive breakpoint
+  const [isMobile, setIsMobile] = useState<boolean>(false);
 
   // Fetch users from API
   const fetchUsers = async () => {
