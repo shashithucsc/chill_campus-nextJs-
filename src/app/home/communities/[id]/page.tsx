@@ -555,7 +555,8 @@ export default function CommunityPage() {
                 _id: community._id,
                 name: community.name,
                 banner: community.coverImage || '',
-                description: community.description
+                description: community.description,
+                memberCount: community.memberCount || 0
               } : undefined}
             />
           </div>

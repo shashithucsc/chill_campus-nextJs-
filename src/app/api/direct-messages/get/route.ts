@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const userId = session.user.id;
+    const userId = (session.user as any).id;
 
     // Verify recipient exists
     const recipient = await User.findById(recipientId).select('fullName avatar email');
@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
       .lean();
 
     // Transform messages for frontend
-    const transformedMessages = messages.map(message => ({
+    const transformedMessages = messages.map((message: any) => ({
       _id: message._id.toString(),
       content: message.content,
       sender: {

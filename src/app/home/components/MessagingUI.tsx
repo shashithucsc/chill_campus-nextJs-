@@ -55,13 +55,8 @@ interface Community {
   name: string;
   memberCount: number;
   coverImage?: string;
-}
-
-interface Community {
-  _id: string;
-  name: string;
-  banner: string;
-  description: string;
+  banner?: string;
+  description?: string;
 }
 
 interface MessagingUIProps {

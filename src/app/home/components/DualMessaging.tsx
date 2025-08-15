@@ -22,6 +22,7 @@ interface Community {
   name: string;
   banner: string;
   description: string;
+  memberCount: number;
 }
 
 interface DualMessagingProps {
@@ -132,11 +133,11 @@ export default function DualMessaging({ community, className = '', onClose }: Du
                         <button
                           onClick={() => handleModeSwitch('group')}
                           className={`p-2 rounded-lg transition-all border ${
-                            mode === 'group' 
+                            (mode as MessagingMode) === 'group' 
                               ? 'text-white border-white/20' 
                               : 'text-white/60 hover:text-white border-transparent'
                           }`}
-                          style={mode === 'group' ? {background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'} : undefined}
+                          style={(mode as MessagingMode) === 'group' ? {background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'} : undefined}
                         >
                           <UserGroupIcon className="h-5 w-5" />
                         </button>
@@ -154,7 +155,7 @@ export default function DualMessaging({ community, className = '', onClose }: Du
                 onConversationSelect={handleConversationSelect}
                 onNewMessage={() => setShowNewMessageModal(true)}
                 onClose={handleClose}
-                selectedConversationId={selectedRecipientId}
+                selectedConversationId={selectedRecipientId || undefined}
                 className="flex-1"
                 refreshTrigger={refreshTrigger}
               />
@@ -268,7 +269,7 @@ export default function DualMessaging({ community, className = '', onClose }: Du
               onConversationSelect={handleConversationSelect}
               onNewMessage={() => setShowNewMessageModal(true)}
               onClose={handleClose}
-              selectedConversationId={selectedRecipientId}
+              selectedConversationId={selectedRecipientId || undefined}
               refreshTrigger={refreshTrigger}
             />
           )}

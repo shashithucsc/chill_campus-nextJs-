@@ -162,7 +162,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     
     const responseData = {
       comment: {
-        _id: comment._id.toString(),
+        _id: (comment._id as any).toString(),
         user: {
           id: (comment.user as any)._id.toString(),
           name: (comment.user as any).fullName,

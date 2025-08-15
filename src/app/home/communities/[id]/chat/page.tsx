@@ -103,11 +103,13 @@ export default function CommunityMessagingPage() {
 
           {/* Messaging UI */}
           <div className="h-[calc(100vh-4rem)]">
-            <MessagingUI
-              communityId={id as string}
-              onLeaveGroup={handleLeaveCommunity}
-              onBack={handleBack}
-            />
+            {community && (
+              <MessagingUI
+                community={community}
+                onLeaveGroup={handleLeaveCommunity}
+                onBack={handleBack}
+              />
+            )}
           </div>
         </div>
       </div>

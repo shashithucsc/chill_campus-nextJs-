@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log('Report API: Session valid for user', session.user.id);
+    console.log('Report API: Session valid for user', (session.user as any).id);
 
     // Basic database connection
     await connectDB();
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ 
       success: true,
       message: 'Report API is working',
-      data: { postId, reason, description, userId: session.user.id }
+      data: { postId, reason, description, userId: (session.user as any).id }
     });
 
   } catch (error) {
