@@ -8,7 +8,7 @@ import Report from '@/models/Report';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: any // Using broad type to satisfy Next.js route handler typing in current version
 ) {
   try {
     // Check admin authentication
@@ -20,8 +20,8 @@ export async function PATCH(
     // Connect to database
     await dbConnect();
 
-    const { action, adminNotes } = await request.json();
-    const postId = params.id;
+  const { action, adminNotes } = await request.json();
+  const postId = context?.params?.id;
     const adminId = (session.user as any).id;
 
     // Validate action
