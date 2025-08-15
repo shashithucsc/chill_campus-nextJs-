@@ -38,7 +38,7 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    const userId = session.user.id;
+  const userId = (session.user as any).id;
     
     // Check if user is the sender or community admin
     const community = await Community.findById(message.community._id);
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const userId = session.user.id;
+  const userId = (session.user as any).id;
 
     // Verify community exists and get user permissions
     const community = await Community.findById(communityId);

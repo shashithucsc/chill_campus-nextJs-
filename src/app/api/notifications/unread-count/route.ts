@@ -18,7 +18,7 @@ export async function GET() {
 
     await dbConnect();
 
-    const unreadCount = await Notification.getUnreadCount(session.user.id);
+  const unreadCount = await Notification.getUnreadCount((session.user as any).id);
 
     return NextResponse.json({
       success: true,

@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Conversation ID is required' }, { status: 400 });
     }
 
-    const userId = new mongoose.Types.ObjectId(session.user.id);
+  const userId = new mongoose.Types.ObjectId((session.user as any).id);
 
     // Mark all unread messages as read for this user in this conversation
     await DirectMessage.updateMany(

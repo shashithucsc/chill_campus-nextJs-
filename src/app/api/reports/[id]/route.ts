@@ -16,7 +16,7 @@ export async function PUT(
     }
 
     // Check if user is admin
-    const user = await User.findById(session.user.id);
+  const user = await User.findById((session.user as any).id);
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
@@ -38,7 +38,7 @@ export async function PUT(
 
     // Update report
     report.status = status;
-    report.reviewedBy = session.user.id;
+  report.reviewedBy = (session.user as any).id;
     report.reviewedAt = new Date();
     if (adminNotes) report.adminNotes = adminNotes;
 
@@ -67,7 +67,7 @@ export async function DELETE(
     }
 
     // Check if user is admin
-    const user = await User.findById(session.user.id);
+  const user = await User.findById((session.user as any).id);
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }

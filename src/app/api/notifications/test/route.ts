@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { type = 'all', count = 5 } = body;
 
-    const userId = session.user.id;
+  const userId = (session.user as any).id;
     const senderName = session.user.name || 'Test User';
     const createdNotifications = [];
 

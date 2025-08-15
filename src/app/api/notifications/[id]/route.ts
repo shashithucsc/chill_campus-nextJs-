@@ -28,7 +28,7 @@ export async function PUT(
   const notification = await Notification.findOneAndUpdate(
       { 
     _id: context?.params?.id, 
-        recipient: session.user.id 
+  recipient: (session.user as any).id 
       },
       { isRead: isRead !== undefined ? isRead : true },
       { new: true }
@@ -76,7 +76,7 @@ export async function DELETE(
   const notification = await Notification.findOneAndUpdate(
       { 
     _id: context?.params?.id, 
-        recipient: session.user.id 
+  recipient: (session.user as any).id 
       },
       { isArchived: true },
       { new: true }

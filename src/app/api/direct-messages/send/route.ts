@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const userId = session.user.id;
+  const userId = (session.user as any).id;
 
     // Cannot send message to yourself
     if (userId === recipientId) {

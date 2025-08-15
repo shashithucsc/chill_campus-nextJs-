@@ -37,7 +37,7 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    const userId = session.user.id;
+  const userId = (session.user as any).id;
     
     // Check if user is the sender or recipient
     const isMessageOwner = message.sender.toString() === userId;
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const userId = session.user.id;
+  const userId = (session.user as any).id;
 
     if (deleteType === 'all') {
       // Delete all messages between the two users

@@ -5,127 +5,96 @@ import User from '@/models/User';
 import { getSession } from '@/lib/session';
 
 // GET: fetch reaction count and user's reaction status for a post
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, context: any) {
   try {
     await dbConnect();
-    
-    // Await params for Next.js 15 compatibility
-    const resolvedParams = await params;
-    
-    // Validate that params and id exist
-    if (!resolvedParams || !resolvedParams.id) {
-      return NextResponse.json(
-        { error: "Post ID is required" },
-        { status: 400 }
-      );
+
+    const postId = context?.params?.id;
+    if (!postId) {
+      return NextResponse.json({ error: 'Post ID is required' }, { status: 400 });
     }
-    
-    const postId = resolvedParams.id;
-    
-    // Check if user is authenticated to get their reaction status
+
+    // Auth (optional for like status)
     const session = await getSession();
     let userReacted = false;
-    
-    if (session && session.user && (session.user as any).id) {
-      const userId = (session.user as any).id;
-      const post = await Post.findById(postId);
-      if (post && post.likes && Array.isArray(post.likes)) {
-        userReacted = post.likes.includes(userId);
-      }
+    let userId: string | null = null;
+    if (session?.user && (session.user as any).id) {
+      userId = (session.user as any).id;
     }
-    
-    // Get the post to count reactions
+
     const post = await Post.findById(postId).select('likes');
     if (!post) {
-      return NextResponse.json(
-        { error: "Post not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
-    
+
+    if (userId && Array.isArray(post.likes)) {
+      userReacted = post.likes.some((l: any) => l?.toString() === userId);
+    }
+
     const reactionCount = post.likes ? post.likes.length : 0;
-    
+
+    // Return both naming styles for backward compatibility
     return NextResponse.json({
       reactionCount,
-      userReacted
+      userReacted,
+      likeCount: reactionCount,
+      likedByCurrentUser: userReacted
     });
-    
   } catch (error) {
-    console.error("Error fetching reactions:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch reactions" },
-      { status: 500 }
-    );
+    console.error('Error fetching reactions:', error);
+    return NextResponse.json({ error: 'Failed to fetch reactions' }, { status: 500 });
   }
 }
 
 // POST: toggle reaction on a post
-export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest, context: any) {
   try {
     await dbConnect();
-    
-    // Check authentication
+
     const session = await getSession();
     if (!session || !session.user || !(session.user as any).id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
-    // Await params for Next.js 15 compatibility
-    const resolvedParams = await params;
-    
-    // Validate params
-    if (!resolvedParams || !resolvedParams.id) {
-      return NextResponse.json(
-        { error: "Post ID is required" },
-        { status: 400 }
-      );
+
+    const postId = context?.params?.id;
+    if (!postId) {
+      return NextResponse.json({ error: 'Post ID is required' }, { status: 400 });
     }
-    
-    const postId = resolvedParams.id;
+
     const userId = (session.user as any).id;
-    
-    // Find the post
+
     const post = await Post.findById(postId);
     if (!post) {
-      return NextResponse.json(
-        { error: "Post not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
-    
-    // Initialize likes array if it doesn't exist
-    if (!post.likes) {
-      post.likes = [];
-    }
-    
-    // Toggle reaction
-    const userIndex = post.likes.indexOf(userId);
-    let action = '';
-    
-    if (userIndex > -1) {
-      // User already liked, so unlike
-      post.likes.splice(userIndex, 1);
+
+    if (!post.likes) post.likes = [];
+
+  const existingIndex = post.likes.findIndex((l: any) => l?.toString() === userId);
+    let action: 'liked' | 'unliked';
+    if (existingIndex > -1) {
+      post.likes.splice(existingIndex, 1);
       action = 'unliked';
     } else {
-      // User hasn't liked, so like
-      post.likes.push(userId);
+      post.likes.push(userId); // will be cast to ObjectId
       action = 'liked';
     }
-    
+
     await post.save();
-    
+
+    const reactionCount = post.likes.length;
+    const userReacted = action === 'liked';
+
     return NextResponse.json({
       success: true,
       action,
-      reactionCount: post.likes.length,
-      userReacted: action === 'liked'
+      reactionCount,
+      userReacted,
+      likeCount: reactionCount,
+      likedByCurrentUser: userReacted
     });
-    
   } catch (error) {
-    console.error("Error toggling reaction:", error);
-    return NextResponse.json(
-      { error: "Failed to toggle reaction" },
-      { status: 500 }
-    );
+    console.error('Error toggling reaction:', error);
+    return NextResponse.json({ error: 'Failed to toggle reaction' }, { status: 500 });
   }
 }
