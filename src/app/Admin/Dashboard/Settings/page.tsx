@@ -387,7 +387,7 @@ const SettingCard = ({
                           )}
                         </button>
                         <input
-                          ref={fileInputRef}
+                          ref={fileInputRef as React.RefObject<HTMLInputElement>}
                           type="file"
                           accept="image/*"
                           onChange={onLogoUpload}
@@ -441,7 +441,7 @@ export default function SettingsPage() {
   
   // File upload states
   const [uploadingLogo, setUploadingLogo] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Fetch settings on component mount
   useEffect(() => {

@@ -5,10 +5,11 @@ declare global {
   var mongoose: { conn: any; promise: Promise<any> | null } | undefined;
 }
 
-const MONGODB_URI = process.env.MONGODB_URI as string;
+const MONGODB_URI = process.env.MONGODB_URI;
 
-if (!MONGODB_URI) {
-  throw new Error('Please define MONGODB_URI in your .env.local file');
+// Handle missing MongoDB URI more gracefully
+if (!MONGODB_URI && process.env.NODE_ENV !== 'test') {
+  console.warn('MongoDB URI not found. Database operations will be limited.');
 }
 
 let cached = (global as any).mongoose;
@@ -18,13 +19,30 @@ if (!cached) {
 }
 
 async function dbConnect() {
+  // Return early if no MongoDB URI is available
+  if (!MONGODB_URI) {
+    return null;
+  }
+
   if (cached.conn) return cached.conn;
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI).then((mongoose) => mongoose);
+    try {
+      cached.promise = mongoose.connect(MONGODB_URI).then((mongoose) => mongoose);
+    } catch (error) {
+      console.error('Database connection error:', error);
+      return null;
+    }
   }
-  cached.conn = await cached.promise;
-  return cached.conn;
+  
+  try {
+    cached.conn = await cached.promise;
+    return cached.conn;
+  } catch (error) {
+    console.error('Database connection failed:', error);
+    cached.promise = null; // Reset promise on failure
+    return null;
+  }
 }
 
 export default dbConnect;

@@ -1,0 +1,12 @@
+{
+  "build": {
+    "env": {
+      "SKIP_ENV_VALIDATION": "true"
+    }
+  },
+  "functions": {
+    "src/app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  }
+}

@@ -1,0 +1,35 @@
+# Build artifacts
+.next/
+out/
+node_modules/
+
+# Development files
+*.log
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Large media files
+public/background.mp4
+public/uploads/*.mp4
+public/uploads/*.webm
+
+# Development tools
+.vscode/
+.idea/
+*.tsbuildinfo
+
+# Cache
+.next/cache/
+.npm/
+.yarn/
+
+# Test files
+__tests__/
+*.test.*
+*.spec.*
+
+# Documentation
+docs/
+README.md
