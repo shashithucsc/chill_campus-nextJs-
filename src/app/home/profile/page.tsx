@@ -127,31 +127,26 @@ export default function ProfilePage() {
   // Enhanced loading state
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center"
-        >
-          <motion.div 
-            animate={{ 
-              rotate: 360,
-              scale: [1, 1.1, 1],
-            }} 
-            transition={{ 
-              rotate: { duration: 1.5, repeat: Infinity, ease: "linear" },
-              scale: { duration: 2, repeat: Infinity, ease: "easeInOut" }
-            }}
-            className="w-20 h-20 rounded-full border-t-4 border-l-4 border-r-4 border-b-transparent border-white/30 mx-auto mb-4"
-          />
-          <motion.p 
-            animate={{ opacity: [0.5, 1, 0.5] }} 
-            transition={{ duration: 1.5, repeat: Infinity }}
-            className="text-xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent font-medium"
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950-900 to-slate-900">
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center"
           >
-            Loading your profile...
-          </motion.p>
-        </motion.div>
+            <motion.div
+              animate={{ rotate: 360, scale: [1, 1.08, 1] }}
+              transition={{ rotate: { duration: 1.2, repeat: Infinity, ease: 'linear' }, scale: { duration: 1.8, repeat: Infinity, ease: 'easeInOut' } }}
+              className="w-20 h-20 rounded-full border-t-4 border-l-4 border-r-4 border-b-transparent mx-auto mb-4"
+              style={{ borderTopColor: '#60A5FA', borderLeftColor: '#7C3AED', borderRightColor: '#8B5CF6', borderBottomColor: 'transparent', boxShadow: '0 8px 30px rgba(99,102,241,0.12)' }}
+            />
+            <motion.p
+              animate={{ opacity: [0.6, 1, 0.6] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              className="text-xl bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent font-medium"
+            >
+              Loading your profile...
+            </motion.p>
+          </motion.div>
       </div>
     );
   }
@@ -185,35 +180,24 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      {/* Animated Background */}
-      <div className="fixed inset-0">
-        {/* Dark gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/80 via-purple-900/70 to-indigo-900/80"></div>
-        
-        {/* Floating Background Elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(8)].map((_, i) => (
-            <motion.div
-              key={i}
-              animate={{
-                y: [-20, 20, -20],
-                x: [-10, 10, -10],
-              }}
-              transition={{
-                duration: 8,
-                repeat: Infinity,
-                ease: [0.25, 0.1, 0.25, 1],
-                delay: i * 0.5
-              }}
-              className="absolute w-32 h-32 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"
-              style={{
-                left: `${15 + i * 10}%`,
-                top: `${10 + i * 8}%`,
-              }}
-            />
-          ))}
-        </div>
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Background Video + Overlay to match Landing theme */}
+      <div className="absolute inset-0 z-0">
+        {/* Solid gradient overlay (no video) to match landing theme */}
+        <div className="absolute inset-0 backdrop-blur-[2px]" style={{ background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)', opacity: 0.9 }} />
+      </div>
+
+      {/* Floating Background Elements (on top of overlay) */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(8)].map((_, i) => (
+          <motion.div
+            key={i}
+            animate={{ y: [-20, 20, -20], x: [-10, 10, -10] }}
+            transition={{ duration: 8, repeat: Infinity, ease: [0.25, 0.1, 0.25, 1], delay: i * 0.5 }}
+            className="absolute w-32 h-32 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"
+            style={{ left: `${15 + i * 10}%`, top: `${10 + i * 8}%` }}
+          />
+        ))}
       </div>
       
       <Navbar onCreatePost={() => setShowCreatePost(true)} />
@@ -353,6 +337,16 @@ export default function ProfilePage() {
                       </p>
                     </div>
                   </motion.div>
+                    {/* Communities joined badge - visible near header info */}
+                    <div className="mt-3 flex items-center gap-3 md:justify-start justify-center">
+                      <div className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium border border-white/20 shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5V4H2v16h5m10 0v-6a4 4 0 10-8 0v6" />
+                        </svg>
+                        <span>{editedData.stats?.communities ?? 0} communities</span>
+                      </div>
+                      <p className="text-sm text-white/70 hidden md:block">Member since { /* optionally show join date if available */ }</p>
+                    </div>
                 </div>
                 
                 {/* Action buttons */}

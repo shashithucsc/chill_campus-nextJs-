@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const userId = session.user.id;
+  const userId = (session.user as any).id;
     if (!community.members.includes(userId)) {
       return NextResponse.json(
         { error: 'Access denied. You must be a member of this community.' },

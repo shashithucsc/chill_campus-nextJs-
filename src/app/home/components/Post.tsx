@@ -90,26 +90,33 @@ export default function Post({
   }, [session]);
 
   useEffect(() => {
-    // Fetch like state from backend
-    fetch(`/api/posts/${id}/reactions`)
-      .then(res => res.json())
-      .then(data => {
-        setIsLiked(data.likedByCurrentUser || false);
-        setLikeCount(data.likeCount || 0);
-      });
-    
+    let cancelled = false;
+    const loadReactions = async () => {
+      try {
+        const res = await fetch(`/api/posts/${id}/reactions`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        // Support both naming styles
+        setIsLiked(Boolean(data.likedByCurrentUser ?? data.userReacted));
+        setLikeCount(typeof data.likeCount === 'number' ? data.likeCount : (data.reactionCount || 0));
+      } catch (e) {
+        console.error('Failed to load reactions', e);
+      }
+    };
+    loadReactions();
+
     // Fetch comment count from backend
     fetchCommentCount();
-    
+
     // Check if user has reported this post
     if (session?.user?.id) {
       fetch(`/api/posts/${id}/reports`)
         .then(res => res.json())
-        .then(data => {
-          setHasReported(data.hasUserReported || false);
-        })
+        .then(data => { if (!cancelled) setHasReported(data.hasUserReported || false); })
         .catch(err => console.error('Error fetching report status:', err));
     }
+    return () => { cancelled = true; };
   }, [id, session?.user?.id]);
 
   const fetchCommentCount = async () => {
@@ -125,15 +132,28 @@ export default function Post({
   };
 
   const handleLike = async () => {
-    const newLiked = !isLiked;
-    setIsLiked(newLiked);
-    setLikeCount(likeCount + (newLiked ? 1 : -1));
-    // Persist like/unlike
-    await fetch(`/api/posts/${id}/reactions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ like: newLiked }),
-    });
+    // Optimistic toggle
+    const optimisticLiked = !isLiked;
+    const prevLiked = isLiked;
+    const prevCount = likeCount;
+    setIsLiked(optimisticLiked);
+    setLikeCount(prevCount + (optimisticLiked ? 1 : -1));
+    try {
+      const res = await fetch(`/api/posts/${id}/reactions`, { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        setIsLiked(Boolean(data.likedByCurrentUser ?? data.userReacted));
+        setLikeCount(typeof data.likeCount === 'number' ? data.likeCount : (data.reactionCount || 0));
+      } else {
+        // Revert on failure
+        setIsLiked(prevLiked);
+        setLikeCount(prevCount);
+      }
+    } catch (e) {
+      console.error('Like toggle failed', e);
+      setIsLiked(prevLiked);
+      setLikeCount(prevCount);
+    }
   };
 
   const handleDelete = async () => {

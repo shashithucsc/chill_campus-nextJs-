@@ -25,7 +25,7 @@ export async function POST(req: Request, context: any) {
       );
     }
 
-    const userId = session.user.id;
+  const userId = (session.user as any).id;
     const isMember = community.members.includes(userId);
 
     if (!isMember) {

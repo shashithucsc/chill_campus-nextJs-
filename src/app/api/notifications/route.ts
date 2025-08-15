@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     // Build query
     const query: any = {
-      recipient: session.user.id,
+  recipient: (session.user as any).id,
       isArchived: false
     };
 
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     const total = await Notification.countDocuments(query);
 
     // Get unread count
-    const unreadCount = await Notification.getUnreadCount(session.user.id);
+  const unreadCount = await Notification.getUnreadCount((session.user as any).id);
 
     return NextResponse.json({
       success: true,
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
     // Create notification
     const notification = await Notification.createNotification({
       recipient: new mongoose.Types.ObjectId(recipient),
-      sender: session.user.id ? new mongoose.Types.ObjectId(session.user.id) : undefined,
+  sender: (session.user as any).id ? new mongoose.Types.ObjectId((session.user as any).id) : undefined,
       type,
       title,
       message,

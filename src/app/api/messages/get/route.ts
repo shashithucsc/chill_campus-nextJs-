@@ -6,6 +6,32 @@ import Community from '@/models/Community';
 import { getSession } from '@/lib/session';
 import mongoose from 'mongoose';
 
+interface LeanMessageSender {
+  _id: any;
+  fullName: string;
+  avatar?: string;
+  email: string;
+}
+
+interface LeanMessageDoc {
+  _id: any;
+  content: string;
+  sender: LeanMessageSender;
+  timestamp: Date;
+  messageType?: string;
+  isEdited?: boolean;
+  editedAt?: Date;
+  reactions?: any[];
+  replyTo?: {
+    _id: any;
+    content: string;
+    sender: { fullName: string };
+    timestamp: Date;
+  } | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export async function GET(req: NextRequest) {
   try {
     await dbConnect();
@@ -41,7 +67,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const userId = session.user.id;
+  const userId = (session.user as any).id;
     if (!community.members.includes(userId)) {
       return NextResponse.json(
         { error: 'Access denied. You must be a member of this community.' },
@@ -71,7 +97,7 @@ export async function GET(req: NextRequest) {
       })
       .sort({ timestamp: -1 })
       .limit(limit)
-      .lean();
+      .lean<LeanMessageDoc[]>();
 
     // Transform messages for frontend
     const transformedMessages = messages.map(message => ({

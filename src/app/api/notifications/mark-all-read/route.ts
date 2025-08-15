@@ -19,7 +19,7 @@ export async function PUT(request: NextRequest) {
     await dbConnect();
 
     // Mark all user's notifications as read
-    const result = await Notification.markAllAsRead(session.user.id);
+  const result = await Notification.markAllAsRead((session.user as any).id);
 
     return NextResponse.json({
       success: true,

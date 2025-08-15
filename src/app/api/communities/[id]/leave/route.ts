@@ -41,7 +41,7 @@ export async function POST(
       );
     }
 
-    if (!community.members.includes(session.user.id)) {
+  if (!community.members.includes((session.user as any).id)) {
       return NextResponse.json(
         { error: "You are not a member of this community" },
         { status: 400 }
@@ -65,7 +65,7 @@ export async function POST(
       const updatedCommunity = await Community.findByIdAndUpdate(
         communityId,
         {
-          $pull: { members: session.user.id }
+          $pull: { members: (session.user as any).id }
         },
         { new: true }
       );

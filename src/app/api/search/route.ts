@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
     if (type === 'all' || type === 'messages') {
       // First get user's communities
       const userCommunities = await Community.find({
-        members: session.user.id
+  members: (session.user as any).id
       }).select('_id');
 
       const communityIds = userCommunities.map(c => c._id);
