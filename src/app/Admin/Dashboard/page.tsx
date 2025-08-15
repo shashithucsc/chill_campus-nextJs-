@@ -7,7 +7,6 @@ import {
   UsersIcon,
   ExclamationTriangleIcon,
   ChartBarIcon,
-  Cog6ToothIcon,
   RectangleGroupIcon,
   MagnifyingGlassIcon,
   DocumentTextIcon,
