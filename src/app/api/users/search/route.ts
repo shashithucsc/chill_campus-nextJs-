@@ -3,6 +3,15 @@ import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import { getSession } from '@/lib/session';
 
+interface SearchLeanUser {
+  _id: any;
+  fullName: string;
+  email: string;
+  avatar?: string;
+  university?: string;
+  role: string;
+}
+
 export async function GET(req: NextRequest) {
   try {
     await dbConnect();
@@ -26,10 +35,10 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const userId = session.user.id;
+  const userId = (session.user as any).id; // cast to any to avoid TS error due to loose session typing
 
     // Search users by name or email (excluding current user)
-    const users = await User.find({
+  const users = await User.find({
       _id: { $ne: userId },
       $or: [
         { fullName: { $regex: query.trim(), $options: 'i' } },
@@ -40,10 +49,10 @@ export async function GET(req: NextRequest) {
     })
     .select('fullName email avatar university role')
     .limit(limit)
-    .lean();
+  .lean<SearchLeanUser[]>();
 
     // Transform users for frontend
-    const transformedUsers = users.map(user => ({
+  const transformedUsers = users.map(user => ({
       _id: user._id.toString(),
       fullName: user.fullName,
       email: user.email,

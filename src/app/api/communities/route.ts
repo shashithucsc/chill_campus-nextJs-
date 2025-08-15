@@ -4,6 +4,21 @@ import Community from '@/models/Community';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 
+// Minimal shape for lean community documents to satisfy TypeScript
+interface CommunityLean {
+  _id: any; // Using any here because Mongoose lean returns _id as unknown without schema typing
+  name: string;
+  description: string;
+  category?: string;
+  status: string;
+  coverImage?: string;
+  imageUrl?: string;
+  tags?: string[];
+  members: any[]; // Member ObjectIds
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export async function GET(req: NextRequest) {
   try {
     await dbConnect();
@@ -114,10 +129,10 @@ export async function GET(req: NextRequest) {
 
       const communities = await Community.find({ status: 'Active' })
         .populate('createdBy', 'fullName email')
-        .lean();
+        .lean<CommunityLean[]>();
 
       // Add isJoined field and process image URLs
-      const communitiesWithJoinStatus = communities.map(community => {
+  const communitiesWithJoinStatus = communities.map((community: CommunityLean) => {
         // Ensure the coverImage is properly formed
         let coverImage = community.coverImage;
         if (coverImage && !coverImage.startsWith('http') && !coverImage.startsWith('/')) {
@@ -126,7 +141,7 @@ export async function GET(req: NextRequest) {
 
         return {
           ...community,
-          id: community._id.toString(),
+          id: (community._id as any).toString(),
           isJoined: community.members.some(memberId => 
             memberId.toString() === userId
           ),
