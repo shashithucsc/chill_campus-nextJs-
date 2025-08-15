@@ -2,26 +2,34 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import User from '@/models/User';
 
+// Minimal shape for a user returned via lean (password removed via select)
+interface LeanUserDoc {
+  _id: any; // ObjectId
+  fullName: string;
+  email: string;
+  role: string;
+  status: string;
+  university?: string;
+  avatar?: string;
+}
+
 // GET - Fetch single user
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, context: any) {
   try {
     await dbConnect();
-    
-    const { id } = await params;
-    const user = await User.findById(id).select('-password').lean();
-    
+
+    const { id } = context?.params || {};
+    const user = await User.findById(id).select('-password').lean<LeanUserDoc>();
+
     if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json(user);
-    
+
   } catch (error) {
     console.error('Error fetching user:', error);
     return NextResponse.json(
@@ -32,33 +40,30 @@ export async function GET(
 }
 
 // PUT - Update user
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: NextRequest, context: any) {
   try {
     await dbConnect();
-    
-    const { id } = await params;
+
+    const { id } = context?.params || {};
     const body = await request.json();
     const { fullName, email, role, status } = body;
-    
+
     // Find and update user
     const updatedUser = await User.findByIdAndUpdate(
       id,
       { fullName, email, role, status },
       { new: true, runValidators: true }
     ).select('-password');
-    
+
     if (!updatedUser) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json(updatedUser);
-    
+
   } catch (error) {
     console.error('Error updating user:', error);
     return NextResponse.json(
@@ -69,25 +74,22 @@ export async function PUT(
 }
 
 // DELETE - Delete user
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(request: NextRequest, context: any) {
   try {
     await dbConnect();
-    
-    const { id } = await params;
+
+    const { id } = context?.params || {};
     const deletedUser = await User.findByIdAndDelete(id);
-    
+
     if (!deletedUser) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json({ message: 'User deleted successfully' });
-    
+
   } catch (error) {
     console.error('Error deleting user:', error);
     return NextResponse.json(

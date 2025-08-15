@@ -5,6 +5,12 @@ import { getSession } from '@/lib/session';
 import path from 'path';
 import fs from 'fs/promises';
 
+interface LeanPostDoc {
+  _id: any;
+  disabled?: boolean;
+  // Other properties are populated and treated as any; we only need disabled flag statically
+}
+
 export async function GET(req: NextRequest, context: any) {
   try {
     await dbConnect();
@@ -16,7 +22,7 @@ export async function GET(req: NextRequest, context: any) {
       .populate('user', 'fullName avatar role')
       .populate('community', 'name coverImage')
       .populate('comments.user', 'fullName avatar')
-      .lean();
+      .lean<LeanPostDoc>();
 
     if (!post) {
       return NextResponse.json(
@@ -26,7 +32,7 @@ export async function GET(req: NextRequest, context: any) {
     }
 
     // Check if post is disabled
-    if ((post as any).disabled) {
+  if ((post as any).disabled) { // retain any cast for populated dynamic shape
       return NextResponse.json(
         { error: 'This post has been disabled' },
         { status: 403 }
