@@ -11,18 +11,19 @@ import fs from 'fs/promises';
 // GET: Fetch all posts for a specific community
 export async function GET(
   req: NextRequest,
-  { params }: { params?: { id?: string } }
+  context: any
 ) {
   try {
     // Type checking to ensure params.id exists
-    if (!params || !params.id) {
+  const params = context?.params;
+  if (!params?.id) {
       return NextResponse.json(
         { error: "Community ID is required" },
         { status: 400 }
       );
     }
     
-    const communityId = params.id;
+  const communityId = params.id;
     
     if (!mongoose.Types.ObjectId.isValid(communityId)) {
       return NextResponse.json(
@@ -67,19 +68,20 @@ export async function GET(
 // POST: Create a new post in a specific community
 export async function POST(
   req: NextRequest,
-  { params }: { params?: { id?: string } }
+  context: any
 ) {
   try {
     await dbConnect();
     
-    if (!params || !params.id) {
+  const params = context?.params;
+  if (!params?.id) {
       return NextResponse.json(
         { error: "Community ID is required" },
         { status: 400 }
       );
     }
 
-    const communityId = params.id;
+  const communityId = params.id;
 
     if (!mongoose.Types.ObjectId.isValid(communityId)) {
       return NextResponse.json(

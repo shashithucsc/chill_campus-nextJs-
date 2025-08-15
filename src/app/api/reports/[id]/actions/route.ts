@@ -10,7 +10,7 @@ import mongoose from 'mongoose';
 // PATCH - Update report status and perform actions
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: any
 ) {
   try {
     console.log('Report Action API: Starting PATCH request');
@@ -28,8 +28,8 @@ export async function PATCH(
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    const { action, adminNotes } = await req.json();
-    const { id } = params;
+  const { action, adminNotes } = await req.json();
+  const { id } = context?.params || {};
 
     console.log('Report Action API: Processing action', { reportId: id, action });
 
