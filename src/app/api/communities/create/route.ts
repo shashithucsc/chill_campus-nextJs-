@@ -38,8 +38,8 @@ export async function POST(req: Request) {
     const community = await Community.create({
       ...data,
       name: data.name.trim(),
-      createdBy: session.user.id,
-      members: [session.user.id] // Add creator as first member
+      createdBy: (session.user as any).id,
+      members: [(session.user as any).id] // Add creator as first member
     });
 
     return NextResponse.json(

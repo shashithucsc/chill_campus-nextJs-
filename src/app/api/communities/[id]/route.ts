@@ -36,7 +36,7 @@ export async function GET(
     const session = await getServerSession(authOptions);
     
     if (session?.user?.id) {
-      isMember = community.members.includes(session.user.id);
+      isMember = community.members.includes((session.user as any).id);
     }
 
     // Format the response
@@ -101,7 +101,7 @@ export async function PUT(
     }
 
     // Check if the current user is the creator of the community
-    if (community.createdBy.toString() !== session.user.id) {
+    if (community.createdBy.toString() !== (session.user as any).id) {
       return NextResponse.json(
         { error: "Only the community creator can edit this community" },
         { status: 403 }
@@ -179,7 +179,7 @@ export async function PUT(
     }
 
     // Check if user is a member for the response
-    const isMember = updatedCommunity.members.includes(session.user.id);
+    const isMember = updatedCommunity.members.includes((session.user as any).id);
     
     // Return updated community with member count and membership status
     const communityResponse = {

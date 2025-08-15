@@ -87,13 +87,7 @@ DirectMessageSchema.index({ sender: 1, recipient: 1, timestamp: -1 });
 DirectMessageSchema.index({ recipient: 1, isRead: 1 });
 DirectMessageSchema.index({ timestamp: -1 });
 
-// Compound index for conversation queries
-DirectMessageSchema.index({ 
-  $or: [
-    { sender: 1, recipient: 1 },
-    { sender: 1, recipient: 1 }
-  ],
-  timestamp: -1 
-});
+// Compound index for conversation queries (reverse order for bidirectional search)
+DirectMessageSchema.index({ recipient: 1, sender: 1, timestamp: -1 });
 
 export default models.DirectMessage || model<IDirectMessage>('DirectMessage', DirectMessageSchema);
