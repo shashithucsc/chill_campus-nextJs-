@@ -4,6 +4,7 @@ import DirectMessage from '@/models/DirectMessage';
 import Conversation from '@/models/Conversation';
 import User from '@/models/User';
 import { getSession } from '@/lib/session';
+import { getSocketIO, emitToConversation, emitToUser } from '@/lib/socket';
 import mongoose from 'mongoose';
 
 export async function POST(req: NextRequest) {
@@ -222,6 +223,22 @@ export async function POST(req: NextRequest) {
       createdAt: message.createdAt.toISOString(),
       updatedAt: message.updatedAt.toISOString()
     };
+
+    // Emit real-time message via Socket.IO
+    const io = getSocketIO(req as any);
+    if (io) {
+      // Emit to conversation room
+      emitToConversation(io, conversation._id.toString(), 'new-direct-message', {
+        message: transformedMessage,
+        conversationId: conversation._id.toString()
+      });
+      
+      // Also emit directly to recipient's user room for notifications
+      emitToUser(io, recipientId, 'new-direct-message', {
+        message: transformedMessage,
+        conversationId: conversation._id.toString()
+      });
+    }
 
     return NextResponse.json({
       message: transformedMessage,

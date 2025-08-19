@@ -3,9 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "node server.js",
+    "dev:next": "next dev --turbopack",
     "build": "next build",
-    "start": "next start",
+    "start": "NODE_ENV=production node server.js",
+    "start:next": "next start",
     "lint": "next lint",
     "build:analyze": "ANALYZE=true npm run build",
     "type-check": "tsc --noEmit"
@@ -13,17 +15,21 @@
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@types/bcrypt": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.10",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
     "dotenv": "^17.2.1",
     "framer-motion": "^12.23.0",
     "jose": "^6.0.11",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.15.1",
     "next": "15.3.3",
     "next-auth": "^4.24.11",
     "nodemailer": "^6.10.1",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

@@ -4,6 +4,7 @@ import Message from '@/models/Message';
 import User from '@/models/User';
 import Community from '@/models/Community';
 import { getSession } from '@/lib/session';
+import { getSocketIO, emitToCommunity } from '@/lib/socket';
 import mongoose from 'mongoose';
 
 export async function POST(req: NextRequest) {
@@ -134,6 +135,15 @@ export async function POST(req: NextRequest) {
       createdAt: message.createdAt.toISOString(),
       updatedAt: message.updatedAt.toISOString()
     };
+
+    // Emit real-time message to community members via Socket.IO
+    const io = getSocketIO(req as any);
+    if (io) {
+      emitToCommunity(io, communityId, 'new-message', {
+        message: transformedMessage,
+        communityId
+      });
+    }
 
     return NextResponse.json({
       message: transformedMessage,
