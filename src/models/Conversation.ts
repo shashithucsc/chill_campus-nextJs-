@@ -6,7 +6,6 @@ export interface IConversation extends Document {
   lastMessage: mongoose.Types.ObjectId;
   lastMessageAt: Date;
   unreadCount: Map<string, number>; // userId -> unread count
-  isArchived: Map<string, boolean>; // userId -> archived status
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,11 +29,6 @@ const ConversationSchema = new Schema<IConversation>(
     unreadCount: {
       type: Map,
       of: Number,
-      default: new Map()
-    },
-    isArchived: {
-      type: Map,
-      of: Boolean,
       default: new Map()
     }
   },

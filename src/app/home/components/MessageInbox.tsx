@@ -8,7 +8,6 @@ import {
   ChatBubbleLeftIcon,
   MagnifyingGlassIcon,
   PlusIcon,
-  ArchiveBoxIcon,
   CheckIcon,
   EllipsisVerticalIcon,
   XMarkIcon
@@ -35,7 +34,6 @@ interface Conversation {
   participant: Participant; // Changed from participants array to single participant
   lastMessage: LastMessage;
   unreadCount: number; // Changed from Record to number
-  isArchived: boolean; // Changed from Record to boolean
   lastMessageAt: string; // Changed from updatedAt to lastMessageAt
   createdAt: string;
 }
@@ -61,7 +59,6 @@ export default function MessageInbox({
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showArchived, setShowArchived] = useState(false);
   const [userSearchResults, setUserSearchResults] = useState<Participant[]>([]);
   const [isSearchingUsers, setIsSearchingUsers] = useState(false);
   const [showUserSearch, setShowUserSearch] = useState(false);
@@ -166,23 +163,14 @@ export default function MessageInbox({
     return conversation.unreadCount; // Already a number from API
   };
 
-  // Check if conversation is archived for current user
-  const isConversationArchived = (conversation: Conversation) => {
-    return conversation.isArchived; // Already a boolean from API
-  };
-
-  // Filter conversations based on search and archive status
+  // Filter conversations based on search
   const filteredConversations = conversations.filter(conversation => {
     const otherParticipant = getOtherParticipant(conversation);
     const matchesSearch = !searchQuery || 
       otherParticipant?.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       conversation.lastMessage?.content.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesArchiveFilter = showArchived ? 
-      isConversationArchived(conversation) : 
-      !isConversationArchived(conversation);
-
-    return matchesSearch && matchesArchiveFilter;
+    return matchesSearch;
   });
 
   // Calculate total unread count
@@ -319,33 +307,6 @@ export default function MessageInbox({
             </div>
           )}
         </div>
-
-        {/* Archive Toggle */}
-        <div className="flex items-center mt-3">
-          <button
-            onClick={() => setShowArchived(false)}
-            className={`px-3 py-1 rounded-lg text-sm transition-all border border-white/20 ${
-              !showArchived 
-                ? 'text-white' 
-                : 'text-white/60 hover:text-white hover:bg-white/10'
-            }`}
-            style={!showArchived ? {background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'} : undefined}
-          >
-            Active
-          </button>
-          <button
-            onClick={() => setShowArchived(true)}
-            className={`px-3 py-1 rounded-lg text-sm transition-all ml-2 border border-white/20 ${
-              showArchived 
-                ? 'text-white' 
-                : 'text-white/60 hover:text-white hover:bg-white/10'
-            }`}
-            style={showArchived ? {background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'} : undefined}
-          >
-            <ArchiveBoxIcon className="h-4 w-4 inline mr-1" />
-            Archived
-          </button>
-        </div>
       </div>
 
       {/* Conversations List */}
@@ -455,15 +416,24 @@ export default function MessageInbox({
                 const isSelected = selectedConversationId === otherParticipant?._id;
 
                 return (
-                  <motion.button
+                  <motion.div
                     key={`conversation-${conversation._id}`} // Add prefix to ensure uniqueness
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
                     onClick={() => handleConversationSelect(conversation)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleConversationSelect(conversation);
+                      }
+                    }}
                     className={`
-                      w-full p-4 flex items-center space-x-3 hover:bg-white/5 transition-all text-left border-r-2
+                      group w-full p-4 flex items-center space-x-3 hover:bg-white/5 transition-all text-left border-r-2
                       ${isSelected ? 'bg-white/10 border-white/30' : 'border-transparent'}
+                      focus:outline-none focus:ring-2 focus:ring-blue-400/50 rounded-lg
                     `}
                   >
                   {/* Avatar */}
@@ -522,14 +492,14 @@ export default function MessageInbox({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Add archive/unarchive functionality here
+                        // Additional conversation options can go here
                       }}
                       className="p-1 rounded-lg hover:bg-white/10 transition-all"
                     >
                       <EllipsisVerticalIcon className="h-4 w-4 text-white/60" />
                     </button>
                   </div>
-                </motion.button>
+                </motion.div>
                 );
               })}
             </>

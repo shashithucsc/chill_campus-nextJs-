@@ -61,7 +61,6 @@ interface Conversation {
   participants: ObjectId[]; // Array of User references
   lastMessage: ObjectId; // Reference to DirectMessage
   unreadCount: Map<string, number>; // Per-user unread counts
-  isArchived: Map<string, boolean>; // Per-user archive status
   createdAt: Date;
   updatedAt: Date;
 }
@@ -116,8 +115,7 @@ interface Message {
 DualMessaging
 ├── MessageInbox (Sidebar)
 │   ├── Conversation list
-│   ├── Search functionality
-│   └── Archive toggle
+│   └── Search functionality
 ├── DirectMessageUI (Main - Direct mode)
 │   ├── Chat header
 │   ├── Message bubbles
@@ -148,7 +146,6 @@ DualMessaging
 1. **Reading**: Messages auto-mark as read when conversation is opened
 2. **Replying**: Click reply icon → Context shows → Type response
 3. **Reactions**: Hover message → Click emoji → Select from picker
-4. **Archive**: Access through conversation options menu
 
 ## Real-time Updates
 

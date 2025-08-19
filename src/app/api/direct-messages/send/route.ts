@@ -131,10 +131,6 @@ export async function POST(req: NextRequest) {
         unreadCount: new Map([
           [userId, 0],
           [recipientId, 1]
-        ]),
-        isArchived: new Map([
-          [userId, false],
-          [recipientId, false]
         ])
       });
       

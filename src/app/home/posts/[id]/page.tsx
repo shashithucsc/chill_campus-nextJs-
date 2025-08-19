@@ -33,7 +33,8 @@ interface PostData {
 }
 
 export default function PostPage() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = (params as Record<string,string | string[]>)?.id;
   const router = useRouter();
   const { data: session } = useSession();
   const [post, setPost] = useState<PostData | null>(null);
@@ -56,7 +57,7 @@ export default function PostPage() {
       }
     };
 
-    if (id) {
+    if (typeof id === 'string' && id) {
       fetchPost();
     }
   }, [id]);

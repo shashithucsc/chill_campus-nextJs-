@@ -83,7 +83,8 @@ interface Post {
 }
 
 export default function CommunityPage() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params ? (Array.isArray(params.id) ? params.id[0] : params.id) : null;
   const { data: session } = useSession();
   
   // States
@@ -129,6 +130,11 @@ export default function CommunityPage() {
       fetchPosts();
     }
   }, [id]);
+
+  // Early return for invalid ID
+  if (!id) {
+    return <div>Invalid community ID</div>;
+  }
   // Fetch posts function
   const fetchPosts = async () => {
     setPostLoading(true);
