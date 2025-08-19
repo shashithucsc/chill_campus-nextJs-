@@ -11,7 +11,8 @@ import MessagingUI from '../../../components/MessagingUI';
 import { useSidebar } from '../../../context/SidebarContext';
 
 export default function CommunityMessagingPage() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params ? (Array.isArray(params.id) ? params.id[0] : params.id) : null;
   const router = useRouter();
   const { data: session } = useSession();
   const { isCollapsed } = useSidebar();
@@ -20,6 +21,8 @@ export default function CommunityMessagingPage() {
 
   // Fetch community data to verify membership
   const fetchCommunity = async () => {
+    if (!id) return;
+    
     try {
       const response = await fetch(`/api/communities/${id}`);
       const data = await response.json();
@@ -63,6 +66,23 @@ export default function CommunityMessagingPage() {
       fetchCommunity();
     }
   }, [id, session]);
+
+  // Early return for invalid ID - after hooks
+  if (!id) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900">
+        <Navbar />
+        <div className="flex">
+          <Sidebar />
+          <div className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-16' : 'ml-64'}`}>
+            <div className="flex items-center justify-center h-96">
+              <div className="text-white">Invalid community ID</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

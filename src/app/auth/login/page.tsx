@@ -24,7 +24,7 @@ function LoginPageContent() {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [popup, setPopup] = useState({ open: false, message: '', type: 'error' });
-  const callbackUrl = searchParams.get('callbackUrl') || '/home';
+  const callbackUrl = searchParams?.get('callbackUrl') || '/home';
   
   // Flag to track if user has explicitly attempted login
   const [hasAttemptedLogin, setHasAttemptedLogin] = useState(false);

@@ -1,7 +1,6 @@
 const { createServer } = require('http');
 const { parse } = require('url');
 const next = require('next');
-const { Server } = require('socket.io');
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = 'localhost';
@@ -25,33 +24,6 @@ app.prepare().then(() => {
     }
   });
 
-  // Initialize Socket.IO with a simpler configuration for now
-  const io = new Server(httpServer, {
-    path: '/api/socket/io',
-    addTrailingSlash: false,
-    cors: {
-      origin: process.env.NEXTAUTH_URL || "http://localhost:3000",
-      methods: ["GET", "POST"],
-      credentials: true
-    },
-    transports: ['websocket', 'polling'],
-    pingTimeout: 60000,
-    pingInterval: 25000,
-  });
-
-  // Basic connection handler
-  io.on('connection', (socket) => {
-    console.log('User connected:', socket.id);
-    
-    socket.on('disconnect', (reason) => {
-      console.log('User disconnected:', socket.id, reason);
-    });
-  });
-
-  // Store io instance for API routes
-  httpServer.io = io;
-  console.log('Socket.IO server initialized');
-
   httpServer
     .once('error', (err) => {
       console.error(err);
@@ -59,5 +31,6 @@ app.prepare().then(() => {
     })
     .listen(port, () => {
       console.log(`> Ready on http://${hostname}:${port}`);
+      console.log('> Socket.IO will be initialized when first accessed');
     });
 });

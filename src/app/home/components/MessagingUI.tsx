@@ -13,10 +13,13 @@ import {
   FaceSmileIcon,
   ArrowUturnLeftIcon,
   TrashIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  SpeakerWaveIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon, HandThumbUpIcon } from '@heroicons/react/24/solid';
 import EmojiPicker from './EmojiPicker';
+import SoundSettings from './SoundSettings';
+import { useSoundManager } from '@/lib/SoundManager';
 
 interface MessageSender {
   _id: string;
@@ -69,6 +72,7 @@ interface MessagingUIProps {
 export default function MessagingUI({ community, onLeaveGroup, onBack }: MessagingUIProps) {
   const { data: session } = useSession();
   const { socket, isConnected, joinCommunity, leaveCommunity, startTyping, stopTyping, typingUsers } = useSocket();
+  const { soundManager } = useSoundManager();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -80,6 +84,7 @@ export default function MessagingUI({ community, onLeaveGroup, onBack }: Messagi
   const [showConversationDeleteModal, setShowConversationDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+  const [showSoundSettings, setShowSoundSettings] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -342,6 +347,12 @@ export default function MessagingUI({ community, onLeaveGroup, onBack }: Messagi
           const exists = prev.some(msg => msg._id === data.message._id);
           if (exists) return prev;
           
+          // Only play sound if message is from another user
+          const currentUserId = session?.user?.id || session?.user?.email;
+          if (data.message.sender._id !== currentUserId) {
+            soundManager.playNewMessageSound();
+          }
+          
           return [...prev, data.message];
         });
         setTimeout(scrollToBottom, 100);
@@ -465,6 +476,15 @@ export default function MessagingUI({ community, onLeaveGroup, onBack }: Messagi
           </div>
 
           <div className="flex items-center space-x-2">
+            {/* Sound Settings Button */}
+            <button
+              onClick={() => setShowSoundSettings(true)}
+              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-all"
+              title="Sound Settings"
+            >
+              <SpeakerWaveIcon className="h-5 w-5 text-white" />
+            </button>
+
             {onLeaveGroup && (
               <button
                 onClick={onLeaveGroup}
@@ -909,6 +929,12 @@ export default function MessagingUI({ community, onLeaveGroup, onBack }: Messagi
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Sound Settings Modal */}
+      <SoundSettings 
+        isOpen={showSoundSettings} 
+        onClose={() => setShowSoundSettings(false)} 
+      />
     </div>
   );
 }

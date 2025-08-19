@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useSession } from 'next-auth/react';
+import { SoundManager } from '@/lib/SoundManager';
 import { 
   ServerToClientEvents, 
   ClientToServerEvents 
@@ -56,6 +57,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const [typingUsers, setTypingUsers] = useState<Map<string, { userId: string; userName: string; timestamp: number }>>(new Map());
+  const [soundManager] = useState(() => SoundManager.getInstance());
 
   useEffect(() => {
     if (status === 'authenticated' && session?.user) {
@@ -76,25 +78,60 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
         auth: {
           token: authToken
         },
-        transports: ['websocket', 'polling'],
+        transports: ['polling', 'websocket'], // Try polling first, then websocket
         timeout: 20000,
-        forceNew: true
+        forceNew: true,
+        autoConnect: true,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
       });
 
       // Connection event handlers
       socketInstance.on('connect', () => {
-        console.log('Socket.IO connected');
+        console.log('Socket.IO connected successfully');
         setIsConnected(true);
+        soundManager.playConnectSound();
       });
 
       socketInstance.on('disconnect', (reason) => {
         console.log('Socket.IO disconnected:', reason);
         setIsConnected(false);
+        soundManager.playDisconnectSound();
       });
 
       socketInstance.on('connect_error', (error) => {
-        console.error('Socket.IO connection error:', error);
+        console.error('Socket.IO connection error:', error.message);
         setIsConnected(false);
+        
+        // Don't play error sound for initial connection attempts
+        if (socketInstance.connected) {
+          soundManager.playErrorSound();
+        }
+        
+        // Log detailed error info for debugging
+        console.error('Error details:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        });
+      });
+
+      socketInstance.on('reconnect', (attemptNumber) => {
+        console.log('Socket.IO reconnected after', attemptNumber, 'attempts');
+        setIsConnected(true);
+        soundManager.playConnectSound();
+      });
+
+      socketInstance.on('reconnect_error', (error) => {
+        console.error('Socket.IO reconnection error:', error.message);
+      });
+
+      socketInstance.on('reconnect_failed', () => {
+        console.error('Socket.IO failed to reconnect');
+        setIsConnected(false);
+        soundManager.playErrorSound();
       });
 
       // User presence handlers
@@ -108,6 +145,15 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
           newSet.delete(data.userId);
           return newSet;
         });
+      });
+
+      // Message event handlers with sound effects
+      socketInstance.on('new-message', (data) => {
+        soundManager.playNewMessageSound();
+      });
+
+      socketInstance.on('new-direct-message', (data) => {
+        soundManager.playDirectMessageSound();
       });
 
       // Typing indicators

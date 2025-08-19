@@ -25,8 +25,7 @@ export async function GET(req: NextRequest) {
 
     // Get all conversations for the user (without populate first to test)
     const conversations = await Conversation.find({
-      participants: userId,
-      [`isArchived.${userId}`]: { $ne: true }
+      participants: userId
     })
     .sort({ lastMessageAt: -1 })
     .lean();
@@ -76,8 +75,7 @@ export async function GET(req: NextRequest) {
           isFromMe: conv.lastMessage.sender.toString() === userId
         } : null,
         lastMessageAt: conv.lastMessageAt.toISOString(),
-        unreadCount: (conv.unreadCount instanceof Map ? conv.unreadCount.get(userId) : conv.unreadCount?.[userId]) || 0,
-        isArchived: (conv.isArchived instanceof Map ? conv.isArchived.get(userId) : conv.isArchived?.[userId]) || false
+        unreadCount: (conv.unreadCount instanceof Map ? conv.unreadCount.get(userId) : conv.unreadCount?.[userId]) || 0
       };
     }).filter(Boolean);
 
