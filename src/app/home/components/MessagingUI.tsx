@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, KeyboardEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSession } from 'next-auth/react';
+import { useSocket } from '@/contexts/SocketContext';
 import Image from 'next/image';
 import { 
   PaperAirplaneIcon,
@@ -67,6 +68,7 @@ interface MessagingUIProps {
 
 export default function MessagingUI({ community, onLeaveGroup, onBack }: MessagingUIProps) {
   const { data: session } = useSession();
+  const { socket, isConnected, joinCommunity, leaveCommunity, startTyping, stopTyping, typingUsers } = useSocket();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -81,7 +83,7 @@ export default function MessagingUI({ community, onLeaveGroup, onBack }: Messagi
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const optionsMenuRef = useRef<HTMLDivElement>(null);
 
@@ -222,6 +224,21 @@ export default function MessagingUI({ community, onLeaveGroup, onBack }: Messagi
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
+      handleTypingStop();
+    } else {
+      // Start typing indicator on any other key
+      handleTypingStart();
+    }
+  };
+
+  // Handle message input change
+  const handleMessageChange = (value: string) => {
+    setNewMessage(value);
+    
+    if (value.trim()) {
+      handleTypingStart();
+    } else {
+      handleTypingStop();
     }
   };
 
@@ -289,20 +306,80 @@ export default function MessagingUI({ community, onLeaveGroup, onBack }: Messagi
     }));
   };
 
-  // Initial fetch and polling setup
-  useEffect(() => {
-    fetchMessages(true);
-
-    // Set up polling for new messages
-    pollingRef.current = setInterval(() => {
-      fetchMessages(false);
+  // Handle typing indicators
+  const handleTypingStart = () => {
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    startTyping({ communityId: community._id });
+    
+    // Stop typing after 3 seconds of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      stopTyping({ communityId: community._id });
     }, 3000);
+  };
 
-    return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
+  const handleTypingStop = () => {
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    stopTyping({ communityId: community._id });
+  };
+
+  // Handle Socket.IO connection and real-time events
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    // Join community room for real-time updates
+    joinCommunity(community._id);
+
+    // Listen for new messages
+    const handleNewMessage = (data: { message: Message; communityId: string }) => {
+      if (data.communityId === community._id) {
+        setMessages(prev => {
+          // Check if message already exists to prevent duplicates
+          const exists = prev.some(msg => msg._id === data.message._id);
+          if (exists) return prev;
+          
+          return [...prev, data.message];
+        });
+        setTimeout(scrollToBottom, 100);
       }
     };
+
+    // Listen for message deletions
+    const handleMessageDeleted = (data: { messageId: string; communityId?: string }) => {
+      if (data.communityId === community._id) {
+        setMessages(prev => prev.filter(msg => msg._id !== data.messageId));
+      }
+    };
+
+    // Listen for message edits
+    const handleMessageEdited = (data: { message: Message; communityId?: string }) => {
+      if (data.communityId === community._id) {
+        setMessages(prev => prev.map(msg => 
+          msg._id === data.message._id ? data.message : msg
+        ));
+      }
+    };
+
+    socket.on('new-message', handleNewMessage);
+    socket.on('message-deleted', handleMessageDeleted);
+    socket.on('message-edited', handleMessageEdited);
+
+    return () => {
+      socket.off('new-message', handleNewMessage);
+      socket.off('message-deleted', handleMessageDeleted);
+      socket.off('message-edited', handleMessageEdited);
+      leaveCommunity(community._id);
+      handleTypingStop();
+    };
+  }, [socket, isConnected, community._id]);
+
+  // Initial fetch (without polling since we have real-time updates)
+  useEffect(() => {
+    fetchMessages(true);
   }, [community._id]);
 
   // Adjust textarea height when message changes
@@ -584,7 +661,56 @@ export default function MessagingUI({ community, onLeaveGroup, onBack }: Messagi
             </div>
           ))}
         </AnimatePresence>
-        
+
+        {/* Typing Indicators */}
+        {Array.from(typingUsers.entries())
+          .filter(([key]) => key.includes(community._id))
+          .map(([key, user]) => {
+            const currentUserId = session?.user?.id || session?.user?.email;
+            if (user.userId === currentUserId) return null;
+            
+            return (
+              <motion.div
+                key={key}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="flex items-start space-x-3 px-4 py-2"
+              >
+                <div className="flex-shrink-0">
+                  <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+                    <span className="text-white text-xs font-medium">
+                      {user.userName.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-black/30 px-4 py-3 rounded-2xl border border-white/10">
+                  <div className="flex space-x-1">
+                    <motion.div
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 1, repeat: Infinity, delay: 0 }}
+                      className="w-2 h-2 bg-white/60 rounded-full"
+                    />
+                    <motion.div
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
+                      className="w-2 h-2 bg-white/60 rounded-full"
+                    />
+                    <motion.div
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
+                      className="w-2 h-2 bg-white/60 rounded-full"
+                    />
+                  </div>
+                  <div className="text-xs text-white/60 mt-1">
+                    {user.userName} is typing...
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })
+        }
+
         <div ref={messagesEndRef} />
       </div>
 
@@ -629,7 +755,7 @@ export default function MessagingUI({ community, onLeaveGroup, onBack }: Messagi
             <textarea
               ref={textareaRef}
               value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
+              onChange={(e) => handleMessageChange(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Type a message..."
               className="
