@@ -20,6 +20,7 @@ import { HeartIcon as HeartSolid } from '@heroicons/react/24/solid';
 import ReportModal from './ReportModal';
 import Toast from './Toast';
 import Comments from './Comments';
+import ProfileViewModal from './ProfileViewModal';
 
 interface PostProps {
   id: string;
@@ -75,6 +76,8 @@ export default function Post({
   const [showReportModal, setShowReportModal] = useState(false);
   const [hasReported, setHasReported] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  // Profile view state
+  const [showProfileModal, setShowProfileModal] = useState(false);
   
   // Debug log for post ownership
   console.log('Post props in Post component:', { id, authorId: author?.id });
@@ -197,6 +200,16 @@ export default function Post({
     setShowToast(true);
   };
 
+  // Profile view handlers
+  const handleProfileClick = () => {
+    setShowProfileModal(true);
+  };
+
+  const handleStartChat = (userId: string) => {
+    // Use the existing onProfileClick prop to handle messaging
+    onProfileClick?.(userId);
+  };
+
   return (
     <div className="bg-white/5 backdrop-blur-md rounded-lg shadow-2xl border border-white/10 mb-4 hover:bg-white/10 transition-all duration-300">
       {/* Post Header */}
@@ -205,8 +218,8 @@ export default function Post({
           <div className="flex items-center space-x-3">
             <div 
               className="h-12 w-12 rounded-full bg-white/10 border border-white/20 overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all"
-              onClick={() => onProfileClick?.(author.id)}
-              title="Send direct message"
+              onClick={handleProfileClick}
+              title="View profile"
             >
               <Image
                 src={author.avatar && author.avatar !== '' ? author.avatar : '/default-avatar.png'}
@@ -218,9 +231,12 @@ export default function Post({
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <Link href={`/home/profile/${author.name}`} className="font-semibold text-white hover:text-blue-300 transition-colors text-lg">
+                <button 
+                  onClick={handleProfileClick}
+                  className="font-semibold text-white hover:text-blue-300 transition-colors text-lg cursor-pointer"
+                >
                   {author.name}
-                </Link>
+                </button>
                 {community && (
                   <>
                     <span className="text-white/60">in</span>
@@ -417,7 +433,7 @@ export default function Post({
         </div>
         
         {/* Enhanced Comments Section */}
-        <Comments postId={id} isVisible={showComments} onCommentUpdate={fetchCommentCount} />
+        <Comments postId={id} isVisible={showComments} onCommentUpdate={fetchCommentCount} onStartChat={handleStartChat} />
       </div>
       {/* Delete Confirmation Popup */}
       {showDeleteConfirm && (
@@ -448,6 +464,14 @@ export default function Post({
         message="Report submitted successfully"
         type="success"
         onClose={() => setShowToast(false)}
+      />
+      
+      {/* Profile View Modal */}
+      <ProfileViewModal
+        userId={author.id}
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        onStartChat={handleStartChat}
       />
     </div>
   );

@@ -159,15 +159,11 @@ export default function MessagingUI({ community, onLeaveGroup, onBack }: Messagi
   const deleteMessage = async (messageId: string) => {
     setIsDeleting(true);
     try {
-      const response = await fetch('/api/messages/delete', {
+      const response = await fetch(`/api/messages/delete?messageId=${messageId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          messageId,
-          communityId: community._id
-        })
+        }
       });
 
       if (!response.ok) {

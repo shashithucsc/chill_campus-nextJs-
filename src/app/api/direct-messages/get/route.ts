@@ -97,6 +97,13 @@ export async function GET(req: NextRequest) {
       } : null,
       createdAt: message.createdAt.toISOString(),
       updatedAt: message.updatedAt.toISOString()
+      ,
+      ...(message.messageType !== 'text' ? {
+        fileUrl: message.fileUrl,
+        fileName: message.fileName,
+        fileSize: message.fileSize,
+        fileType: message.fileType
+      } : {})
     }));
 
     // Reverse to show oldest first

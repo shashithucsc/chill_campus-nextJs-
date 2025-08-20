@@ -20,6 +20,7 @@ import {
   FaceFrownIcon as FaceFrownSolid,
   ExclamationCircleIcon as ExclamationCircleSolid
 } from '@heroicons/react/24/solid';
+import ProfileViewModal from './ProfileViewModal';
 
 export type ReactionType = 'like' | 'love' | 'laugh' | 'wow' | 'sad' | 'angry';
 
@@ -63,6 +64,7 @@ interface CommentItemProps {
   comment: Comment;
   onReact: (commentId: string, type: ReactionType, replyId?: string) => void;
   onReply: (commentId: string, content: string) => void;
+  onStartChat?: (userId: string) => void;
 }
 
 const reactionEmojis = {
@@ -83,12 +85,15 @@ const reactionIcons = {
   angry: { outline: FaceFrownIcon, solid: FaceFrownSolid }
 };
 
-export default function CommentItem({ comment, onReact, onReply }: CommentItemProps) {
+export default function CommentItem({ comment, onReact, onReply, onStartChat }: CommentItemProps) {
   const { data: session } = useSession();
   const [showReactions, setShowReactions] = useState(false);
   const [showReplies, setShowReplies] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [showReplyInput, setShowReplyInput] = useState(false);
+  // Profile modal state
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
 
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
@@ -146,6 +151,16 @@ export default function CommentItem({ comment, onReact, onReply }: CommentItemPr
     }
   };
 
+  // Profile modal handlers
+  const handleProfileClick = (userId: string) => {
+    setSelectedUserId(userId);
+    setShowProfileModal(true);
+  };
+
+  const handleStartChat = (userId: string) => {
+    onStartChat?.(userId);
+  };
+
   const userReaction = getUserReaction(comment.reactions, session?.user?.id || '');
 
   return (
@@ -156,7 +171,11 @@ export default function CommentItem({ comment, onReact, onReply }: CommentItemPr
     >
       {/* Comment Header */}
       <div className="flex items-start space-x-3">
-        <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-white/20">
+        <div 
+          className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-white/20 cursor-pointer hover:border-blue-400 transition-colors"
+          onClick={() => handleProfileClick(comment.user.id)}
+          title="View profile"
+        >
           <Image
             src={comment.user.avatar || '/default-avatar.png'}
             alt={comment.user.name}
@@ -168,7 +187,12 @@ export default function CommentItem({ comment, onReact, onReply }: CommentItemPr
         <div className="flex-1">
           {/* User info and content */}
           <div className="bg-white/10 rounded-2xl px-4 py-3">
-            <h4 className="text-white font-medium text-sm">{comment.user.name}</h4>
+            <button 
+              onClick={() => handleProfileClick(comment.user.id)}
+              className="text-white font-medium text-sm hover:text-blue-300 transition-colors cursor-pointer"
+            >
+              {comment.user.name}
+            </button>
             <p className="text-white/90 text-sm mt-1">{comment.content}</p>
           </div>
           
@@ -311,6 +335,7 @@ export default function CommentItem({ comment, onReact, onReply }: CommentItemPr
                         reply={reply}
                         commentId={comment._id}
                         onReact={onReact}
+                        onStartChat={onStartChat || (() => {})}
                       />
                     ))}
                   </motion.div>
@@ -320,6 +345,16 @@ export default function CommentItem({ comment, onReact, onReply }: CommentItemPr
           )}
         </div>
       </div>
+
+      {/* Profile View Modal */}
+      {showProfileModal && selectedUserId && (
+        <ProfileViewModal
+          isOpen={showProfileModal}
+          userId={selectedUserId}
+          onClose={() => setShowProfileModal(false)}
+          onStartChat={handleStartChat}
+        />
+      )}
     </motion.div>
   );
 }
@@ -329,11 +364,25 @@ interface ReplyItemProps {
   reply: Reply;
   commentId: string;
   onReact: (commentId: string, type: ReactionType, replyId?: string) => void;
+  onStartChat: (userId: string) => void;
 }
 
-function ReplyItem({ reply, commentId, onReact }: ReplyItemProps) {
+function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
   const { data: session } = useSession();
   const [showReactions, setShowReactions] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
+
+  // Profile modal handlers
+  const handleProfileClick = (userId: string) => {
+    setSelectedUserId(userId);
+    setShowProfileModal(true);
+  };
+
+  const handleStartChat = (userId: string) => {
+    setShowProfileModal(false);
+    onStartChat(userId);
+  };
 
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
@@ -381,18 +430,26 @@ function ReplyItem({ reply, commentId, onReact }: ReplyItemProps) {
 
   return (
     <div className="flex items-start space-x-2">
-      <div className="relative w-8 h-8 rounded-full overflow-hidden border border-white/20">
+      <button
+        onClick={() => handleProfileClick(reply.user.id)}
+        className="relative w-8 h-8 rounded-full overflow-hidden border border-white/20 hover:ring-2 hover:ring-blue-500/50 transition-all duration-200"
+      >
         <Image
           src={reply.user.avatar || '/default-avatar.png'}
           alt={reply.user.name}
           fill
           className="object-cover"
         />
-      </div>
+      </button>
       
       <div className="flex-1">
         <div className="bg-white/5 rounded-xl px-3 py-2">
-          <h5 className="text-white font-medium text-xs">{reply.user.name}</h5>
+          <button
+            onClick={() => handleProfileClick(reply.user.id)}
+            className="text-white font-medium text-xs hover:text-blue-400 transition-colors duration-200"
+          >
+            {reply.user.name}
+          </button>
           <p className="text-white/90 text-xs mt-1">{reply.content}</p>
         </div>
         
@@ -459,6 +516,16 @@ function ReplyItem({ reply, commentId, onReact }: ReplyItemProps) {
           <span className="text-white/40 text-xs">{formatTimeAgo(reply.createdAt)}</span>
         </div>
       </div>
+
+      {/* Profile View Modal */}
+      {showProfileModal && selectedUserId && (
+        <ProfileViewModal
+          isOpen={showProfileModal}
+          userId={selectedUserId}
+          onClose={() => setShowProfileModal(false)}
+          onStartChat={handleStartChat}
+        />
+      )}
     </div>
   );
 }

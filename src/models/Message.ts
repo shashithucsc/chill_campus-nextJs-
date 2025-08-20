@@ -6,7 +6,11 @@ export interface IMessage extends Document {
   sender: mongoose.Types.ObjectId;
   community: mongoose.Types.ObjectId;
   timestamp: Date;
-  messageType: 'text' | 'image' | 'file';
+  messageType: 'text' | 'image' | 'audio' | 'video' | 'file' | 'pdf';
+  fileUrl?: string;
+  fileName?: string;
+  fileSize?: number;
+  fileType?: string;
   isEdited: boolean;
   editedAt?: Date;
   reactions: Array<{
@@ -41,8 +45,20 @@ const MessageSchema = new Schema<IMessage>(
     },
     messageType: {
       type: String,
-      enum: ['text', 'image', 'file'],
+      enum: ['text', 'image', 'audio', 'video', 'file', 'pdf'],
       default: 'text'
+    },
+    fileUrl: {
+      type: String
+    },
+    fileName: {
+      type: String
+    },
+    fileSize: {
+      type: Number
+    },
+    fileType: {
+      type: String
     },
     isEdited: {
       type: Boolean,
