@@ -20,17 +20,24 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { content, recipientId, replyTo } = body;
+    const { content, recipientId, replyTo, messageType, fileUrl, fileName, fileSize, fileType } = body;
 
-    // Validate input
-    if (!content || content.trim().length === 0) {
+    // Validate input - content is required for text messages, fileUrl for file messages
+    if (messageType === 'text' && (!content || content.trim().length === 0)) {
       return NextResponse.json(
-        { error: 'Message content is required' },
+        { error: 'Message content is required for text messages' },
         { status: 400 }
       );
     }
 
-    if (content.length > 2000) {
+    if (messageType !== 'text' && !fileUrl) {
+      return NextResponse.json(
+        { error: 'File URL is required for file messages' },
+        { status: 400 }
+      );
+    }
+
+    if (content && content.length > 2000) {
       return NextResponse.json(
         { error: 'Message content cannot exceed 2000 characters' },
         { status: 400 }
@@ -73,12 +80,20 @@ export async function POST(req: NextRequest) {
 
     // Create the message
     const messageData: any = {
-      content: content.trim(),
+      content: content ? content.trim() : (fileName || 'File'),
       sender: userId,
       recipient: recipientId,
       timestamp: new Date(),
-      messageType: 'text'
+      messageType: messageType || 'text'
     };
+
+    // Add file data if it's a file message
+    if (messageType !== 'text' && fileUrl) {
+      messageData.fileUrl = fileUrl;
+      messageData.fileName = fileName;
+      messageData.fileSize = fileSize;
+      messageData.fileType = fileType;
+    }
 
     if (replyTo) {
       const originalMessage = await DirectMessage.findById(replyTo);
@@ -194,7 +209,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Transform message for frontend
-    const transformedMessage = {
+    const transformedMessage: any = {
       _id: message._id.toString(),
       content: message.content,
       sender: {
@@ -219,6 +234,14 @@ export async function POST(req: NextRequest) {
       createdAt: message.createdAt.toISOString(),
       updatedAt: message.updatedAt.toISOString()
     };
+
+    // Add file data if it's a file message
+    if (message.messageType !== 'text') {
+      transformedMessage.fileUrl = message.fileUrl;
+      transformedMessage.fileName = message.fileName;
+      transformedMessage.fileSize = message.fileSize;
+      transformedMessage.fileType = message.fileType;
+    }
 
     // Emit real-time message via Socket.IO
     const io = getSocketIO(req as any);

@@ -8,6 +8,10 @@ export interface IUser extends Document {
   university: string;
   createdAt: Date;
   avatar?: string; // Optional avatar field
+  bio?: string; // User bio/description
+  interests?: string[]; // User interests
+  followers?: mongoose.Types.ObjectId[]; // Users following this user
+  following?: mongoose.Types.ObjectId[]; // Users this user is following
   isActive: boolean; // Indicates if the user's email is confirmed
   activationToken: string; // Token for email confirmation
   status: 'Active' | 'Suspended'; // User status for admin management
@@ -62,6 +66,21 @@ const UserSchema = new Schema<IUser>(
       type: String,
       default: '',
     },
+    bio: {
+      type: String,
+      default: '',
+    },
+    interests: [{
+      type: String,
+    }],
+    followers: [{
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    }],
+    following: [{
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    }],
     isActive: {
       type: Boolean,
       default: false,

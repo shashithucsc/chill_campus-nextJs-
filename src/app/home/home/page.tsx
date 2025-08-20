@@ -71,16 +71,28 @@ export default function HomePage() {
   const fetchPosts = async () => {
     setLoading(true);
     try {
+      console.log('🔄 Fetching posts...');
       const res = await fetch('/api/posts');
+      console.log('📡 Posts API response status:', res.status);
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
       const data = await res.json();
+      console.log('📊 Posts data received:', data);
+      console.log('📰 Number of posts:', data.posts?.length || 0);
+      
       setPosts(data.posts || []);
     } catch (err) {
+      console.error('❌ Error fetching posts:', err);
       setPosts([]);
     }
     setLoading(false);
   };
 
   useEffect(() => {
+    console.log('🚀 HomePage useEffect triggered');
     fetchPosts();
   }, []);
 
@@ -247,7 +259,12 @@ export default function HomePage() {
                 </motion.button>
               </motion.div>
             ) : (
-              posts.map((post, index) => (
+              posts.map((post, index) => {
+                if (index === 0) {
+                  console.log('📋 Rendering posts, count:', posts.length);
+                  console.log('📋 Posts array:', posts);
+                }
+                return (
                 <motion.div
                   key={post._id}
                   variants={itemVariants}
@@ -273,7 +290,8 @@ export default function HomePage() {
                     onProfileClick={handleProfileClick}
                   />
                 </motion.div>
-              ))
+                );
+              })
             )}
           </motion.div>
         </div>

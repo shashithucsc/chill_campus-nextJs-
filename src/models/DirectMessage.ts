@@ -6,7 +6,11 @@ export interface IDirectMessage extends Document {
   sender: mongoose.Types.ObjectId;
   recipient: mongoose.Types.ObjectId;
   timestamp: Date;
-  messageType: 'text' | 'image' | 'file';
+  messageType: 'text' | 'image' | 'audio' | 'video' | 'file' | 'pdf';
+  fileUrl?: string;
+  fileName?: string;
+  fileSize?: number;
+  fileType?: string;
   isRead: boolean;
   readAt?: Date;
   isEdited: boolean;
@@ -43,8 +47,20 @@ const DirectMessageSchema = new Schema<IDirectMessage>(
     },
     messageType: {
       type: String,
-      enum: ['text', 'image', 'file'],
+      enum: ['text', 'image', 'audio', 'video', 'file', 'pdf'],
       default: 'text'
+    },
+    fileUrl: {
+      type: String
+    },
+    fileName: {
+      type: String
+    },
+    fileSize: {
+      type: Number
+    },
+    fileType: {
+      type: String
     },
     isRead: {
       type: Boolean,

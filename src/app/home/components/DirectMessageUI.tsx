@@ -16,6 +16,8 @@ import {
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import EmojiPicker from './EmojiPicker';
+import FileAttachment from './FileAttachment';
+import FileMessage from './FileMessage';
 
 interface MessageSender {
   _id: string;
@@ -38,7 +40,11 @@ interface DirectMessage {
   content: string;
   sender: MessageSender;
   timestamp: string;
-  messageType: 'text' | 'image' | 'file';
+  messageType: 'text' | 'image' | 'audio' | 'video' | 'file' | 'pdf';
+  fileUrl?: string;
+  fileName?: string;
+  fileSize?: number;
+  fileType?: string;
   isRead: boolean;
   readAt?: string;
   isEdited: boolean;
@@ -80,6 +86,7 @@ export default function DirectMessageUI({ recipientId, onBack, onNewMessage }: D
   const [showConversationDeleteOptions, setShowConversationDeleteOptions] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<any>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -116,14 +123,27 @@ export default function DirectMessageUI({ recipientId, onBack, onNewMessage }: D
 
   // Send message
   const sendMessage = async () => {
-    if (!newMessage.trim() || isSending) return;
+    if ((!newMessage.trim() && !selectedFile) || isSending) return;
 
     setIsSending(true);
     try {
       const messageData: any = {
-        content: newMessage.trim(),
         recipientId
       };
+
+      if (selectedFile) {
+        // Sending file message
+        messageData.content = selectedFile.originalName;
+        messageData.messageType = selectedFile.category;
+        messageData.fileUrl = selectedFile.url;
+        messageData.fileName = selectedFile.originalName;
+        messageData.fileSize = selectedFile.size;
+        messageData.fileType = selectedFile.type;
+      } else {
+        // Sending text message
+        messageData.content = newMessage.trim();
+        messageData.messageType = 'text';
+      }
 
       if (replyingTo) {
         messageData.replyTo = replyingTo._id;
@@ -142,6 +162,7 @@ export default function DirectMessageUI({ recipientId, onBack, onNewMessage }: D
       const data = await response.json();
       setMessages(prev => [...prev, data.message]);
       setNewMessage('');
+      setSelectedFile(null);
       setReplyingTo(null);
       setTimeout(scrollToBottom, 100);
       
@@ -158,15 +179,11 @@ export default function DirectMessageUI({ recipientId, onBack, onNewMessage }: D
   const deleteMessage = async (messageId: string) => {
     setIsDeleting(true);
     try {
-      const response = await fetch('/api/direct-messages/delete', {
+      const response = await fetch(`/api/direct-messages/delete?messageId=${messageId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          messageId,
-          recipientId
-        })
+        }
       });
 
       if (!response.ok) {
@@ -519,9 +536,27 @@ export default function DirectMessageUI({ recipientId, onBack, onNewMessage }: D
                           `}
                           style={isOwnMessage ? {background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'} : undefined}
                         >
-                          <div className="whitespace-pre-wrap break-words">
-                            {message.content}
-                          </div>
+                          {/* File Message */}
+                          {message.messageType !== 'text' && message.fileUrl && (
+                            <div className="mb-2">
+                              <FileMessage
+                                fileUrl={message.fileUrl}
+                                fileName={message.fileName || 'File'}
+                                fileSize={message.fileSize}
+                                fileType={message.fileType}
+                                messageType={message.messageType as any}
+                                isOwnMessage={isOwnMessage}
+                                onDelete={() => handleDeleteMessage(message._id)}
+                              />
+                            </div>
+                          )}
+                          
+                          {/* Text Content (for captions or text messages) */}
+                          {message.messageType === 'text' || (message.content && message.content !== message.fileName) ? (
+                            <div className="whitespace-pre-wrap break-words">
+                              {message.content}
+                            </div>
+                          ) : null}
                           
                           {/* Timestamp and Read status */}
                           <div className={`flex items-center space-x-1 mt-2 ${isOwnMessage ? 'justify-start' : 'justify-end'}`}>
@@ -639,6 +674,14 @@ export default function DirectMessageUI({ recipientId, onBack, onNewMessage }: D
         </AnimatePresence>
 
         <div className="flex items-end space-x-3">
+          {/* File Attachment */}
+          <FileAttachment
+            onFileSelect={setSelectedFile}
+            onFileRemove={() => setSelectedFile(null)}
+            selectedFile={selectedFile}
+            disabled={isSending}
+          />
+
           {/* Message Input */}
           <div className="flex-1 relative">
             <textarea
@@ -646,7 +689,7 @@ export default function DirectMessageUI({ recipientId, onBack, onNewMessage }: D
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Type a message..."
+              placeholder={selectedFile ? "Add a caption (optional)" : "Type a message..."}
               className="
                 w-full px-4 py-3 pr-12 bg-white/10 backdrop-blur-sm border border-white/20 
                 rounded-2xl text-white placeholder-white/50 resize-none
@@ -679,15 +722,15 @@ export default function DirectMessageUI({ recipientId, onBack, onNewMessage }: D
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={sendMessage}
-            disabled={!newMessage.trim() || isSending}
+            disabled={(!newMessage.trim() && !selectedFile) || isSending}
             className={`
               p-3 rounded-2xl transition-all
-              ${newMessage.trim() && !isSending
+              ${(newMessage.trim() || selectedFile) && !isSending
                 ? 'text-white shadow-lg border border-white/20' 
                 : 'bg-white/10 text-white/40 cursor-not-allowed'
               }
             `}
-            style={newMessage.trim() && !isSending ? {background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'} : undefined}
+            style={(newMessage.trim() || selectedFile) && !isSending ? {background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'} : undefined}
           >
             {isSending ? (
               <motion.div
