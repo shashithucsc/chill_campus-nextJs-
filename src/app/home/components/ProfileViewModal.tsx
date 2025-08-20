@@ -15,11 +15,13 @@ import {
   ChatBubbleOvalLeftIcon,
   UsersIcon,
   SparklesIcon,
-  EnvelopeIcon
+  EnvelopeIcon,
+  StarIcon
 } from '@heroicons/react/24/outline';
 import { 
   HeartIcon as HeartSolid,
-  UserIcon as UserSolid
+  UserIcon as UserSolid,
+  StarIcon as StarSolid
 } from '@heroicons/react/24/solid';
 
 interface UserStats {
@@ -61,8 +63,8 @@ export default function ProfileViewModal({
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [followLoading, setFollowLoading] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
 
   // Fetch user profile
   const fetchProfile = async () => {
@@ -79,7 +81,8 @@ export default function ProfileViewModal({
       
       const data = await response.json();
       setProfile(data.user);
-      setIsFollowing(data.user.isFollowing || false);
+      // Check if this user is in current user's favorites
+      await checkIfFavorite();
     } catch (err) {
       console.error('Error fetching profile:', err);
       setError('Failed to load profile');
@@ -88,34 +91,39 @@ export default function ProfileViewModal({
     }
   };
 
-  // Handle follow/unfollow
-  const handleFollowToggle = async () => {
-    if (!profile || followLoading) return;
-    
-    setFollowLoading(true);
+  // Check if user is in favorites
+  const checkIfFavorite = async () => {
     try {
-      const response = await fetch(`/api/users/${userId}/follow`, {
-        method: isFollowing ? 'DELETE' : 'POST',
-        headers: { 'Content-Type': 'application/json' }
+      const response = await fetch('/api/users/favorites');
+      if (response.ok) {
+        const data = await response.json();
+        const isUserFavorite = data.favorites.some((fav: any) => fav._id === userId);
+        setIsFavorite(isUserFavorite);
+      }
+    } catch (err) {
+      console.error('Error checking favorite status:', err);
+    }
+  };
+
+  // Handle add/remove favorite
+  const handleFavoriteToggle = async () => {
+    if (!profile || favoriteLoading) return;
+    
+    setFavoriteLoading(true);
+    try {
+      const response = await fetch('/api/users/favorites', {
+        method: isFavorite ? 'DELETE' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: profile._id })
       });
       
       if (response.ok) {
-        setIsFollowing(!isFollowing);
-        // Update follower count
-        if (profile.stats.followers !== undefined) {
-          setProfile(prev => prev ? {
-            ...prev,
-            stats: {
-              ...prev.stats,
-              followers: (prev.stats.followers || 0) + (isFollowing ? -1 : 1)
-            }
-          } : null);
-        }
+        setIsFavorite(!isFavorite);
       }
     } catch (err) {
-      console.error('Error toggling follow:', err);
+      console.error('Error toggling favorite:', err);
     } finally {
-      setFollowLoading(false);
+      setFavoriteLoading(false);
     }
   };
 
@@ -146,7 +154,7 @@ export default function ProfileViewModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
         onClick={onClose}
       >
         <motion.div
@@ -154,7 +162,7 @@ export default function ProfileViewModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className="bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto border border-white/20 shadow-2xl"
+          className="bg-gradient-to-br from-gray-900/98 to-black/98 backdrop-blur-xl rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto border border-white/20 shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -318,20 +326,20 @@ export default function ProfileViewModal({
               {/* Action Buttons */}
               {!isOwnProfile && (
                 <div className="flex gap-3 pt-4">
-                  {/* Follow Button */}
+                  {/* Add to Favorite Button */}
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={handleFollowToggle}
-                    disabled={followLoading}
+                    onClick={handleFavoriteToggle}
+                    disabled={favoriteLoading}
                     className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all ${
-                      isFollowing
-                        ? 'bg-green-500/20 text-green-300 border border-green-500/30 hover:bg-green-500/30'
-                        : 'bg-blue-500/20 text-blue-300 border border-blue-500/30 hover:bg-blue-500/30'
-                    } ${followLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      isFavorite
+                        ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 hover:bg-yellow-500/30'
+                        : 'bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30'
+                    } ${favoriteLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <div className="flex items-center justify-center">
-                      {followLoading ? (
+                      {favoriteLoading ? (
                         <motion.div
                           animate={{ rotate: 360 }}
                           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
@@ -339,12 +347,12 @@ export default function ProfileViewModal({
                         />
                       ) : (
                         <>
-                          {isFollowing ? (
-                            <HeartSolid className="h-4 w-4 mr-2" />
+                          {isFavorite ? (
+                            <StarSolid className="h-4 w-4 mr-2" />
                           ) : (
-                            <HeartIcon className="h-4 w-4 mr-2" />
+                            <StarIcon className="h-4 w-4 mr-2" />
                           )}
-                          {isFollowing ? 'Following' : 'Follow'}
+                          {isFavorite ? 'Remove from Favourites' : 'Add to Favourites'}
                         </>
                       )}
                     </div>
@@ -355,7 +363,7 @@ export default function ProfileViewModal({
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={handleStartChat}
-                    className="flex-1 py-3 px-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-white rounded-xl font-semibold border border-purple-500/30 hover:from-purple-500/30 hover:to-pink-500/30 transition-all"
+                    className="flex-1 py-3 px-4 bg-gradient-to-r from-gray-700/60 to-gray-800/60 text-white rounded-xl font-semibold border border-gray-600/50 hover:from-gray-600/60 hover:to-gray-700/60 transition-all backdrop-blur-sm"
                   >
                     <div className="flex items-center justify-center">
                       <ChatBubbleLeftIcon className="h-4 w-4 mr-2" />

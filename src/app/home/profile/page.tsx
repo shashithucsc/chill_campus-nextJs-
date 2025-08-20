@@ -18,6 +18,8 @@ export default function ProfilePage() {
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [userPosts, setUserPosts] = useState<any[]>([]);
   const [postLoading, setPostLoading] = useState(false);
+  const [favorites, setFavorites] = useState<any[]>([]);
+  const [favoritesLoading, setFavoritesLoading] = useState(false);
 
   // Debug session data
   console.log("Session in profile page:", session);
@@ -58,7 +60,7 @@ export default function ProfilePage() {
           stats: { 
             posts: 0,  // Will be updated from posts data
             communities: data.user.communityCount || 0,
-            events: 0 
+            favorites: 0 // Will be updated from favorites data
           },
           recentActivity: [],
           userId: session.user.id
@@ -66,6 +68,9 @@ export default function ProfilePage() {
         
         // Now fetch user's posts using session user ID
         await fetchUserPosts(session.user.id);
+        
+        // Fetch user's favorites
+        await fetchUserFavorites();
       } catch (error) {
         console.error("Error loading profile:", error);
       } finally {
@@ -100,6 +105,30 @@ export default function ProfilePage() {
       console.error("Error fetching user posts:", error);
     } finally {
       setPostLoading(false);
+    }
+  }
+
+  async function fetchUserFavorites() {
+    setFavoritesLoading(true);
+    try {
+      const res = await fetch('/api/users/favorites');
+      if (res.ok) {
+        const data = await res.json();
+        setFavorites(data.favorites || []);
+        
+        // Update stats with favorites count
+        setEditedData((prev: any) => ({
+          ...prev,
+          stats: {
+            ...prev.stats,
+            favorites: data.favorites?.length || 0
+          }
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching user favorites:", error);
+    } finally {
+      setFavoritesLoading(false);
     }
   }
 
@@ -217,6 +246,7 @@ export default function ProfilePage() {
             setShowCreatePost(false);
             // Refresh posts after creating a new post
             fetchUserPosts(editedData?.userId);
+            fetchUserFavorites();
           }}
         />
       )}
@@ -226,7 +256,7 @@ export default function ProfilePage() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="bg-gray-900/60 backdrop-blur-md border border-gray-700 shadow-2xl rounded-2xl mb-6 md:mb-8 mt-4 md:mt-6 mx-4 md:mx-6 overflow-hidden"
+          className="bg-gray-900/60 backdrop-blur-md border border-gray-700 shadow-2xl rounded-2xl mb-6 md:mb-8 mt-4 md:mt-6 mx-4 md:mx-6 lg:mx-8 overflow-hidden lg:max-w-[76rem] xl:max-w-[76rem] xl:mx-auto"
         >
           {/* Background elements with dark theme */}
           <div className="absolute top-0 left-0 w-full h-full overflow-hidden">
@@ -242,12 +272,12 @@ export default function ProfilePage() {
                 whileHover={{ scale: 1.03 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
-                <div className="h-32 w-32 md:h-44 md:w-44 rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 p-1 shadow-2xl relative overflow-hidden group">
+                <div className="h-32 w-32 md:h-44 md:w-44 rounded-2xl bg-gray-800/80 backdrop-blur-md border border-gray-600/50 p-1 shadow-2xl relative overflow-hidden group">
                   {/* Animated background effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-400/30 to-purple-400/30 opacity-50 group-hover:opacity-70 transition-opacity duration-300"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-gray-700/30 to-gray-600/30 opacity-50 group-hover:opacity-70 transition-opacity duration-300"></div>
                   
                   {/* Glow effect matching landing theme */}
-                  <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl opacity-30 blur-md group-hover:opacity-50 transition-opacity duration-300"></div>
+                  <div className="absolute -inset-0.5 bg-gray-700/40 rounded-2xl opacity-30 blur-md group-hover:opacity-50 transition-opacity duration-300"></div>
                   
                   <div className="relative h-full w-full rounded-xl bg-gray-800/50 backdrop-blur-sm p-1 border border-gray-600 overflow-hidden">
                     <div className="h-full w-full rounded-lg overflow-hidden">
@@ -299,7 +329,7 @@ export default function ProfilePage() {
               </motion.div>
               
               {/* User information with animated elements */}
-              <div className="flex-1 text-center md:text-left space-y-3 md:space-y-4">
+              <div className="flex-1 text-center md:text-left space-y-3 md:space-y-4 w-full">
                 <div className="space-y-1">
                   {isEditing ? (
                     <input
@@ -325,7 +355,7 @@ export default function ProfilePage() {
                     className="flex flex-col sm:flex-row gap-2 sm:gap-4 md:gap-6 items-center justify-center md:justify-start"
                   >
                     <div className="flex items-center">
-                      <span className="bg-gradient-to-r from-blue-600 to-purple-600 h-5 w-5 rounded-full flex items-center justify-center mr-2">
+                      <span className="bg-gray-700/60 backdrop-blur-sm border border-gray-600/40 h-5 w-5 rounded-full flex items-center justify-center mr-2">
                         <span className="bg-white/80 h-1.5 w-1.5 rounded-full"></span>
                       </span>
                       <p className="text-gray-300 font-medium">
@@ -335,7 +365,7 @@ export default function ProfilePage() {
                     </div>
                     
                     <div className="flex items-center">
-                      <span className="bg-gradient-to-r from-blue-600 to-purple-600 h-5 w-5 rounded-full flex items-center justify-center mr-2">
+                      <span className="bg-gray-700/60 backdrop-blur-sm border border-gray-600/40 h-5 w-5 rounded-full flex items-center justify-center mr-2">
                         <span className="bg-white/80 h-1.5 w-1.5 rounded-full"></span>
                       </span>
                       <p className="text-gray-300 font-medium">
@@ -344,16 +374,16 @@ export default function ProfilePage() {
                       </p>
                     </div>
                   </motion.div>
-                    {/* Communities joined badge - visible near header info */}
-                    <div className="mt-3 flex items-center gap-3 justify-center md:justify-start">
-                      <div className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium border border-gray-600 shadow-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5V4H2v16h5m10 0v-6a4 4 0 10-8 0v6" />
-                        </svg>
-                        <span className="text-sm md:text-base">{editedData.stats?.communities ?? 0} communities</span>
-                      </div>
-                      <p className="text-xs md:text-sm text-gray-400 hidden md:block">Member since { /* optionally show join date if available */ }</p>
+                  {/* Communities joined badge - visible near header info */}
+                  <div className="mt-3 flex items-center gap-3 justify-center md:justify-start">
+                    <div className="inline-flex items-center px-3 py-1 rounded-full bg-gray-800/80 backdrop-blur-md border border-gray-600/50 text-white font-medium shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5V4H2v16h5m10 0v-6a4 4 0 10-8 0v6" />
+                      </svg>
+                      <span className="text-sm md:text-base">{editedData.stats?.communities ?? 0} communities</span>
                     </div>
+                    <p className="text-xs md:text-sm text-gray-400 hidden md:block">Member since { /* optionally show join date if available */ }</p>
+                  </div>
                 </div>
                 
                 {/* Action buttons */}
@@ -365,10 +395,15 @@ export default function ProfilePage() {
                 >
                   {!isEditing ? (
                     <motion.button
-                      whileHover={{ scale: 1.05, boxShadow: "0 15px 30px rgba(59, 130, 246, 0.4)" }}
+                      whileHover={{ scale: 1.05, boxShadow: "0 15px 30px rgba(0, 0, 0, 0.6)" }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setIsEditing(true)}
-                      className="px-6 md:px-7 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold shadow-xl border border-gray-600 flex items-center gap-2 text-sm md:text-base"
+                      className="px-6 md:px-7 py-3 bg-gray-900/80 backdrop-blur-md border border-white/10 text-white rounded-xl font-semibold shadow-2xl flex items-center gap-2 text-sm md:text-base hover:bg-gray-800/80 hover:border-white/20 transition-all duration-300"
+                      style={{
+                        background: 'rgba(15, 23, 42, 0.8)',
+                        backdropFilter: 'blur(16px)',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                      }}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -409,7 +444,7 @@ export default function ProfilePage() {
                     className="text-center"
                     whileHover={{ y: -5, transition: { duration: 0.2 } }}
                   >
-                    <div className="w-10 h-10 md:w-12 md:h-12 lg:w-16 lg:h-16 mx-auto rounded-lg md:rounded-xl lg:rounded-2xl flex items-center justify-center bg-gradient-to-br from-blue-600/60 to-blue-700/60 border border-gray-600 shadow-lg mb-1 md:mb-2 hover:shadow-blue-500/30 transition-all duration-300">
+                    <div className="w-10 h-10 md:w-12 md:h-12 lg:w-16 lg:h-16 mx-auto rounded-lg md:rounded-xl lg:rounded-2xl flex items-center justify-center bg-gray-800/80 backdrop-blur-md border border-gray-600/50 shadow-lg mb-1 md:mb-2 hover:shadow-gray-500/30 transition-all duration-300">
                       <motion.p 
                         className="text-base md:text-lg lg:text-2xl font-bold text-white"
                         initial={{ opacity: 0, scale: 0.5 }}
@@ -426,7 +461,7 @@ export default function ProfilePage() {
                     className="text-center"
                     whileHover={{ y: -5, transition: { duration: 0.2 } }}
                   >
-                    <div className="w-10 h-10 md:w-12 md:h-12 lg:w-16 lg:h-16 mx-auto rounded-lg md:rounded-xl lg:rounded-2xl flex items-center justify-center bg-gradient-to-br from-blue-600/60 to-purple-600/60 border border-gray-600 shadow-lg mb-1 md:mb-2 hover:shadow-purple-500/30 transition-all duration-300">
+                    <div className="w-10 h-10 md:w-12 md:h-12 lg:w-16 lg:h-16 mx-auto rounded-lg md:rounded-xl lg:rounded-2xl flex items-center justify-center bg-gray-800/80 backdrop-blur-md border border-gray-600/50 shadow-lg mb-1 md:mb-2 hover:shadow-gray-500/30 transition-all duration-300">
                       <motion.p 
                         className="text-lg md:text-2xl font-bold text-white"
                         initial={{ opacity: 0, scale: 0.5 }}
@@ -443,17 +478,17 @@ export default function ProfilePage() {
                     className="text-center"
                     whileHover={{ y: -5, transition: { duration: 0.2 } }}
                   >
-                    <div className="w-12 h-12 md:w-16 md:h-16 mx-auto rounded-xl md:rounded-2xl flex items-center justify-center bg-gradient-to-br from-purple-600/60 to-purple-700/60 border border-gray-600 shadow-lg mb-2 hover:shadow-purple-500/30 transition-all duration-300">
+                    <div className="w-10 h-10 md:w-12 md:h-12 lg:w-16 lg:h-16 mx-auto rounded-lg md:rounded-xl lg:rounded-2xl flex items-center justify-center bg-gray-800/80 backdrop-blur-md border border-gray-600/50 shadow-lg mb-1 md:mb-2 hover:shadow-gray-500/30 transition-all duration-300">
                       <motion.p 
-                        className="text-lg md:text-2xl font-bold text-white"
+                        className="text-base md:text-lg lg:text-2xl font-bold text-white"
                         initial={{ opacity: 0, scale: 0.5 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.6, type: "spring", stiffness: 200 }}
                       >
-                        {editedData.stats.events}
+                        {editedData.stats.favorites}
                       </motion.p>
                     </div>
-                    <p className="text-xs md:text-sm font-medium text-gray-300">Events</p>
+                    <p className="text-xs md:text-sm font-medium text-gray-300">Favourites</p>
                   </motion.div>
                 </div>
               </motion.div>
@@ -468,7 +503,7 @@ export default function ProfilePage() {
                 <div className="absolute -top-10 -left-10 w-40 h-40 bg-purple-500/5 rounded-full blur-3xl"></div>
                 
                 <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                   </svg>
                   Interests
@@ -484,7 +519,7 @@ export default function ProfilePage() {
                         transition={{ delay: 0.1 * index, type: "spring", stiffness: 100 }}
                         whileHover={{ scale: 1.05, boxShadow: "0 5px 15px rgba(59, 130, 246, 0.3)" }}
                         whileTap={{ scale: 0.95 }}
-                        className="px-3 md:px-4 py-1.5 md:py-2 bg-gradient-to-r from-blue-600/70 to-purple-600/70 text-white rounded-lg md:rounded-xl text-xs md:text-sm border border-gray-600 shadow-lg hover:shadow-blue-500/30 transition-all duration-300 backdrop-blur-sm"
+                        className="px-3 md:px-4 py-1.5 md:py-2 bg-gray-800/80 backdrop-blur-md border border-gray-600/50 text-white rounded-lg md:rounded-xl text-xs md:text-sm shadow-lg hover:shadow-gray-500/30 transition-all duration-300"
                       >
                         {interest}
                       </motion.span>
@@ -498,7 +533,7 @@ export default function ProfilePage() {
                     >
                       <p className="text-gray-300 mb-3 text-sm md:text-base">No interests added yet</p>
                       {isEditing && (
-                        <button className="px-3 md:px-4 py-1.5 md:py-2 bg-gradient-to-r from-blue-500/60 to-purple-500/60 text-white rounded-lg md:rounded-xl text-xs md:text-sm border border-gray-600 hover:shadow-purple-500/30 transition-all duration-300">
+                        <button className="px-3 md:px-4 py-1.5 md:py-2 bg-gray-800/80 backdrop-blur-md border border-gray-600/50 text-white rounded-lg md:rounded-xl text-xs md:text-sm hover:shadow-gray-500/30 transition-all duration-300">
                           Add interests
                         </button>
                       )}
@@ -509,10 +544,15 @@ export default function ProfilePage() {
               
               {/* Create New Post Button (Mobile-visible) - Dark theme */}
               <motion.button
-                whileHover={{ scale: 1.03, boxShadow: "0 20px 40px rgba(59, 130, 246, 0.4)" }}
+                whileHover={{ scale: 1.03, boxShadow: "0 20px 40px rgba(0, 0, 0, 0.6)" }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setShowCreatePost(true)}
-                className="lg:hidden w-full py-3 md:py-4 px-4 md:px-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl md:rounded-2xl font-bold shadow-xl border border-gray-600 flex items-center justify-center gap-2 text-sm md:text-base"
+                className="lg:hidden w-full py-3 md:py-4 px-4 md:px-6 bg-gray-900/80 backdrop-blur-md border border-white/10 text-white rounded-xl md:rounded-2xl font-bold shadow-2xl flex items-center justify-center gap-2 text-sm md:text-base hover:bg-gray-800/80 hover:border-white/20 transition-all duration-300"
+                style={{
+                  background: 'rgba(15, 23, 42, 0.8)',
+                  backdropFilter: 'blur(16px)',
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                }}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -559,16 +599,108 @@ export default function ProfilePage() {
                 {!isEditing && (
                   <div className="mt-6 flex justify-end">
                     <motion.button
-                      whileHover={{ scale: 1.05, boxShadow: "0 5px 15px rgba(59, 130, 246, 0.4)" }}
+                      whileHover={{ scale: 1.05, boxShadow: "0 15px 30px rgba(0, 0, 0, 0.6)" }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setShowCreatePost(true)}
-                      className="hidden md:flex items-center gap-2 py-2 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl text-sm font-medium shadow-xl border border-gray-600"
+                      className="hidden md:flex items-center gap-2 py-2 px-4 bg-gray-900/80 backdrop-blur-md border border-white/10 text-white rounded-xl text-sm font-medium shadow-2xl hover:bg-gray-800/80 hover:border-white/20 transition-all duration-300"
+                      style={{
+                        background: 'rgba(15, 23, 42, 0.8)',
+                        backdropFilter: 'blur(16px)',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                      }}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                       </svg>
                       Create New Post
                     </motion.button>
+                  </div>
+                )}
+              </motion.div>
+
+              {/* Favorites List - Only visible to profile owner */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.45 }}
+                className="bg-gray-900/60 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-700 p-6 overflow-hidden relative"
+              >
+                <div className="absolute top-0 right-0 w-40 h-40 bg-yellow-500/5 rounded-full blur-3xl"></div>
+                
+                <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-white via-yellow-200 to-orange-200 bg-clip-text text-transparent flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                  </svg>
+                  My Favourites
+                </h2>
+                
+                {favoritesLoading ? (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
+                  </div>
+                ) : favorites.length === 0 ? (
+                  <div className="text-center py-8 px-6 bg-gray-800/40 backdrop-blur-sm rounded-2xl border border-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                    </svg>
+                    <p className="text-gray-300 text-sm">No favourite users yet.</p>
+                    <p className="text-gray-400 text-xs mt-1">Visit profiles and add users to your favourites!</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {favorites.map((user, index) => (
+                      <motion.div
+                        key={user._id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 * index, duration: 0.5 }}
+                        className="bg-gray-800/40 backdrop-blur-sm rounded-xl border border-gray-600 p-4 hover:bg-gray-800/60 transition-all duration-300 group"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="relative">
+                            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-yellow-500/30 bg-gradient-to-br from-yellow-500 to-orange-500">
+                              {user.avatar ? (
+                                <Image
+                                  src={user.avatar}
+                                  alt={user.fullName}
+                                  width={48}
+                                  height={48}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                  </svg>
+                                </div>
+                              )}
+                            </div>
+                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-yellow-500 rounded-full border-2 border-gray-800 flex items-center justify-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-2.5 w-2.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                              </svg>
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-white font-medium text-sm truncate group-hover:text-yellow-300 transition-colors">
+                              {user.fullName}
+                            </h3>
+                            <p className="text-gray-400 text-xs truncate">{user.university}</p>
+                            <div className="flex items-center mt-1">
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                user.role === 'admin' ? 'bg-red-500/20 text-red-300' :
+                                user.role === 'moderator' ? 'bg-yellow-500/20 text-yellow-300' :
+                                'bg-blue-500/20 text-blue-300'
+                              }`}>
+                                {user.role === 'admin' ? 'Admin' :
+                                 user.role === 'moderator' ? 'Mod' :
+                                 'Student'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
                   </div>
                 )}
               </motion.div>
@@ -583,7 +715,7 @@ export default function ProfilePage() {
                 <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-purple-500/5 rounded-full blur-3xl"></div>
                 
                 <h2 className="text-xl font-bold mb-6 bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                   </svg>
                   My Posts
@@ -608,10 +740,15 @@ export default function ProfilePage() {
                       </svg>
                       <p className="text-gray-300 mb-6 text-lg">You haven't created any posts yet.</p>
                       <motion.button 
-                        whileHover={{ scale: 1.05, boxShadow: "0 8px 25px rgba(59, 130, 246, 0.5)" }}
+                        whileHover={{ scale: 1.05, boxShadow: "0 25px 50px rgba(0, 0, 0, 0.6)" }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setShowCreatePost(true)}
-                        className="py-3 px-8 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-medium shadow-xl border border-gray-600"
+                        className="py-3 px-8 bg-gray-900/80 backdrop-blur-md border border-white/10 text-white rounded-xl font-medium shadow-2xl hover:bg-gray-800/80 hover:border-white/20 transition-all duration-300"
+                        style={{
+                          background: 'rgba(15, 23, 42, 0.8)',
+                          backdropFilter: 'blur(16px)',
+                          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                        }}
                       >
                         Create Your First Post
                       </motion.button>

@@ -64,19 +64,35 @@ export default function PostPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 relative">
-        <AnimatedBackground />
+      <div className="relative min-h-screen overflow-hidden bg-gray-950">
+        {/* Dark gradient background matching system theme */}
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950"></div>
+        
+        {/* Subtle floating background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(4)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-32 h-32 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-full blur-2xl"
+              style={{ 
+                left: `${20 + i * 20}%`, 
+                top: `${10 + i * 15}%`,
+                animation: `float ${8 + i * 2}s ease-in-out infinite`,
+                animationDelay: `${i * 1.5}s`
+              }}
+            />
+          ))}
+        </div>
+        
         <Navbar />
-        <div className="flex">
-          <Sidebar />
-          <div className="flex-1 lg:ml-64 p-4 lg:p-8">
-            <div className="max-w-2xl mx-auto">
-              <div className="bg-black/20 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
-                <div className="animate-pulse">
-                  <div className="h-4 bg-white/20 rounded w-3/4 mb-4"></div>
-                  <div className="h-4 bg-white/20 rounded w-1/2 mb-4"></div>
-                  <div className="h-32 bg-white/20 rounded mb-4"></div>
-                </div>
+        <Sidebar />
+        <div className="pl-0 md:pl-64 pt-16 md:pt-24 relative z-10">
+          <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+            <div className="bg-gray-900/60 backdrop-blur-md rounded-2xl p-8 border border-gray-700 shadow-xl">
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-700/60 rounded w-3/4 mb-4"></div>
+                <div className="h-4 bg-gray-700/60 rounded w-1/2 mb-4"></div>
+                <div className="h-32 bg-gray-700/60 rounded mb-4"></div>
               </div>
             </div>
           </div>
@@ -87,37 +103,53 @@ export default function PostPage() {
 
   if (error || !post) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 relative">
-        <AnimatedBackground />
+      <div className="relative min-h-screen overflow-hidden bg-gray-950">
+        {/* Dark gradient background matching system theme */}
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950"></div>
+        
+        {/* Subtle floating background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(4)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-32 h-32 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-full blur-2xl"
+              style={{ 
+                left: `${20 + i * 20}%`, 
+                top: `${10 + i * 15}%`,
+                animation: `float ${8 + i * 2}s ease-in-out infinite`,
+                animationDelay: `${i * 1.5}s`
+              }}
+            />
+          ))}
+        </div>
+        
         <Navbar />
-        <div className="flex">
-          <Sidebar />
-          <div className="flex-1 lg:ml-64 p-4 lg:p-8">
-            <div className="max-w-2xl mx-auto">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-black/20 backdrop-blur-sm rounded-2xl p-8 border border-white/10 text-center"
+        <Sidebar />
+        <div className="pl-0 md:pl-64 pt-16 md:pt-24 relative z-10">
+          <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-gray-900/60 backdrop-blur-md rounded-2xl p-8 border border-gray-700 shadow-xl text-center"
+            >
+              <button
+                onClick={() => router.back()}
+                className="flex items-center text-gray-400 hover:text-white mb-6 transition-colors"
               >
-                <button
-                  onClick={() => router.back()}
-                  className="flex items-center text-white/70 hover:text-white mb-6 transition-colors"
-                >
-                  <ArrowLeftIcon className="w-5 h-5 mr-2" />
-                  Go Back
-                </button>
-                <h1 className="text-2xl font-bold text-white mb-4">Post Not Found</h1>
-                <p className="text-white/70 mb-6">
-                  {error || 'The post you\'re looking for doesn\'t exist or has been removed.'}
-                </p>
-                <button
-                  onClick={() => router.push('/home/home')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
-                >
-                  Go to Feed
-                </button>
-              </motion.div>
-            </div>
+                <ArrowLeftIcon className="w-5 h-5 mr-2" />
+                Go Back
+              </button>
+              <h1 className="text-2xl font-bold text-white mb-4">Post Not Found</h1>
+              <p className="text-gray-300 mb-6">
+                {error || 'The post you\'re looking for doesn\'t exist or has been removed.'}
+              </p>
+              <button
+                onClick={() => router.push('/home/home')}
+                className="bg-gray-800/80 backdrop-blur-md border border-gray-600/50 hover:bg-gray-700/80 text-white px-6 py-2 rounded-lg transition-colors"
+              >
+                Go to Feed
+              </button>
+            </motion.div>
           </div>
         </div>
       </div>
@@ -125,53 +157,69 @@ export default function PostPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 relative">
-      <AnimatedBackground />
-      <Navbar />
-      <div className="flex">
-        <Sidebar />
-        <div className="flex-1 lg:ml-64 p-4 lg:p-8">
-          <div className="max-w-2xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-6"
-            >
-              <button
-                onClick={() => router.back()}
-                className="flex items-center text-white/70 hover:text-white transition-colors"
-              >
-                <ArrowLeftIcon className="w-5 h-5 mr-2" />
-                Back
-              </button>
-            </motion.div>
+    <div className="relative min-h-screen overflow-hidden bg-gray-950">
+      {/* Dark gradient background matching system theme */}
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950"></div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
+      {/* Subtle floating background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(4)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-32 h-32 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-full blur-2xl"
+            style={{ 
+              left: `${20 + i * 20}%`, 
+              top: `${10 + i * 15}%`,
+              animation: `float ${8 + i * 2}s ease-in-out infinite`,
+              animationDelay: `${i * 1.5}s`
+            }}
+          />
+        ))}
+      </div>
+      
+      <Navbar />
+      <Sidebar />
+      <div className="pl-0 md:pl-64 pt-16 md:pt-24 relative z-10">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            <button
+              onClick={() => router.back()}
+              className="flex items-center text-gray-400 hover:text-white transition-colors"
             >
-              <Post
-                id={post._id}
-                author={{
-                  id: post.user._id,
-                  name: post.user.fullName,
-                  avatar: post.user.avatar || '',
-                  role: post.user.role
-                }}
-                content={post.content}
-                media={post.media}
-                mediaType={post.mediaType}
-                likes={post.likes.length}
-                comments={post.comments.length}
-                timestamp={post.createdAt}
-                community={post.community ? {
-                  name: post.community.name,
-                  avatar: post.community.coverImage || ''
-                } : undefined}
-              />
-            </motion.div>
-          </div>
+              <ArrowLeftIcon className="w-5 h-5 mr-2" />
+              Back
+            </button>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Post
+              id={post._id}
+              author={{
+                id: post.user._id,
+                name: post.user.fullName,
+                avatar: post.user.avatar || '',
+                role: post.user.role
+              }}
+              content={post.content}
+              media={post.media}
+              mediaType={post.mediaType}
+              likes={post.likes.length}
+              comments={post.comments.length}
+              timestamp={post.createdAt}
+              community={post.community ? {
+                name: post.community.name,
+                avatar: post.community.coverImage || ''
+              } : undefined}
+            />
+          </motion.div>
         </div>
       </div>
     </div>
