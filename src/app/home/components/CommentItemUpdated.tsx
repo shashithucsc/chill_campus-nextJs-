@@ -346,14 +346,31 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
         </div>
       </div>
 
-      {/* Profile View Modal - now uses createPortal internally */}
+      {/* Profile View Modal - rendered at document root level with flex positioning */}
       {showProfileModal && selectedUserId && (
-        <ProfileViewModal
-          isOpen={showProfileModal}
-          userId={selectedUserId}
-          onClose={() => setShowProfileModal(false)}
-          onStartChat={handleStartChat}
-        />
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center" 
+             style={{ 
+               position: 'fixed', 
+               top: 0, 
+               left: 0, 
+               right: 0, 
+               bottom: 0,
+               width: '100vw',
+               height: '100vh'
+             }}
+             onClick={(e) => {
+               if (e.target === e.currentTarget) {
+                 setShowProfileModal(false);
+               }
+             }}
+        >
+          <ProfileViewModal
+            isOpen={showProfileModal}
+            userId={selectedUserId}
+            onClose={() => setShowProfileModal(false)}
+            onStartChat={handleStartChat}
+          />
+        </div>
       )}
     </motion.div>
   );
@@ -517,14 +534,31 @@ function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
         </div>
       </div>
 
-      {/* Profile View Modal - now uses createPortal internally */}
+      {/* Profile View Modal - rendered at document root level with flex positioning */}
       {showProfileModal && selectedUserId && (
-        <ProfileViewModal
-          isOpen={showProfileModal}
-          userId={selectedUserId}
-          onClose={() => setShowProfileModal(false)}
-          onStartChat={handleStartChat}
-        />
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center" 
+             style={{ 
+               position: 'fixed', 
+               top: 0, 
+               left: 0, 
+               right: 0, 
+               bottom: 0,
+               width: '100vw',
+               height: '100vh'
+             }}
+             onClick={(e) => {
+               if (e.target === e.currentTarget) {
+                 setShowProfileModal(false);
+               }
+             }}
+        >
+          <ProfileViewModal
+            isOpen={showProfileModal}
+            userId={selectedUserId}
+            onClose={() => setShowProfileModal(false)}
+            onStartChat={handleStartChat}
+          />
+        </div>
       )}
     </div>
   );

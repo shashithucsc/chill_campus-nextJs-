@@ -199,8 +199,8 @@ export default function Comments({ postId, isVisible, onCommentUpdate, onStartCh
       className="border-t border-white/10 pt-4 mt-4"
     >
       {/* Comment input */}
-      <form onSubmit={handleCommentSubmit} className="flex items-center space-x-3 mb-6">
-        <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-white/20">
+      <form onSubmit={handleCommentSubmit} className="flex items-center space-x-4 mb-6">
+        <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-white/20">
           <Image
             src={session?.user?.image || '/default-avatar.png'}
             alt="Your avatar"
@@ -208,13 +208,13 @@ export default function Comments({ postId, isVisible, onCommentUpdate, onStartCh
             className="object-cover"
           />
         </div>
-        <div className="flex-1 flex items-center bg-white/10 backdrop-blur-sm rounded-full border border-white/20">
+        <div className="flex-1 flex items-center bg-white/12 backdrop-blur-sm rounded-full border border-white/25">
           <input
             type="text"
             value={commentInput}
             onChange={(e) => setCommentInput(e.target.value)}
             placeholder="Write a comment..."
-            className="flex-1 bg-transparent text-white placeholder-white/50 px-4 py-3 focus:outline-none"
+            className="flex-1 bg-transparent text-white placeholder-white/60 px-6 py-4 focus:outline-none text-base"
             disabled={submitting}
           />
           <button
@@ -261,9 +261,9 @@ export default function Comments({ postId, isVisible, onCommentUpdate, onStartCh
             </div>
           ))
         ) : comments.length === 0 ? (
-          <div className="text-center py-8">
-            <div className="text-white/40 text-sm">No comments yet.</div>
-            <div className="text-white/30 text-xs mt-1">Be the first to comment!</div>
+          <div className="text-center py-12">
+            <div className="text-white/50 text-base font-medium">No comments yet.</div>
+            <div className="text-white/40 text-sm mt-2">Be the first to comment!</div>
           </div>
         ) : (
           <AnimatePresence>

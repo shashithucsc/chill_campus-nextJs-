@@ -120,7 +120,7 @@ export default function CreatePostModal({ open = true, onClose, onPostCreated, c
                 {/* Main modal container */}
                 <div className="relative backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl" style={{background: 'rgba(15, 15, 35, 0.1)'}}>
                   {/* Animated gradient border */}
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-indigo-500/20 animate-pulse" />
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-gray-700/20 via-gray-800/20 to-black/20 animate-pulse" />
                   
                   <div className="relative p-8">
                     {/* Close button */}
@@ -141,7 +141,7 @@ export default function CreatePostModal({ open = true, onClose, onPostCreated, c
                       transition={{ delay: 0.1 }}
                       className="mb-8"
                     >
-                      <h2 className="text-4xl font-bold bg-gradient-to-r from-white via-blue-200 to-purple-200 bg-clip-text text-transparent mb-3">
+                      <h2 className="text-4xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-300 bg-clip-text text-transparent mb-3">
                         Create Post
                       </h2>
                       <p className="text-white/80 text-lg">Share your thoughts with the community</p>
@@ -156,7 +156,7 @@ export default function CreatePostModal({ open = true, onClose, onPostCreated, c
                         className="relative group"
                       >
                         <textarea
-                          className="w-full h-36 bg-white/10 border border-white/20 rounded-xl px-4 py-4 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-400/50 focus:border-purple-400/50 focus:bg-white/15 resize-none transition-all duration-300"
+                          className="w-full h-36 bg-white/10 border border-white/20 rounded-xl px-4 py-4 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 focus:bg-white/15 resize-none transition-all duration-300"
                           placeholder="What's on your mind? Share something amazing..."
                           value={content}
                           onChange={(e) => setContent(e.target.value)}
@@ -239,7 +239,7 @@ export default function CreatePostModal({ open = true, onClose, onPostCreated, c
                           whileTap={{ scale: 0.98 }}
                           className="flex items-center justify-center w-full py-4 px-4 bg-white/10 border border-white/20 border-dashed rounded-xl text-white/80 hover:bg-white/15 hover:border-white/30 transition-all duration-200 cursor-pointer group"
                         >
-                          <PhotoIcon className="w-5 h-5 mr-2 group-hover:text-purple-300 transition-colors" />
+                          <PhotoIcon className="w-5 h-5 mr-2 group-hover:text-blue-300 transition-colors" />
                           <span className="group-hover:text-white transition-colors">
                             Add Photo or Video
                           </span>
@@ -272,10 +272,10 @@ export default function CreatePostModal({ open = true, onClose, onPostCreated, c
                         transition={{ delay: 0.4 }}
                         whileHover={{ scale: loading ? 1 : 1.02 }}
                         whileTap={{ scale: loading ? 1 : 0.98 }}
-                        className="w-full relative overflow-hidden bg-gradient-to-r from-purple-600 via-pink-600 to-teal-600 hover:from-purple-700 hover:via-pink-700 hover:to-teal-700 disabled:from-gray-500 disabled:to-gray-600 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-xl disabled:cursor-not-allowed group"
+                        className="w-full relative overflow-hidden bg-gradient-to-r from-gray-700 via-gray-800 to-gray-900 hover:from-gray-800 hover:via-gray-900 hover:to-black disabled:from-gray-500 disabled:to-gray-600 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-xl disabled:cursor-not-allowed group"
                       >
                         {/* Button glow effect */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-teal-600 opacity-0 group-hover:opacity-20 blur transition-opacity duration-300" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/30 to-gray-800 opacity-0 group-hover:opacity-20 blur transition-opacity duration-300" />
                         
                         <div className="relative flex items-center justify-center">
                           {loading ? (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, KeyboardEvent } from 'react';
+import { useState, useEffect, useRef, KeyboardEvent, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSession } from 'next-auth/react';
 import { useSocket } from '@/contexts/SocketContext';
@@ -87,6 +87,8 @@ export default function DirectMessageUI({ recipientId, onBack, onNewMessage }: D
   const [isDeleting, setIsDeleting] = useState(false);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   const [selectedFile, setSelectedFile] = useState<any>(null);
+  const [isUserBlocked, setIsUserBlocked] = useState(false);
+  const [isBlockingUser, setIsBlockingUser] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -95,12 +97,14 @@ export default function DirectMessageUI({ recipientId, onBack, onNewMessage }: D
   const optionsMenuRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, []);
 
-  // Fetch messages
-  const fetchMessages = async (isInitial = false) => {
+  // Fetch messages - defined first since other functions depend on it
+  const fetchMessages = useCallback(async (isInitial = false) => {
+    if (!recipientId || !session?.user) return;
+    
     try {
       if (isInitial) setIsLoading(true);
       
@@ -108,8 +112,21 @@ export default function DirectMessageUI({ recipientId, onBack, onNewMessage }: D
       if (!response.ok) throw new Error('Failed to fetch messages');
       
       const data = await response.json();
-      setMessages(data.messages || []);
+      
+      // Set recipient data
       setRecipient(data.recipient);
+      
+      // Check if we need to filter messages due to blocked status
+      if (isUserBlocked) {
+        // If user is blocked, only show messages from the current user
+        const currentUserId = session?.user?.id;
+        const filteredMessages = data.messages.filter((msg: DirectMessage) => 
+          msg.sender._id === currentUserId
+        );
+        setMessages(filteredMessages || []);
+      } else {
+        setMessages(data.messages || []);
+      }
       
       if (isInitial) {
         setTimeout(scrollToBottom, 100);
@@ -119,7 +136,56 @@ export default function DirectMessageUI({ recipientId, onBack, onNewMessage }: D
     } finally {
       if (isInitial) setIsLoading(false);
     }
-  };
+  }, [recipientId, session, isUserBlocked, scrollToBottom]);
+
+  // Check if user is blocked
+  const checkIfUserIsBlocked = useCallback(async () => {
+    if (!recipientId || !session?.user) return;
+    
+    try {
+      const response = await fetch(`/api/users/block/${recipientId}`);
+      if (!response.ok) throw new Error('Failed to check block status');
+      
+      const data = await response.json();
+      setIsUserBlocked(data.isBlocked);
+    } catch (error) {
+      console.error('Error checking block status:', error);
+    }
+  }, [recipientId, session]);
+
+  // Block or unblock user
+  const toggleBlockUser = useCallback(async () => {
+    if (!recipientId || !session?.user) return;
+    
+    try {
+      setIsBlockingUser(true);
+      
+      const method = isUserBlocked ? 'DELETE' : 'POST';
+      const response = await fetch('/api/users/block', {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: recipientId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to toggle block status');
+      }
+
+      // Update the blocked status
+      setIsUserBlocked(prev => !prev);
+      setShowOptionsMenu(false);
+      
+      // We don't call fetchMessages directly to avoid circular dependency
+      // The useEffect with isUserBlocked dependency will handle this
+    } catch (error) {
+      console.error('Error toggling block status:', error);
+    } finally {
+      setIsBlockingUser(false);
+    }
+  }, [recipientId, session, isUserBlocked]);
 
   // Send message
   const sendMessage = async () => {
@@ -321,19 +387,32 @@ export default function DirectMessageUI({ recipientId, onBack, onNewMessage }: D
 
   // Initial fetch and polling setup
   useEffect(() => {
-    fetchMessages(true);
+    if (session?.user) {
+      fetchMessages(true);
+      checkIfUserIsBlocked();
+  
+      // Set up polling for new messages
+      pollingRef.current = setInterval(() => {
+        fetchMessages(false);
+        // Periodically check if block status has changed
+        // but not too frequently to avoid too many API calls
+        checkIfUserIsBlocked();
+      }, 5000); // Slightly longer interval for better performance
+  
+      return () => {
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current);
+        }
+      };
+    }
+  }, [recipientId, session, fetchMessages, checkIfUserIsBlocked]);
 
-    // Set up polling for new messages
-    pollingRef.current = setInterval(() => {
+  // Refetch messages when block status changes
+  useEffect(() => {
+    if (session?.user) {
       fetchMessages(false);
-    }, 3000);
-
-    return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-      }
-    };
-  }, [recipientId]);
+    }
+  }, [isUserBlocked, session]);
 
   // Adjust textarea height when message changes
   useEffect(() => {
@@ -441,6 +520,14 @@ export default function DirectMessageUI({ recipientId, onBack, onNewMessage }: D
                 exit={{ opacity: 0, y: -10 }}
                 className="absolute right-0 top-full mt-2 w-56 bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden z-50"
               >
+                <button
+                  onClick={toggleBlockUser}
+                  disabled={isBlockingUser}
+                  className={`w-full px-4 py-3 text-left ${isUserBlocked ? 'text-green-300 hover:bg-green-500/20' : 'text-red-300 hover:bg-red-500/20'} transition-all flex items-center space-x-2`}
+                >
+                  <ExclamationTriangleIcon className="h-4 w-4" />
+                  <span>{isBlockingUser ? 'Processing...' : isUserBlocked ? 'Unblock User' : 'Block User'}</span>
+                </button>
                 <button
                   onClick={() => {
                     setShowConversationDeleteModal(true);
@@ -644,105 +731,121 @@ export default function DirectMessageUI({ recipientId, onBack, onNewMessage }: D
         animate={{ opacity: 1, y: 0 }}
         className="sticky bottom-0 bg-black/30 backdrop-blur-xl border-t border-white/10 p-4"
       >
-        {/* Reply Context */}
-        <AnimatePresence>
-          {replyingTo && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mb-3 p-3 bg-black/20 rounded-lg border border-white/10"
+        {isUserBlocked ? (
+          <div className="bg-red-500/20 rounded-xl p-4 border border-red-500/30 text-center">
+            <p className="text-white font-medium">You have blocked this user</p>
+            <p className="text-white/70 text-sm mt-1">You cannot send messages to a blocked user</p>
+            <button
+              onClick={toggleBlockUser}
+              disabled={isBlockingUser}
+              className="mt-3 px-4 py-2 bg-green-500/30 hover:bg-green-500/40 rounded-lg text-green-300 transition-all"
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-white/60 text-xs font-medium mb-1">
-                    Replying to {replyingTo.sender.fullName}
-                  </div>
-                  <div className="text-white/80 text-sm truncate">
-                    {replyingTo.content}
-                  </div>
-                </div>
-                <button
-                  onClick={() => setReplyingTo(null)}
-                  className="p-1 rounded-lg hover:bg-white/10 transition-all"
-                >
-                  <ArrowLeftIcon className="h-4 w-4 text-white/60" />
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <div className="flex items-end space-x-3">
-          {/* File Attachment */}
-          <FileAttachment
-            onFileSelect={setSelectedFile}
-            onFileRemove={() => setSelectedFile(null)}
-            selectedFile={selectedFile}
-            disabled={isSending}
-          />
-
-          {/* Message Input */}
-          <div className="flex-1 relative">
-            <textarea
-              ref={textareaRef}
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={selectedFile ? "Add a caption (optional)" : "Type a message..."}
-              className="
-                w-full px-4 py-3 pr-12 bg-white/10 backdrop-blur-sm border border-white/20 
-                rounded-2xl text-white placeholder-white/50 resize-none
-                focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50
-                transition-all duration-200 min-h-[48px] max-h-[120px]
-              "
-              rows={1}
-              disabled={isSending}
-            />
-            
-            {/* Emoji Button and Picker */}
-            <div ref={emojiPickerRef} className="absolute right-3 bottom-3">
-              <button
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="p-1 rounded-lg hover:bg-white/10 transition-all"
-              >
-                <FaceSmileIcon className="h-5 w-5 text-white/60" />
-              </button>
-              
-              <EmojiPicker
-                isOpen={showEmojiPicker}
-                onEmojiSelect={handleEmojiSelect}
-                onClose={() => setShowEmojiPicker(false)}
-              />
-            </div>
+              {isBlockingUser ? 'Processing...' : 'Unblock User'}
+            </button>
           </div>
+        ) : (
+          <>
+            {/* Reply Context */}
+            <AnimatePresence>
+              {replyingTo && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mb-3 p-3 bg-black/20 rounded-lg border border-white/10"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-white/60 text-xs font-medium mb-1">
+                        Replying to {replyingTo.sender.fullName}
+                      </div>
+                      <div className="text-white/80 text-sm truncate">
+                        {replyingTo.content}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setReplyingTo(null)}
+                      className="p-1 rounded-lg hover:bg-white/10 transition-all"
+                    >
+                      <ArrowLeftIcon className="h-4 w-4 text-white/60" />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          {/* Send Button */}
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={sendMessage}
-            disabled={(!newMessage.trim() && !selectedFile) || isSending}
-            className={`
-              p-3 rounded-2xl transition-all
-              ${(newMessage.trim() || selectedFile) && !isSending
-                ? 'text-white shadow-lg border border-white/20' 
-                : 'bg-white/10 text-white/40 cursor-not-allowed'
-              }
-            `}
-            style={(newMessage.trim() || selectedFile) && !isSending ? {background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'} : undefined}
-          >
-            {isSending ? (
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+            <div className="flex items-end space-x-3">
+              {/* File Attachment */}
+              <FileAttachment
+                onFileSelect={setSelectedFile}
+                onFileRemove={() => setSelectedFile(null)}
+                selectedFile={selectedFile}
+                disabled={isSending}
               />
-            ) : (
-              <PaperAirplaneIcon className="h-5 w-5" />
-            )}
-          </motion.button>
-        </div>
+
+              {/* Message Input */}
+              <div className="flex-1 relative">
+                <textarea
+                  ref={textareaRef}
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={selectedFile ? "Add a caption (optional)" : "Type a message..."}
+                  className="
+                    w-full px-4 py-3 pr-12 bg-white/10 backdrop-blur-sm border border-white/20 
+                    rounded-2xl text-white placeholder-white/50 resize-none
+                    focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50
+                    transition-all duration-200 min-h-[48px] max-h-[120px]
+                  "
+                  rows={1}
+                  disabled={isSending}
+                />
+                
+                {/* Emoji Button and Picker */}
+                <div ref={emojiPickerRef} className="absolute right-3 bottom-3">
+                  <button
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    className="p-1 rounded-lg hover:bg-white/10 transition-all"
+                  >
+                    <FaceSmileIcon className="h-5 w-5 text-white/60" />
+                  </button>
+                  
+                  <EmojiPicker
+                    isOpen={showEmojiPicker}
+                    onEmojiSelect={handleEmojiSelect}
+                    onClose={() => setShowEmojiPicker(false)}
+                  />
+                </div>
+              </div>
+
+              {/* Send Button */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={sendMessage}
+                disabled={(!newMessage.trim() && !selectedFile) || isSending}
+                className={`
+                  p-3 rounded-2xl transition-all
+                  ${(newMessage.trim() || selectedFile) && !isSending
+                    ? 'text-white shadow-lg border border-white/20' 
+                    : 'bg-white/10 text-white/40 cursor-not-allowed'
+                  }
+                `}
+                style={(newMessage.trim() || selectedFile) && !isSending ? {background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'} : undefined}
+              >
+                {isSending ? (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                  />
+                ) : (
+                  <PaperAirplaneIcon className="h-5 w-5" />
+                )}
+              </motion.button>
+            </div>
+          </>
+        )}
       </motion.div>
 
       {/* Delete Message Confirmation Modal */}

@@ -13,6 +13,7 @@ export interface IUser extends Document {
   followers?: mongoose.Types.ObjectId[]; // Users following this user
   following?: mongoose.Types.ObjectId[]; // Users this user is following
   favorites?: mongoose.Types.ObjectId[]; // Users this user has favorited
+  blockedUsers?: mongoose.Types.ObjectId[]; // Users blocked by this user
   isActive: boolean; // Indicates if the user's email is confirmed
   activationToken: string; // Token for email confirmation
   status: 'Active' | 'Suspended'; // User status for admin management
@@ -83,6 +84,10 @@ const UserSchema = new Schema<IUser>(
       ref: 'User',
     }],
     favorites: [{
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    }],
+    blockedUsers: [{
       type: Schema.Types.ObjectId,
       ref: 'User',
     }],

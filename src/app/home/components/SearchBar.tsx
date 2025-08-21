@@ -168,15 +168,15 @@ export default function SearchBar() {
           onFocus={handleInputFocus}
           onKeyDown={handleKeyDown}
           placeholder="Search posts, communities, users..."
-          className="w-full px-4 py-3 pl-12 rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 focus:bg-white/20 transition-all duration-300 shadow-lg hover:shadow-xl"
+          className="w-full px-4 py-2 pl-10 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 focus:bg-white/20 transition-all duration-300 shadow-lg text-sm"
         />
         <motion.button 
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={() => performFullSearch(query)}
-          className="absolute left-3 top-3.5"
+          className="absolute left-3 top-2.5"
         >
-          <MagnifyingGlassIcon className="h-5 w-5 text-white/70" />
+          <MagnifyingGlassIcon className="h-4 w-4 text-white/70" />
         </motion.button>
       </div>
 

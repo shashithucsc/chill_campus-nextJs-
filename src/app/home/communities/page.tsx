@@ -7,8 +7,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSession } from 'next-auth/react';
 import Navbar from '../navbar/Navbar';
 import Sidebar from '../sidebar/Sidebar';
+import ChatSidebar from '../sidebar/ChatSidebar';
 import { useSidebar } from '../context/SidebarContext';
 import AnimatedBackground from './components/AnimatedBackground';
+import CreatePostModal from '../components/CreatePostModal';
 import { 
   MagnifyingGlassIcon,
   PlusIcon,
@@ -96,6 +98,7 @@ export default function CommunitiesPage() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [loading, setLoading] = useState(true);
   const [communitiesData, setCommunitiesData] = useState<Community[]>([]);
+  const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
 
   // Animation variants
   const containerVariants = {
@@ -201,8 +204,9 @@ export default function CommunitiesPage() {
         <AnimatedBackground />
       </div>
 
-      <Navbar />
+      <Navbar onCreatePost={() => setIsCreatePostOpen(true)} />
       <Sidebar />
+      <ChatSidebar />
       
       {/* Main Content */}
       <motion.main 
@@ -394,6 +398,15 @@ export default function CommunitiesPage() {
           </motion.div>
         </div>
       </motion.main>
+
+      {/* Create Post Modal */}
+      <CreatePostModal 
+        open={isCreatePostOpen}
+        onClose={() => setIsCreatePostOpen(false)}
+        onPostCreated={() => {
+          setIsCreatePostOpen(false);
+        }}
+      />
     </div>
   );
 }

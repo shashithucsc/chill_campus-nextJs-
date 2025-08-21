@@ -10,7 +10,6 @@ import CreatePostModal from '../components/CreatePostModal';
 import MessageInbox from '../components/MessageInbox';
 import DirectMessageUI from '../components/DirectMessageUI';
 import NewMessageModal from '../components/NewMessageModal';
-import AnimatedBackground from '../communities/components/AnimatedBackground';
 import { useSidebar } from '../context/SidebarContext';
 import { useChat } from '../context/ChatContext';
 import { 
@@ -136,18 +135,24 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden" style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}}>
-      {/* Animated Background */}
-      <div className="fixed inset-0">
-        {/* Dark gradient background */}
-        <div className="absolute inset-0" style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}}></div>
-        
-        {/* Floating Background Elements */}
-        <AnimatedBackground 
-          particleCount={8} 
-          glassParticleCount={12}
-          className="absolute inset-0 overflow-hidden pointer-events-none"
-        />
+    <div className="relative min-h-screen overflow-hidden bg-gray-950">
+      {/* Dark gradient background matching search page theme */}
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950"></div>
+
+      {/* Subtle floating background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(6)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-32 h-32 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-full blur-2xl"
+            style={{ 
+              left: `${15 + i * 15}%`, 
+              top: `${5 + i * 12}%`,
+              animation: `float ${8 + i * 2}s ease-in-out infinite`,
+              animationDelay: `${i * 1.5}s`
+            }}
+          />
+        ))}
       </div>
 
       <Navbar onCreatePost={() => setIsCreatePostOpen(true)} />
@@ -160,8 +165,7 @@ export default function HomePage() {
           initial={{ x: '100%' }}
           animate={{ x: 0 }}
           exit={{ x: '100%' }}
-          className="fixed inset-0 z-50"
-          style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}}
+          className="fixed inset-0 z-50 bg-gray-950"
         >
           <DirectMessageUI
             recipientId={selectedRecipientId}
@@ -170,32 +174,20 @@ export default function HomePage() {
         </motion.div>
       )}
 
-      {/* Desktop Layout */}
-      <div className="flex h-screen pt-16">
-        {/* Main Content */}
-        <motion.main 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ 
-            opacity: 1, 
-            y: 0,
-            marginLeft: isCollapsed ? '0px' : '256px',
-            marginRight: !isMobile && showMessaging ? '400px' : '0px'
-          }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="flex-1 relative z-10 overflow-y-auto"
-        >
-        <div className="max-w-6xl mx-auto px-8 py-8">
+      {/* Main Content Area */}
+      <div className="pl-0 md:pl-64 pt-16 md:pt-24 relative z-10">
+        <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
           {/* Welcome Header */}
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="mb-10 text-center"
+            className="mb-8 text-center"
           >
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-white to-blue-100 bg-clip-text text-transparent mb-3">
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
               Welcome to Your Feed
             </h1>
-            <p className="text-xl text-white/80">Stay connected with your university community</p>
+            <p className="text-lg text-gray-300">Stay connected with your university community</p>
           </motion.div>
 
           {/* Quick Create Post Card */}
@@ -204,16 +196,16 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.3 }}
             whileHover={{ y: -2, boxShadow: "0 25px 50px rgba(59, 130, 246, 0.15)" }}
-            className="mb-10 p-8 bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 cursor-pointer transition-all duration-300"
+            className="mb-8 p-6 bg-gray-900/60 backdrop-blur-md rounded-2xl shadow-xl border border-gray-700 cursor-pointer transition-all duration-300 hover:bg-gray-800/60"
             onClick={() => setIsCreatePostOpen(true)}
           >
-            <div className="flex items-center space-x-6">
-              <div className="w-16 h-16 rounded-full backdrop-blur-sm border border-white/20 flex items-center justify-center" style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}>
-                <span className="text-white font-bold text-2xl">+</span>
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 rounded-full bg-gray-800/80 backdrop-blur-sm border border-gray-600 flex items-center justify-center">
+                <span className="text-white font-bold text-xl">+</span>
               </div>
               <div className="flex-1">
-                <p className="text-white/90 text-xl font-medium">What's on your mind?</p>
-                <p className="text-white/60 text-sm mt-1">Share your thoughts with the community</p>
+                <p className="text-white font-semibold text-lg">What's on your mind?</p>
+                <p className="text-gray-400 text-sm mt-1">Share your thoughts with the community</p>
               </div>
             </div>
           </motion.div>
@@ -223,37 +215,34 @@ export default function HomePage() {
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="space-y-10"
+            className="space-y-6"
             id="posts-feed"
           >
             {loading ? (
               <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-center py-16"
+                className="text-center py-12"
               >
-                <div className="inline-flex items-center space-x-4">
-                  <div className="w-10 h-10 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span className="text-white/90 font-medium text-xl">Loading your feed...</span>
-                </div>
+                <div className="w-12 h-12 border-4 border-gray-600 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+                <span className="text-gray-300 font-medium text-lg">Loading your feed...</span>
               </motion.div>
             ) : posts.length === 0 ? (
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-center py-20"
+                className="text-center py-16"
               >
-                <div className="w-32 h-32 mx-auto mb-8 backdrop-blur-sm border border-white/20 rounded-full flex items-center justify-center" style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}>
-                  <span className="text-5xl">📝</span>
+                <div className="w-24 h-24 mx-auto mb-6 bg-gray-800/60 backdrop-blur-sm border border-gray-600 rounded-full flex items-center justify-center">
+                  <span className="text-4xl">📝</span>
                 </div>
                 <h3 className="text-2xl font-semibold text-white mb-3">No posts yet</h3>
-                <p className="text-white/70 text-lg mb-8">Be the first to share something with your community!</p>
+                <p className="text-gray-400 text-lg mb-6">Be the first to share something with your community!</p>
                 <motion.button
                   whileHover={{ scale: 1.05, boxShadow: "0 15px 40px rgba(59, 130, 246, 0.4)" }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setIsCreatePostOpen(true)}
-                  className="px-8 py-4 text-white text-lg rounded-xl font-semibold shadow-2xl hover:shadow-xl transition-all duration-300 border border-white/30"
-                  style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}
+                  className="px-6 py-3 bg-gray-800/80 backdrop-blur-md text-white text-lg rounded-xl font-semibold shadow-xl hover:bg-gray-700/80 transition-all duration-300 border border-gray-600"
                 >
                   Create Your First Post
                 </motion.button>
@@ -269,8 +258,8 @@ export default function HomePage() {
                   key={post._id}
                   variants={itemVariants}
                   custom={index}
-                  whileHover={{ y: -6, boxShadow: "0 25px 50px rgba(59, 130, 246, 0.15)" }}
-                  className="bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 overflow-hidden transition-all duration-300 hover:border-white/30"
+                  whileHover={{ y: -3, boxShadow: "0 25px 50px rgba(59, 130, 246, 0.15)" }}
+                  className="bg-gray-900/60 backdrop-blur-md rounded-2xl shadow-xl border border-gray-700 overflow-hidden transition-all duration-300 hover:bg-gray-800/60"
                 >
                   <Post
                     id={post._id}
@@ -287,6 +276,11 @@ export default function HomePage() {
                     likes={0}
                     comments={0}
                     timestamp={new Date(post.createdAt).toLocaleString()}
+                    community={post.community ? {
+                      id: post.community._id || '',
+                      name: post.community.name || '',
+                      avatar: post.community.avatar || '/images/default-community-banner.jpg'
+                    } : undefined}
                     onProfileClick={handleProfileClick}
                   />
                 </motion.div>
@@ -295,7 +289,6 @@ export default function HomePage() {
             )}
           </motion.div>
         </div>
-      </motion.main>
       </div>
 
       {/* Desktop Messaging Sidebar */}
@@ -307,7 +300,7 @@ export default function HomePage() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="fixed right-0 top-16 bottom-0 w-96 bg-black/20 backdrop-blur-sm border-l border-white/10 z-40"
+              className="fixed right-0 top-16 bottom-0 w-96 bg-gray-900/40 backdrop-blur-sm border-l border-gray-700 z-40"
             >
               {selectedRecipientId ? (
                 <DirectMessageUI
@@ -335,11 +328,10 @@ export default function HomePage() {
         <motion.button
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          whileHover={{ scale: 1.1 }}
+          whileHover={{ scale: 1.1, boxShadow: "0 15px 40px rgba(59, 130, 246, 0.4)" }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setShowMessaging(true)}
-          className="fixed bottom-8 right-8 w-14 h-14 text-white rounded-full shadow-2xl flex items-center justify-center z-30 transition-all border border-white/30"
-          style={{background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)'}}
+          className="fixed bottom-8 right-8 w-14 h-14 bg-gray-800/80 backdrop-blur-md text-white rounded-full shadow-xl flex items-center justify-center z-30 transition-all border border-gray-600 hover:bg-gray-700/80"
         >
           <ChatBubbleLeftIcon className="h-6 w-6" />
         </motion.button>
@@ -359,36 +351,35 @@ export default function HomePage() {
         onPostCreated={handlePostCreated}
       >
         {/* Pass the posts feed as children to show in blurred background */}
-        <div className={`min-h-screen pt-16 transition-all duration-300 ${isCollapsed ? 'pl-0' : 'pl-64'}`}>
-          <div className="max-w-6xl mx-auto px-8 py-8">
+        <div className="min-h-screen pt-16 pl-0 md:pl-64">
+          <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
             {/* Welcome Header */}
-            <div className="mb-10 text-center">
-              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-white to-blue-100 bg-clip-text text-transparent mb-3">
+            <div className="mb-8 text-center">
+              <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
                 Welcome to Your Feed
               </h1>
-              <p className="text-xl text-white/80">Stay connected with your university community</p>
+              <p className="text-lg text-gray-300">Stay connected with your university community</p>
             </div>
 
             {/* Quick Create Post Card */}
-            <div className="mb-10 p-8 bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20">
-              <div className="flex items-center space-x-6">
-                <div className="w-16 h-16 rounded-full backdrop-blur-sm border border-white/20 flex items-center justify-center"
-                     style={{background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'}}>
-                  <span className="text-white font-bold text-2xl">+</span>
+            <div className="mb-8 p-6 bg-gray-900/60 backdrop-blur-md rounded-2xl shadow-xl border border-gray-700">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 rounded-full bg-gray-800/80 backdrop-blur-sm border border-gray-600 flex items-center justify-center">
+                  <span className="text-white font-bold text-xl">+</span>
                 </div>
                 <div className="flex-1">
-                  <p className="text-white/90 text-xl font-medium">What's on your mind?</p>
-                  <p className="text-white/60 text-sm mt-1">Share your thoughts with the community</p>
+                  <p className="text-white font-semibold text-lg">What's on your mind?</p>
+                  <p className="text-gray-400 text-sm mt-1">Share your thoughts with the community</p>
                 </div>
               </div>
             </div>
 
             {/* Posts Feed for background */}
-            <div className="space-y-10">
+            <div className="space-y-6">
               {posts.map((post) => (
                 <div
                   key={post._id}
-                  className="bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 overflow-hidden"
+                  className="bg-gray-900/60 backdrop-blur-md rounded-2xl shadow-xl border border-gray-700 overflow-hidden"
                 >
                   <Post
                     id={post._id}

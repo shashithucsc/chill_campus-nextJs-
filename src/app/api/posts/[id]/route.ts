@@ -20,7 +20,7 @@ export async function GET(req: NextRequest, context: any) {
     // Find the post by ID and populate the user and community data
     const post = await Post.findById(id)
       .populate('user', 'fullName avatar role')
-      .populate('community', 'name coverImage')
+      .populate('community', '_id name coverImage')
       .populate('comments.user', 'fullName avatar')
       .lean<LeanPostDoc>();
 

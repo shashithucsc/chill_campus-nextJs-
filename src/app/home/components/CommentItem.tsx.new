@@ -99,11 +99,11 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
     const date = new Date(dateString);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
-
+    
     const minutes = Math.floor(diff / (1000 * 60));
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
+    
     if (minutes < 1) return 'just now';
     if (minutes < 60) return `${minutes}m`;
     if (hours < 24) return `${hours}h`;
@@ -126,9 +126,9 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
     const counts: { [key in ReactionType]: number } = {
       like: 0, love: 0, laugh: 0, wow: 0, sad: 0, angry: 0
     };
-
+    
     reactions.forEach(r => counts[r.type]++);
-
+    
     return Object.entries(counts)
       .filter(([_, count]) => count > 0)
       .sort((a, b) => b[1] - a[1])
@@ -171,7 +171,7 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
     >
       {/* Comment Header */}
       <div className="flex items-start space-x-3">
-        <div
+        <div 
           className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-white/20 cursor-pointer hover:border-blue-400 transition-colors"
           onClick={() => handleProfileClick(comment.user.id)}
           title="View profile"
@@ -183,11 +183,11 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
             className="object-cover"
           />
         </div>
-
+        
         <div className="flex-1">
           {/* User info and content */}
           <div className="bg-white/12 rounded-2xl px-5 py-4">
-            <button
+            <button 
               onClick={() => handleProfileClick(comment.user.id)}
               className="text-blue-900 font-semibold text-base hover:text-blue-300 transition-colors cursor-pointer"
             >
@@ -195,7 +195,7 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
             </button>
             <p className="text-white/95 text-base mt-2 leading-relaxed">{comment.content}</p>
           </div>
-
+          
           {/* Reactions display */}
           {getTotalReactions(comment.reactions) > 0 && (
             <div className="flex items-center mt-2 mb-2">
@@ -211,7 +211,7 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
               </div>
             </div>
           )}
-
+          
           {/* Action buttons */}
           <div className="flex items-center space-x-6 mt-3">
             <div className="relative">
@@ -219,8 +219,8 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
                 onMouseEnter={() => setShowReactions(true)}
                 onMouseLeave={() => setShowReactions(false)}
                 className={`flex items-center space-x-2 text-sm py-2 px-3 rounded-lg transition-all ${
-                  userReaction
-                    ? 'text-blue-400 bg-blue-500/20'
+                  userReaction 
+                    ? 'text-blue-400 bg-blue-500/20' 
                     : 'text-white/70 hover:text-white hover:bg-white/15'
                 }`}
               >
@@ -231,7 +231,7 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
                 )}
                 <span className="font-medium">{userReaction ? userReaction.type : 'Like'}</span>
               </button>
-
+              
               {/* Reaction picker */}
               <AnimatePresence>
                 {showReactions && (
@@ -239,7 +239,7 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
                     initial={{ opacity: 0, y: 10, scale: 0.9 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                    className="absolute bottom-full left-0 mb-2 bg-black/80 backdrop-blur-md rounded-full p-2 flex space-x-1 shadow-xl border border-white/20"  
+                    className="absolute bottom-full left-0 mb-2 bg-black/80 backdrop-blur-md rounded-full p-2 flex space-x-1 shadow-xl border border-white/20"
                     onMouseEnter={() => setShowReactions(true)}
                     onMouseLeave={() => setShowReactions(false)}
                   >
@@ -256,7 +256,7 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
                 )}
               </AnimatePresence>
             </div>
-
+            
             <button
               onClick={() => setShowReplyInput(!showReplyInput)}
               className="flex items-center space-x-2 text-sm text-white/70 hover:text-white py-2 px-3 rounded-lg hover:bg-white/15 transition-all"
@@ -264,10 +264,10 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
               <ChatBubbleOvalLeftIcon className="w-5 h-5" />
               <span className="font-medium">Reply</span>
             </button>
-
+            
             <span className="text-white/50 text-sm font-medium">{formatTimeAgo(comment.createdAt)}</span>
           </div>
-
+          
           {/* Reply input */}
           <AnimatePresence>
             {showReplyInput && (
@@ -310,7 +310,7 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
               </motion.form>
             )}
           </AnimatePresence>
-
+          
           {/* Replies */}
           {comment.replyCount > 0 && (
             <div className="mt-4">
@@ -320,7 +320,7 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
               >
                 <span>{showReplies ? 'Hide' : 'View'} {comment.replyCount} replies</span>
               </button>
-
+              
               <AnimatePresence>
                 {showReplies && (
                   <motion.div
@@ -346,14 +346,16 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
         </div>
       </div>
 
-      {/* Profile View Modal - now uses createPortal internally */}
+      {/* Profile View Modal - rendered at document root level */}
       {showProfileModal && selectedUserId && (
-        <ProfileViewModal
-          isOpen={showProfileModal}
-          userId={selectedUserId}
-          onClose={() => setShowProfileModal(false)}
-          onStartChat={handleStartChat}
-        />
+        <div className="fixed inset-0 z-[9999]" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+          <ProfileViewModal
+            isOpen={showProfileModal}
+            userId={selectedUserId}
+            onClose={() => setShowProfileModal(false)}
+            onStartChat={handleStartChat}
+          />
+        </div>
       )}
     </motion.div>
   );
@@ -388,11 +390,11 @@ function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
     const date = new Date(dateString);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
-
+    
     const minutes = Math.floor(diff / (1000 * 60));
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
+    
     if (minutes < 1) return 'just now';
     if (minutes < 60) return `${minutes}m`;
     if (hours < 24) return `${hours}h`;
@@ -413,7 +415,7 @@ function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
     };
     
     reactions.forEach(r => counts[r.type]++);
-
+    
     return Object.entries(counts)
       .filter(([_, count]) => count > 0)
       .sort((a, b) => b[1] - a[1])
@@ -432,7 +434,7 @@ function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
     <div className="flex items-start space-x-3">
       <button
         onClick={() => handleProfileClick(reply.user.id)}
-        className="relative w-9 h-9 rounded-full overflow-hidden border border-white/20 hover:ring-2 hover:ring-blue-500/50 transition-all duration-200"        
+        className="relative w-9 h-9 rounded-full overflow-hidden border border-white/20 hover:ring-2 hover:ring-blue-500/50 transition-all duration-200"
       >
         <Image
           src={reply.user.avatar || '/default-avatar.png'}
@@ -441,7 +443,7 @@ function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
           className="object-cover"
         />
       </button>
-
+      
       <div className="flex-1">
         <div className="bg-white/8 rounded-xl px-4 py-3">
           <button
@@ -452,7 +454,7 @@ function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
           </button>
           <p className="text-white/95 text-sm mt-1.5 leading-relaxed">{reply.content}</p>
         </div>
-
+        
         {/* Reactions display */}
         {getTotalReactions(reply.reactions) > 0 && (
           <div className="flex items-center mt-1 mb-1">
@@ -468,15 +470,15 @@ function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
             </div>
           </div>
         )}
-
+        
         <div className="flex items-center space-x-4 mt-2">
           <div className="relative">
             <button
               onMouseEnter={() => setShowReactions(true)}
               onMouseLeave={() => setShowReactions(false)}
               className={`flex items-center space-x-1.5 text-sm py-1.5 px-2 rounded transition-all ${
-                userReaction
-                  ? 'text-blue-400'
+                userReaction 
+                  ? 'text-blue-400' 
                   : 'text-white/70 hover:text-white'
               }`}
             >
@@ -487,7 +489,7 @@ function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
               )}
               <span className="font-medium">{userReaction ? userReaction.type : 'Like'}</span>
             </button>
-
+            
             {/* Reaction picker */}
             <AnimatePresence>
               {showReactions && (
@@ -495,7 +497,7 @@ function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
                   initial={{ opacity: 0, y: 10, scale: 0.9 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                  className="absolute bottom-full left-0 mb-1 bg-black/80 backdrop-blur-md rounded-full p-1 flex space-x-1 shadow-xl border border-white/20"    
+                  className="absolute bottom-full left-0 mb-1 bg-black/80 backdrop-blur-md rounded-full p-1 flex space-x-1 shadow-xl border border-white/20"
                   onMouseEnter={() => setShowReactions(true)}
                   onMouseLeave={() => setShowReactions(false)}
                 >
@@ -512,19 +514,21 @@ function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
               )}
             </AnimatePresence>
           </div>
-
+          
           <span className="text-white/50 text-sm font-medium">{formatTimeAgo(reply.createdAt)}</span>
         </div>
       </div>
 
-      {/* Profile View Modal - now uses createPortal internally */}
+      {/* Profile View Modal - rendered at document root level */}
       {showProfileModal && selectedUserId && (
-        <ProfileViewModal
-          isOpen={showProfileModal}
-          userId={selectedUserId}
-          onClose={() => setShowProfileModal(false)}
-          onStartChat={handleStartChat}
-        />
+        <div className="fixed inset-0 z-[9999]" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+          <ProfileViewModal
+            isOpen={showProfileModal}
+            userId={selectedUserId}
+            onClose={() => setShowProfileModal(false)}
+            onStartChat={handleStartChat}
+          />
+        </div>
       )}
     </div>
   );

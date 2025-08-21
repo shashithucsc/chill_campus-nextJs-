@@ -8,6 +8,7 @@ import Navbar from '../navbar/Navbar';
 import Sidebar from '../sidebar/Sidebar';
 import Post from '../components/Post';
 import CreatePostModal from '../components/CreatePostModal';
+import ProfileViewModal from '../components/ProfileViewModal';
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
@@ -20,6 +21,8 @@ export default function ProfilePage() {
   const [postLoading, setPostLoading] = useState(false);
   const [favorites, setFavorites] = useState<any[]>([]);
   const [favoritesLoading, setFavoritesLoading] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   // Debug session data
   console.log("Session in profile page:", session);
@@ -132,6 +135,17 @@ export default function ProfilePage() {
     }
   }
 
+  // Profile view handlers
+  const handleProfileClick = (userId: string) => {
+    setSelectedProfile(userId);
+    setShowProfileModal(true);
+  };
+
+  const handleStartChat = (userId: string) => {
+    // Navigate to messaging with this user
+    window.location.href = `/home/messages?userId=${userId}`;
+  };
+
   const handleSave = async () => {
     const formData = new FormData();
     formData.append('fullName', editedData.name);
@@ -152,8 +166,6 @@ export default function ProfilePage() {
       setIsEditing(false);
     }
   };
-
-  // Enhanced loading state with dark theme
   if (loading) {
     return (
       <div className="relative min-h-screen overflow-hidden bg-gray-950">
@@ -654,7 +666,8 @@ export default function ProfilePage() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.1 * index, duration: 0.5 }}
-                        className="bg-gray-800/40 backdrop-blur-sm rounded-xl border border-gray-600 p-4 hover:bg-gray-800/60 transition-all duration-300 group"
+                        className="bg-gray-800/40 backdrop-blur-sm rounded-xl border border-gray-600 p-4 hover:bg-gray-800/60 transition-all duration-300 group cursor-pointer"
+                        onClick={() => handleProfileClick(user._id)}
                       >
                         <div className="flex items-center space-x-3">
                           <div className="relative">
@@ -836,6 +849,16 @@ export default function ProfilePage() {
           )}
         </div>
       </div>
+      
+      {/* Profile View Modal - now uses createPortal internally */}
+      {selectedProfile && showProfileModal && (
+        <ProfileViewModal
+          userId={selectedProfile}
+          isOpen={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
+          onStartChat={handleStartChat}
+        />
+      )}
     </div>
   );
 }

@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
   // Populate fullName, email, avatar, and role for the user
   const posts = await Post.find(filter)
     .populate('user', 'fullName email avatar role')
+    .populate('community', '_id name avatar') // Include _id in populated community
     .sort({ createdAt: -1 });
   
   return NextResponse.json({ posts });

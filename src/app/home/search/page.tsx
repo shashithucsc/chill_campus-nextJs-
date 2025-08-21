@@ -235,7 +235,7 @@ function SearchPageContent() {
                     </Link>
                   )}
                   {result.type === "user" && (
-                    <Link href="/home/profile">
+                    <Link href={`/home/profile/${result._id}`}>
                       <div className="flex items-center space-x-4 hover:bg-gray-800/40 rounded-xl p-4 -m-4 transition-colors">
                         <div className="w-12 h-12 rounded-full overflow-hidden">
                           {result.avatar ? (

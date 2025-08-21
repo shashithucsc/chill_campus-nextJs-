@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
+import { createPortal } from 'react-dom';
 import { 
   XMarkIcon,
   ChatBubbleLeftIcon,
@@ -27,8 +28,6 @@ import {
 interface UserStats {
   posts: number;
   communities: number;
-  followers?: number;
-  following?: number;
 }
 
 interface UserProfile {
@@ -42,7 +41,6 @@ interface UserProfile {
   interests?: string[];
   joinedAt: string;
   stats: UserStats;
-  isFollowing?: boolean;
   mutualConnections?: number;
 }
 
@@ -65,6 +63,27 @@ export default function ProfileViewModal({
   const [error, setError] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  
+  // Ensure component is mounted before rendering portal
+  useEffect(() => {
+    setMounted(true);
+    
+    // Prevent body scroll when modal is open
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = 'unset';
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   // Fetch user profile
   const fetchProfile = async () => {
@@ -148,22 +167,46 @@ export default function ProfileViewModal({
   // Check if viewing own profile
   const isOwnProfile = session?.user?.id === userId;
 
-  return (
+  const modalContent = (
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-        onClick={onClose}
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[99999] flex items-start justify-center overflow-y-auto p-4 pt-20"
+        onClick={(e) => {
+          // Only close if clicking the backdrop (not the modal content)
+          if (e.target === e.currentTarget) {
+            onClose();
+          }
+        }}
+        style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          bottom: 0,
+          margin: 0,
+          padding: 0,
+          paddingTop: '80px', // Position from top
+          transform: 'none',
+          zIndex: 99999,
+          width: '100vw',
+          height: '100vh'
+        }}
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className="bg-gradient-to-br from-gray-900/98 to-black/98 backdrop-blur-xl rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto border border-white/20 shadow-2xl"
-          onClick={(e) => e.stopPropagation()}
+          className="bg-gradient-to-br from-gray-900/98 to-black/98 backdrop-blur-xl rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto border border-white/20 shadow-2xl transform-gpu"
+          onClick={(e) => e.stopPropagation()} // Prevent clicks from bubbling up to parent
+          style={{ 
+            margin: 'auto', // Center in flex container
+            position: 'relative',
+            zIndex: 10000
+          }}
         >
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
@@ -258,18 +301,6 @@ export default function ProfileViewModal({
                     <div className="text-xl font-bold text-white">{profile.stats.communities}</div>
                     <div className="text-xs text-white/60">Communities</div>
                   </div>
-                  {profile.stats.followers !== undefined && (
-                    <div className="text-center">
-                      <div className="text-xl font-bold text-white">{profile.stats.followers}</div>
-                      <div className="text-xs text-white/60">Followers</div>
-                    </div>
-                  )}
-                  {profile.stats.following !== undefined && (
-                    <div className="text-center">
-                      <div className="text-xl font-bold text-white">{profile.stats.following}</div>
-                      <div className="text-xs text-white/60">Following</div>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -396,4 +427,10 @@ export default function ProfileViewModal({
       </motion.div>
     </AnimatePresence>
   );
+
+  // Use portal to render modal at document.body level to avoid positioning issues
+  // Don't render until mounted (for SSR compatibility)
+  return mounted && typeof window !== 'undefined' && document.body 
+    ? createPortal(modalContent, document.body)
+    : null;
 }

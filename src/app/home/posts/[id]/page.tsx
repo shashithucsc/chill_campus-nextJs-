@@ -215,6 +215,7 @@ export default function PostPage() {
               comments={post.comments.length}
               timestamp={post.createdAt}
               community={post.community ? {
+                id: post.community._id,
                 name: post.community.name,
                 avatar: post.community.coverImage || ''
               } : undefined}

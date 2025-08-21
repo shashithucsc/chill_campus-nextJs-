@@ -38,7 +38,6 @@ interface PostProps {
   comments: number;
   timestamp: string;
   community?: {
-    id: string;
     name: string;
     avatar: string;
   };
@@ -242,7 +241,7 @@ export default function Post({
                   {community && (
                     <>
                       <span className="text-white/60">in</span>
-                      <Link href={`/home/communities/${community.id}`} className="font-medium text-blue-400 hover:text-blue-300 transition-colors">
+                      <Link href={`/home/communities/${community.name}`} className="font-medium text-blue-400 hover:text-blue-300 transition-colors">
                         {community.name}
                       </Link>
                     </>
@@ -474,14 +473,16 @@ export default function Post({
         />
       )}
       
-      {/* Profile View Modal - Now uses createPortal inside the component */}
+      {/* Profile View Modal - Now rendering outside of the post container */}
       {showProfileModal && (
-        <ProfileViewModal
-          userId={author.id}
-          isOpen={showProfileModal}
-          onClose={() => setShowProfileModal(false)}
-          onStartChat={handleStartChat}
-        />
+        <div className="fixed inset-0 flex items-center justify-center z-[9999]">
+          <ProfileViewModal
+            userId={author.id}
+            isOpen={showProfileModal}
+            onClose={() => setShowProfileModal(false)}
+            onStartChat={handleStartChat}
+          />
+        </div>
       )}
     </>
   );
