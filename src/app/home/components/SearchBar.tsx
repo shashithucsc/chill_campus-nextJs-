@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import Link from 'next/link';
+// import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   MagnifyingGlassIcon,
@@ -11,10 +11,11 @@ import {
   UserGroupIcon,
   DocumentTextIcon,
   ChatBubbleLeftIcon,
-  ClockIcon,
-  HeartIcon,
+  // ClockIcon,
+  // HeartIcon,
   ChatBubbleBottomCenterTextIcon
 } from '@heroicons/react/24/outline';
+import ProfileViewModal from './ProfileViewModal';
 
 interface SearchSuggestion {
   type: 'user' | 'community' | 'post' | 'message';
@@ -30,6 +31,8 @@ export default function SearchBar() {
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
   
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -134,13 +137,15 @@ export default function SearchBar() {
     // Navigate based on suggestion type
     switch (suggestion.type) {
       case 'user':
-        router.push(`/home/profile/${suggestion.id}`);
+        // Instead of navigating, show profile modal
+        setSelectedUserId(suggestion.id);
+        setShowProfileModal(true);
         break;
       case 'community':
         router.push(`/home/communities/${suggestion.id}`);
         break;
       case 'post':
-        router.push(`/home/posts/${suggestion.id}`);
+        router.push(`/post/${suggestion.id}`);
         break;
       default:
         performFullSearch(suggestion.text);
@@ -168,15 +173,15 @@ export default function SearchBar() {
           onFocus={handleInputFocus}
           onKeyDown={handleKeyDown}
           placeholder="Search posts, communities, users..."
-          className="w-full px-4 py-3 pl-12 rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 focus:bg-white/20 transition-all duration-300 shadow-lg hover:shadow-xl"
+          className="w-full px-4 py-2 pl-10 rounded-lg border border-white/20 bg-white/10 backdrop-blur-sm text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 focus:bg-white/20 transition-all duration-300 shadow-lg text-sm"
         />
         <motion.button 
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={() => performFullSearch(query)}
-          className="absolute left-3 top-3.5"
+          className="absolute left-3 top-2.5"
         >
-          <MagnifyingGlassIcon className="h-5 w-5 text-white/70" />
+          <MagnifyingGlassIcon className="h-4 w-4 text-white/70" />
         </motion.button>
       </div>
 
@@ -248,6 +253,16 @@ export default function SearchBar() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Profile View Modal */}
+      {showProfileModal && selectedUserId && (
+        <ProfileViewModal
+          isOpen={showProfileModal}
+          userId={selectedUserId}
+          onClose={() => setShowProfileModal(false)}
+          onStartChat={() => {}}
+        />
+      )}
     </div>
   );
 }

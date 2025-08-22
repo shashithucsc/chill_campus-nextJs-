@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const recipientId = searchParams.get('recipientId');
-    const page = parseInt(searchParams.get('page') || '1');
+    const _page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
     const before = searchParams.get('before');
 
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Build query for messages between these two users
-    let query: any = {
+    const query: any = {
       $or: [
         { sender: userId, recipient: recipientId },
         { sender: recipientId, recipient: userId }

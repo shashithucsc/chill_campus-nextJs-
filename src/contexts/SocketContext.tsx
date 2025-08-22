@@ -8,12 +8,27 @@ import {
   ServerToClientEvents, 
   ClientToServerEvents 
 } from '@/lib/socket';
+import { toast } from 'react-hot-toast';
+import NotificationToast from '@/app/components/NotificationToast';
+
+interface Notification {
+  _id: string;
+  type: string;
+  title: string;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+  actionUrl?: string;
+  sender?: string;
+  priority: string;
+}
 
 interface SocketContextType {
   socket: Socket<ServerToClientEvents, ClientToServerEvents> | null;
   isConnected: boolean;
   onlineUsers: Set<string>;
   typingUsers: Map<string, { userId: string; userName: string; timestamp: number }>;
+  latestNotification: Notification | null;
   
   // Helper functions
   joinCommunity: (communityId: string) => void;
@@ -30,6 +45,7 @@ const SocketContext = createContext<SocketContextType>({
   isConnected: false,
   onlineUsers: new Set(),
   typingUsers: new Map(),
+  latestNotification: null,
   joinCommunity: () => {},
   leaveCommunity: () => {},
   joinConversation: () => {},
@@ -58,6 +74,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const [typingUsers, setTypingUsers] = useState<Map<string, { userId: string; userName: string; timestamp: number }>>(new Map());
   const [soundManager] = useState(() => SoundManager.getInstance());
+  const [latestNotification, setLatestNotification] = useState<Notification | null>(null);
 
   useEffect(() => {
     if (status === 'authenticated' && session?.user) {
@@ -156,6 +173,21 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
         soundManager.playDirectMessageSound();
       });
 
+      // Notification handler
+      socketInstance.on('notification:new', (data) => {
+        console.log('New notification received:', data);
+        setLatestNotification(data.notification);
+        soundManager.playNewMessageSound();
+        
+        // Show toast notification
+        toast.custom((t) => (
+          <NotificationToast notification={data.notification} t={t} />
+        ), {
+          duration: 5000,
+          position: 'top-right',
+        });
+      });
+
       // Typing indicators
       socketInstance.on('user-typing', (data) => {
         setTypingUsers(prev => {
@@ -240,6 +272,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     isConnected,
     onlineUsers,
     typingUsers,
+    latestNotification,
     joinCommunity,
     leaveCommunity,
     joinConversation,

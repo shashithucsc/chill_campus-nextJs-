@@ -24,7 +24,7 @@ function LoginPageContent() {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [popup, setPopup] = useState({ open: false, message: '', type: 'error' });
-  const callbackUrl = searchParams?.get('callbackUrl') || '/home';
+  const _callbackUrl = searchParams?.get('callbackUrl') || '/home';
   
   // Flag to track if user has explicitly attempted login
   const [hasAttemptedLogin, setHasAttemptedLogin] = useState(false);
@@ -77,7 +77,7 @@ function LoginPageContent() {
         });
 
         if (!customSessionResponse.ok) {
-          const errorData = await customSessionResponse.json();
+          const _errorData = await customSessionResponse.json();
           
           // Check if user is suspended
           if (errorData.suspended) {
@@ -349,9 +349,9 @@ function LoginPageContent() {
                 </div>
 
                 <div className="text-sm">
-                  <a href="#" className="font-medium bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent hover:from-blue-300 hover:to-purple-300 transition-all duration-300">
+                  <Link href="/auth/forgot-password" className="font-medium bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent hover:from-blue-300 hover:to-purple-300 transition-all duration-300">
                     Forgot password?
-                  </a>
+                  </Link>
                 </div>
               </div>
 

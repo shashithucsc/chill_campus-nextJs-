@@ -200,11 +200,11 @@ export default function CreateCommunityForm() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
+        const _data = await response.json();
         throw new Error(data.message || 'Failed to create community');
       }
 
-      const data = await response.json();
+      const _data = await response.json();
       setShowSuccessPopup(true);
       
       // Reset form

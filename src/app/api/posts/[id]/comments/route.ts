@@ -4,6 +4,8 @@ import Post from '@/models/Post';
 import Comment from '@/models/Comment';
 import User from '@/models/User';
 import { getSession } from '@/lib/session';
+import { registerAllModels } from '@/lib/registerModels';
+import NotificationService from '@/lib/notificationService';
 
 // GET: fetch all comments for a post with replies and reactions - FIXED NULL HANDLING
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -102,6 +104,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     await dbConnect();
     console.log('POST /api/posts/[id]/comments - Database connected');
     
+    // Register all models
+    registerAllModels();
+    
     const session = await getSession();
     if (!session || !session.user || !(session.user as any).id) {
       console.log('POST /api/posts/[id]/comments - Unauthorized');
@@ -156,6 +161,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     
     await comment.save();
     console.log('POST /api/posts/[id]/comments - Comment saved with ID:', comment._id);
+    
+    // Send notification to post owner if it's not their own post
+    if (post.user.toString() !== userId) {
+      try {
+        console.log('POST /api/posts/[id]/comments - Sending notification to post owner');
+        await NotificationService.notifyPostComment(
+          post.user.toString(),
+          userId,
+          post._id.toString(),
+          user.fullName
+        );
+        console.log('POST /api/posts/[id]/comments - Notification sent successfully');
+      } catch (notificationError) {
+        console.error('POST /api/posts/[id]/comments - Error sending notification:', notificationError);
+        // Continue even if notification fails
+      }
+    }
     
     // Populate user data for response
     await comment.populate('user', 'fullName avatar');

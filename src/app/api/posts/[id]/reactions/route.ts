@@ -3,6 +3,8 @@ import dbConnect from '@/lib/db';
 import Post from '@/models/Post';
 import User from '@/models/User';
 import { getSession } from '@/lib/session';
+import NotificationService from '@/lib/notificationService';
+import { registerAllModels } from '@/lib/registerModels';
 
 // GET: fetch reaction count and user's reaction status for a post
 export async function GET(req: NextRequest, context: any) {
@@ -50,6 +52,9 @@ export async function GET(req: NextRequest, context: any) {
 export async function POST(req: NextRequest, context: any) {
   try {
     await dbConnect();
+    
+    // Register all models to prevent schema errors
+    registerAllModels();
 
     const session = await getSession();
     if (!session || !session.user || !(session.user as any).id) {
@@ -63,14 +68,14 @@ export async function POST(req: NextRequest, context: any) {
 
     const userId = (session.user as any).id;
 
-    const post = await Post.findById(postId);
+    const post = await Post.findById(postId).populate('user', 'fullName email');
     if (!post) {
       return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
 
     if (!post.likes) post.likes = [];
 
-  const existingIndex = post.likes.findIndex((l: any) => l?.toString() === userId);
+    const existingIndex = post.likes.findIndex((l: any) => l?.toString() === userId);
     let action: 'liked' | 'unliked';
     if (existingIndex > -1) {
       post.likes.splice(existingIndex, 1);
@@ -78,6 +83,27 @@ export async function POST(req: NextRequest, context: any) {
     } else {
       post.likes.push(userId); // will be cast to ObjectId
       action = 'liked';
+      
+      // Send notification if the post isn't by the current user
+      if (post.user && post.user._id.toString() !== userId) {
+        try {
+          // Get liker's name
+          const currentUser = await User.findById(userId).select('fullName');
+          const likerName = currentUser?.fullName || 'Someone';
+          
+          // Send notification to post owner
+          await NotificationService.notifyPostLike(
+            post.user._id.toString(),
+            userId,
+            post._id.toString(),
+            likerName
+          );
+          console.log(`✅ Sent like notification to ${post.user._id} from ${likerName}`);
+        } catch (notificationError) {
+          console.error('Error sending like notification:', notificationError);
+          // Don't block the like action if notification fails
+        }
+      }
     }
 
     await post.save();

@@ -10,7 +10,7 @@ import {
   PlusIcon, 
   BellIcon, 
   UserIcon,
-  Cog6ToothIcon,
+  // Cog6ToothIcon,
   ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline';
 import { useNotifications } from '../hooks/useNotifications';
@@ -24,11 +24,8 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const { unreadCount } = useNotifications();
   const loading = status === 'loading';
-  
-  // Log session data for debugging
-  console.log('Session in Navbar:', session);
-  console.log('Session status:', status);
 
+  // Sign out user and go to login
   const handleLogout = async () => {
     await signOut({ redirect: false });
     router.push('/auth/login');
@@ -44,7 +41,7 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
-          {/* Left side - Logo and Search */}
+          {/* Left: logo and search */}
           <div className="flex items-center">
             <motion.div
               whileHover={{ scale: 1.05 }}
@@ -69,9 +66,9 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
             </div>
           </div>
 
-          {/* Right side - Navigation Items */}
+          {/* Right: actions */}
           <div className="flex items-center space-x-4">
-            {/* Create Post Button */}
+            {/* Create Post */}
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: "0 15px 40px rgba(31, 31, 67, 0.6)" }}
               whileTap={{ scale: 0.95 }}
@@ -104,7 +101,7 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
                 )}
               </motion.button>
 
-              {/* Notifications Dropdown */}
+              {/* Notifications dropdown */}
               <NotificationDropdown 
                 isOpen={isNotificationsOpen}
                 onClose={() => setIsNotificationsOpen(false)}
@@ -136,7 +133,7 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
                 </span>
               </motion.button>
 
-              {/* Profile Dropdown */}
+              {/* Profile menu */}
               {isProfileOpen && (
                 <motion.div 
                   initial={{ opacity: 0, y: -10, scale: 0.95 }}
@@ -152,12 +149,6 @@ export default function Navbar({ onCreatePost }: { onCreatePost?: () => void }) 
                       Your Profile
                     </Link>
                   </motion.div>
-                  {/* <motion.div whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }}>
-                    <Link href="/home/settings" className="flex items-center px-6 py-3 text-sm text-white/90 hover:text-white font-medium transition-colors">
-                      <Cog6ToothIcon className="w-5 h-5 mr-3 text-blue-400" />
-                      Settings
-                    </Link>
-                  </motion.div> */}
                   <div className="border-t border-white/20 mt-2 pt-2">
                     <motion.button 
                       whileHover={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}

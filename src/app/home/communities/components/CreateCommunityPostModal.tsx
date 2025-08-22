@@ -105,7 +105,7 @@ export default function CreateCommunityPostModal({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.3 }}
-              className="relative z-10 w-full max-w-2xl bg-gradient-to-br from-slate-800/95 via-purple-800/95 to-indigo-800/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20"
+              className="relative z-10 w-full max-w-2xl bg-gradient-to-br from-gray-900/98 to-black/98 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}

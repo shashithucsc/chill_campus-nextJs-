@@ -42,7 +42,11 @@ const formatDate = (dateString: string | Date) => {
   } else if (diffInDays < 7) {
     return `${diffInDays}d ago`;
   } else {
-    return date.toLocaleDateString();
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
   }
 };
 import Link from 'next/link';
@@ -100,13 +104,13 @@ export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState<'posts' | 'chat'>('posts');
 
   // Simple animation variants without transitions
-  const fadeIn = {
+  const _fadeIn = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 }
   };
 
   // Stagger container
-  const staggerContainer = {
+  const _staggerContainer = {
     hidden: { opacity: 0 },
     visible: { opacity: 1 }
   };
@@ -252,16 +256,6 @@ export default function CommunityPage() {
       // Clear message after 3 seconds
       setTimeout(() => setMessage(null), 3000);
     }
-  };
-
-  // Format date 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
   };
 
   return (
@@ -544,6 +538,7 @@ export default function CommunityPage() {
                     comments={post.commentCount || 0}
                     timestamp={formatDate(post.createdAt)}
                     community={{
+                      id: community?._id || '',
                       name: community?.name || '',
                       avatar: community?.coverImage || ''
                     }}

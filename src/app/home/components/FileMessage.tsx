@@ -7,7 +7,7 @@ import {
   DocumentIcon,
   PhotoIcon,
   SpeakerWaveIcon,
-  VideoCameraIcon,
+  // VideoCameraIcon,
   ArrowDownTrayIcon,
   PlayIcon,
   PauseIcon,

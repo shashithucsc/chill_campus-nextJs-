@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     const activationToken = crypto.randomBytes(32).toString('hex');
 
     // Create new user (inactive by default)
-    const newUser = await User.create({
+    const _newUser = await User.create({
       fullName,
       email,
       password: hashedPassword,

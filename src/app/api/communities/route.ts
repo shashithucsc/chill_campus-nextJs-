@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
     
     if (isAdmin) {
       // Admin view - return all communities with detailed info
-      let filter: any = {};
+      const filter: any = {};
       
       if (search) {
         filter.$or = [
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
       }
       
       // Build sort query
-      let sortQuery: any = {};
+      const sortQuery: any = {};
       if (sort === 'latest') {
         sortQuery.createdAt = -1;
       } else if (sort === 'oldest') {

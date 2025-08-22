@@ -11,7 +11,9 @@ import {
   FaceFrownIcon,
   ExclamationCircleIcon,
   ChatBubbleOvalLeftIcon,
-  PaperAirplaneIcon
+  PaperAirplaneIcon,
+  TrashIcon,
+  EllipsisHorizontalIcon
 } from '@heroicons/react/24/outline';
 import {
   HeartIcon as HeartSolid,
@@ -65,6 +67,7 @@ interface CommentItemProps {
   onReact: (commentId: string, type: ReactionType, replyId?: string) => void;
   onReply: (commentId: string, content: string) => void;
   onStartChat?: (userId: string) => void;
+  postOwnerId?: string;
 }
 
 const reactionEmojis = {
@@ -76,7 +79,7 @@ const reactionEmojis = {
   angry: '😠'
 };
 
-const reactionIcons = {
+const _reactionIcons = {
   like: { outline: HandThumbUpIcon, solid: HandThumbUpSolid },
   love: { outline: HeartIcon, solid: HeartSolid },
   laugh: { outline: FaceSmileIcon, solid: FaceSmileSolid },
@@ -85,12 +88,14 @@ const reactionIcons = {
   angry: { outline: FaceFrownIcon, solid: FaceFrownSolid }
 };
 
-export default function CommentItem({ comment, onReact, onReply, onStartChat }: CommentItemProps) {
+export default function CommentItem({ comment, onReact, onReply, onStartChat, postOwnerId }: CommentItemProps) {
   const { data: session } = useSession();
   const [showReactions, setShowReactions] = useState(false);
   const [showReplies, setShowReplies] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [showReplyInput, setShowReplyInput] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   // Profile modal state
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
@@ -99,11 +104,11 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
     const date = new Date(dateString);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
-    
+
     const minutes = Math.floor(diff / (1000 * 60));
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    
+
     if (minutes < 1) return 'just now';
     if (minutes < 60) return `${minutes}m`;
     if (hours < 24) return `${hours}h`;
@@ -114,7 +119,7 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
     return reactions.find(r => r.user.id === userId);
   };
 
-  const getReactionCount = (reactions: Reaction[], type: ReactionType) => {
+  const _getReactionCount = (reactions: Reaction[], type: ReactionType) => {
     return reactions.filter(r => r.type === type).length;
   };
 
@@ -126,9 +131,9 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
     const counts: { [key in ReactionType]: number } = {
       like: 0, love: 0, laugh: 0, wow: 0, sad: 0, angry: 0
     };
-    
+
     reactions.forEach(r => counts[r.type]++);
-    
+
     return Object.entries(counts)
       .filter(([_, count]) => count > 0)
       .sort((a, b) => b[1] - a[1])
@@ -161,17 +166,49 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
     onStartChat?.(userId);
   };
 
+  const handleDeleteComment = async () => {
+    if (isDeleting) return;
+    
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/comments/${comment._id}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        // Remove comment from DOM
+        const commentElement = document.getElementById(`comment-${comment._id}`);
+        if (commentElement) {
+          commentElement.style.opacity = '0';
+          setTimeout(() => {
+            commentElement.remove();
+          }, 300);
+        }
+        
+        // Close delete confirmation
+        setShowDeleteConfirm(false);
+      } else {
+        console.error('Failed to delete comment');
+      }
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const userReaction = getUserReaction(comment.reactions, session?.user?.id || '');
 
   return (
     <motion.div
+      id={`comment-${comment._id}`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10"
+      className="bg-white/8 backdrop-blur-sm rounded-xl p-5 border border-white/15"
     >
       {/* Comment Header */}
       <div className="flex items-start space-x-3">
-        <div 
+        <div
           className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-white/20 cursor-pointer hover:border-blue-400 transition-colors"
           onClick={() => handleProfileClick(comment.user.id)}
           title="View profile"
@@ -183,19 +220,32 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
             className="object-cover"
           />
         </div>
-        
+
         <div className="flex-1">
           {/* User info and content */}
-          <div className="bg-white/10 rounded-2xl px-4 py-3">
-            <button 
-              onClick={() => handleProfileClick(comment.user.id)}
-              className="text-white font-medium text-sm hover:text-blue-300 transition-colors cursor-pointer"
-            >
-              {comment.user.name}
-            </button>
-            <p className="text-white/90 text-sm mt-1">{comment.content}</p>
+          <div className="bg-white/12 rounded-2xl px-5 py-4">
+            <div className="flex justify-between items-start">
+              <button
+                onClick={() => handleProfileClick(comment.user.id)}
+                className="text-blue-900 font-semibold text-base hover:text-blue-300 transition-colors cursor-pointer"
+              >
+                {comment.user.name}
+              </button>
+              
+              {/* Delete option - Only show if user is comment author or post owner */}
+              {session?.user?.id && (session.user.id === comment.user.id || session.user.id === postOwnerId) && (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="text-white/40 hover:text-red-400 transition-colors p-1"
+                  title="Delete comment"
+                >
+                  <TrashIcon className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            <p className="text-white/95 text-base mt-2 leading-relaxed">{comment.content}</p>
           </div>
-          
+
           {/* Reactions display */}
           {getTotalReactions(comment.reactions) > 0 && (
             <div className="flex items-center mt-2 mb-2">
@@ -211,27 +261,27 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
               </div>
             </div>
           )}
-          
+
           {/* Action buttons */}
-          <div className="flex items-center space-x-4 mt-2">
+          <div className="flex items-center space-x-6 mt-3">
             <div className="relative">
               <button
                 onMouseEnter={() => setShowReactions(true)}
                 onMouseLeave={() => setShowReactions(false)}
-                className={`flex items-center space-x-1 text-xs py-1 px-2 rounded-lg transition-all ${
-                  userReaction 
-                    ? 'text-blue-400 bg-blue-500/20' 
-                    : 'text-white/60 hover:text-white hover:bg-white/10'
+                className={`flex items-center space-x-2 text-sm py-2 px-3 rounded-lg transition-all ${
+                  userReaction
+                    ? 'text-blue-400 bg-blue-500/20'
+                    : 'text-white/70 hover:text-white hover:bg-white/15'
                 }`}
               >
                 {userReaction ? (
-                  <span className="text-sm">{reactionEmojis[userReaction.type]}</span>
+                  <span className="text-base">{reactionEmojis[userReaction.type]}</span>
                 ) : (
-                  <HandThumbUpIcon className="w-4 h-4" />
+                  <HandThumbUpIcon className="w-5 h-5" />
                 )}
-                <span>{userReaction ? userReaction.type : 'Like'}</span>
+                <span className="font-medium">{userReaction ? userReaction.type : 'Like'}</span>
               </button>
-              
+
               {/* Reaction picker */}
               <AnimatePresence>
                 {showReactions && (
@@ -239,7 +289,7 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
                     initial={{ opacity: 0, y: 10, scale: 0.9 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                    className="absolute bottom-full left-0 mb-2 bg-black/80 backdrop-blur-md rounded-full p-2 flex space-x-1 shadow-xl border border-white/20"
+                    className="absolute bottom-full left-0 mb-2 bg-black/80 backdrop-blur-md rounded-full p-2 flex space-x-1 shadow-xl border border-white/20"  
                     onMouseEnter={() => setShowReactions(true)}
                     onMouseLeave={() => setShowReactions(false)}
                   >
@@ -256,18 +306,18 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
                 )}
               </AnimatePresence>
             </div>
-            
+
             <button
               onClick={() => setShowReplyInput(!showReplyInput)}
-              className="flex items-center space-x-1 text-xs text-white/60 hover:text-white py-1 px-2 rounded-lg hover:bg-white/10 transition-all"
+              className="flex items-center space-x-2 text-sm text-white/70 hover:text-white py-2 px-3 rounded-lg hover:bg-white/15 transition-all"
             >
-              <ChatBubbleOvalLeftIcon className="w-4 h-4" />
-              <span>Reply</span>
+              <ChatBubbleOvalLeftIcon className="w-5 h-5" />
+              <span className="font-medium">Reply</span>
             </button>
-            
-            <span className="text-white/40 text-xs">{formatTimeAgo(comment.createdAt)}</span>
+
+            <span className="text-white/50 text-sm font-medium">{formatTimeAgo(comment.createdAt)}</span>
           </div>
-          
+
           {/* Reply input */}
           <AnimatePresence>
             {showReplyInput && (
@@ -276,9 +326,9 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 onSubmit={handleReplySubmit}
-                className="flex items-center space-x-3 mt-3"
+                className="flex items-center space-x-3 mt-4"
               >
-                <div className="relative w-8 h-8 rounded-full overflow-hidden border border-white/20">
+                <div className="relative w-9 h-9 rounded-full overflow-hidden border border-white/20">
                   <Image
                     src={session?.user?.image || '/default-avatar.png'}
                     alt="Your avatar"
@@ -286,48 +336,48 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
                     className="object-cover"
                   />
                 </div>
-                <div className="flex-1 flex items-center bg-white/10 rounded-full">
+                <div className="flex-1 flex items-center bg-white/12 rounded-full border border-white/20">
                   <input
                     type="text"
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
                     placeholder="Write a reply..."
-                    className="flex-1 bg-transparent text-white placeholder-white/50 px-4 py-2 focus:outline-none text-sm"
+                    className="flex-1 bg-transparent text-white placeholder-white/60 px-5 py-3 focus:outline-none text-base"
                   />
                   <button
                     type="submit"
                     disabled={!replyText.trim()}
-                    className={`m-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 flex items-center space-x-1 ${
+                    className={`m-1 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 flex items-center space-x-2 ${
                       !replyText.trim()
                         ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                         : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md hover:shadow-lg transform hover:scale-105'
                     }`}
                   >
-                    <PaperAirplaneIcon className="w-3 h-3" />
+                    <PaperAirplaneIcon className="w-4 h-4" />
                     <span>Send</span>
                   </button>
                 </div>
               </motion.form>
             )}
           </AnimatePresence>
-          
+
           {/* Replies */}
           {comment.replyCount > 0 && (
-            <div className="mt-3">
+            <div className="mt-4">
               <button
                 onClick={() => setShowReplies(!showReplies)}
-                className="text-white/60 hover:text-white text-xs mb-2 flex items-center space-x-1"
+                className="text-white/70 hover:text-white text-sm font-medium mb-3 flex items-center space-x-2 transition-colors"
               >
                 <span>{showReplies ? 'Hide' : 'View'} {comment.replyCount} replies</span>
               </button>
-              
+
               <AnimatePresence>
                 {showReplies && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="space-y-3 pl-4 border-l border-white/20"
+                    className="space-y-4 pl-5 border-l-2 border-white/25"
                   >
                     {comment.replies.map((reply) => (
                       <ReplyItem
@@ -336,6 +386,7 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
                         commentId={comment._id}
                         onReact={onReact}
                         onStartChat={onStartChat || (() => {})}
+                        postOwnerId={postOwnerId}
                       />
                     ))}
                   </motion.div>
@@ -346,7 +397,54 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
         </div>
       </div>
 
-      {/* Profile View Modal */}
+      {/* Delete confirmation dialog */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"
+            onClick={() => setShowDeleteConfirm(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-gray-900 rounded-xl border border-gray-700 p-6 w-full max-w-md mx-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xl font-bold text-white mb-3">Delete Comment</h3>
+              <p className="text-white/80 mb-6">Are you sure you want to delete this comment? This action cannot be undone.</p>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 rounded-lg bg-gray-800 text-white font-medium hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteComment}
+                  disabled={isDeleting}
+                  className="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition-colors flex items-center"
+                >
+                  {isDeleting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    <>Delete</>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Profile View Modal - now uses createPortal internally */}
       {showProfileModal && selectedUserId && (
         <ProfileViewModal
           isOpen={showProfileModal}
@@ -365,13 +463,16 @@ interface ReplyItemProps {
   commentId: string;
   onReact: (commentId: string, type: ReactionType, replyId?: string) => void;
   onStartChat: (userId: string) => void;
+  postOwnerId?: string;
 }
 
-function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
+function ReplyItem({ reply, commentId, onReact, onStartChat, postOwnerId }: ReplyItemProps) {
   const { data: session } = useSession();
   const [showReactions, setShowReactions] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Profile modal handlers
   const handleProfileClick = (userId: string) => {
@@ -384,15 +485,46 @@ function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
     onStartChat(userId);
   };
 
+  const handleDeleteReply = async () => {
+    if (isDeleting) return;
+    
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/comments/${reply._id}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        // Remove reply from DOM
+        const replyElement = document.getElementById(`reply-${reply._id}`);
+        if (replyElement) {
+          replyElement.style.opacity = '0';
+          setTimeout(() => {
+            replyElement.remove();
+          }, 300);
+        }
+        
+        // Close delete confirmation
+        setShowDeleteConfirm(false);
+      } else {
+        console.error('Failed to delete reply');
+      }
+    } catch (error) {
+      console.error('Error deleting reply:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
-    
+
     const minutes = Math.floor(diff / (1000 * 60));
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    
+
     if (minutes < 1) return 'just now';
     if (minutes < 60) return `${minutes}m`;
     if (hours < 24) return `${hours}h`;
@@ -413,7 +545,7 @@ function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
     };
     
     reactions.forEach(r => counts[r.type]++);
-    
+
     return Object.entries(counts)
       .filter(([_, count]) => count > 0)
       .sort((a, b) => b[1] - a[1])
@@ -429,10 +561,10 @@ function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
   const userReaction = getUserReaction(reply.reactions, session?.user?.id || '');
 
   return (
-    <div className="flex items-start space-x-2">
+    <div className="flex items-start space-x-3" id={`reply-${reply._id}`}>
       <button
         onClick={() => handleProfileClick(reply.user.id)}
-        className="relative w-8 h-8 rounded-full overflow-hidden border border-white/20 hover:ring-2 hover:ring-blue-500/50 transition-all duration-200"
+        className="relative w-9 h-9 rounded-full overflow-hidden border border-white/20 hover:ring-2 hover:ring-blue-500/50 transition-all duration-200"        
       >
         <Image
           src={reply.user.avatar || '/default-avatar.png'}
@@ -441,18 +573,31 @@ function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
           className="object-cover"
         />
       </button>
-      
+
       <div className="flex-1">
-        <div className="bg-white/5 rounded-xl px-3 py-2">
-          <button
-            onClick={() => handleProfileClick(reply.user.id)}
-            className="text-white font-medium text-xs hover:text-blue-400 transition-colors duration-200"
-          >
-            {reply.user.name}
-          </button>
-          <p className="text-white/90 text-xs mt-1">{reply.content}</p>
+        <div className="bg-white/8 rounded-xl px-4 py-3">
+          <div className="flex justify-between items-start">
+            <button
+              onClick={() => handleProfileClick(reply.user.id)}
+              className="text-blue-900 font-semibold text-sm hover:text-blue-300 transition-colors duration-200"
+            >
+              {reply.user.name}
+            </button>
+            
+            {/* Delete option - Only show if user is reply author or post owner */}
+            {session?.user?.id && (session.user.id === reply.user.id || session.user.id === postOwnerId) && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="text-white/40 hover:text-red-400 transition-colors p-0.5"
+                title="Delete reply"
+              >
+                <TrashIcon className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+          <p className="text-white/95 text-sm mt-1.5 leading-relaxed">{reply.content}</p>
         </div>
-        
+
         {/* Reactions display */}
         {getTotalReactions(reply.reactions) > 0 && (
           <div className="flex items-center mt-1 mb-1">
@@ -468,26 +613,26 @@ function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
             </div>
           </div>
         )}
-        
-        <div className="flex items-center space-x-3 mt-1">
+
+        <div className="flex items-center space-x-4 mt-2">
           <div className="relative">
             <button
               onMouseEnter={() => setShowReactions(true)}
               onMouseLeave={() => setShowReactions(false)}
-              className={`flex items-center space-x-1 text-xs py-0.5 px-1 rounded transition-all ${
-                userReaction 
-                  ? 'text-blue-400' 
-                  : 'text-white/60 hover:text-white'
+              className={`flex items-center space-x-1.5 text-sm py-1.5 px-2 rounded transition-all ${
+                userReaction
+                  ? 'text-blue-400'
+                  : 'text-white/70 hover:text-white'
               }`}
             >
               {userReaction ? (
-                <span className="text-xs">{reactionEmojis[userReaction.type]}</span>
+                <span className="text-sm">{reactionEmojis[userReaction.type]}</span>
               ) : (
-                <HandThumbUpIcon className="w-3 h-3" />
+                <HandThumbUpIcon className="w-4 h-4" />
               )}
-              <span>{userReaction ? userReaction.type : 'Like'}</span>
+              <span className="font-medium">{userReaction ? userReaction.type : 'Like'}</span>
             </button>
-            
+
             {/* Reaction picker */}
             <AnimatePresence>
               {showReactions && (
@@ -495,7 +640,7 @@ function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
                   initial={{ opacity: 0, y: 10, scale: 0.9 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                  className="absolute bottom-full left-0 mb-1 bg-black/80 backdrop-blur-md rounded-full p-1 flex space-x-1 shadow-xl border border-white/20"
+                  className="absolute bottom-full left-0 mb-1 bg-black/80 backdrop-blur-md rounded-full p-1 flex space-x-1 shadow-xl border border-white/20"    
                   onMouseEnter={() => setShowReactions(true)}
                   onMouseLeave={() => setShowReactions(false)}
                 >
@@ -512,12 +657,12 @@ function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
               )}
             </AnimatePresence>
           </div>
-          
-          <span className="text-white/40 text-xs">{formatTimeAgo(reply.createdAt)}</span>
+
+          <span className="text-white/50 text-sm font-medium">{formatTimeAgo(reply.createdAt)}</span>
         </div>
       </div>
 
-      {/* Profile View Modal */}
+      {/* Profile View Modal - now uses createPortal internally */}
       {showProfileModal && selectedUserId && (
         <ProfileViewModal
           isOpen={showProfileModal}
@@ -526,6 +671,53 @@ function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
           onStartChat={handleStartChat}
         />
       )}
+      
+      {/* Delete confirmation dialog */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"
+            onClick={() => setShowDeleteConfirm(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-gray-900 rounded-xl border border-gray-700 p-6 w-full max-w-md mx-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xl font-bold text-white mb-3">Delete Reply</h3>
+              <p className="text-white/80 mb-6">Are you sure you want to delete this reply? This action cannot be undone.</p>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 rounded-lg bg-gray-800 text-white font-medium hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteReply}
+                  disabled={isDeleting}
+                  className="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition-colors flex items-center"
+                >
+                  {isDeleting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    <>Delete</>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

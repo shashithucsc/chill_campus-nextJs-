@@ -29,7 +29,7 @@ export default function LandingPage() {
     }
   };
   
-  const floatingTransition = {
+  const _floatingTransition = {
     duration: 3,
     repeat: Infinity,
     ease: "easeInOut"

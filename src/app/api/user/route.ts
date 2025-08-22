@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
       userId = queryUserId;
     } else {
       // Try to get session from custom session system
-      let session = await getSession();
+      const session = await getSession();
       console.log('Custom session data:', session);
 
       // If that fails, check for session sync headers from middleware

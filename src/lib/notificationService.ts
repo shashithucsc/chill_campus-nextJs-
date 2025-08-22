@@ -1,6 +1,7 @@
 import Notification, { NotificationType } from '@/models/Notification';
 import dbConnect from '@/lib/db';
 import mongoose from 'mongoose';
+import { emitToUserDirect } from '@/lib/socket';
 
 interface CreateNotificationParams {
   recipientId: string;
@@ -50,6 +51,26 @@ export class NotificationService {
           ...params.deliveryMethods
         }
       });
+
+      // Emit socket event for real-time notification
+      try {
+        emitToUserDirect(params.recipientId, 'notification:new', {
+          notification: {
+            _id: notification._id,
+            type: notification.type,
+            title: notification.title,
+            message: notification.message,
+            isRead: notification.isRead,
+            createdAt: notification.createdAt,
+            actionUrl: notification.actionUrl,
+            sender: notification.sender,
+            priority: notification.priority
+          }
+        });
+      } catch (socketError) {
+        console.error('Error sending socket notification:', socketError);
+        // Don't throw the error as the notification was still created successfully
+      }
 
       return notification;
     } catch (error) {
@@ -264,7 +285,32 @@ export class NotificationService {
         }
       }));
 
-      return await Notification.insertMany(notificationDocs);
+      const createdNotifications = await Notification.insertMany(notificationDocs);
+
+      // Emit socket events for real-time notifications
+      createdNotifications.forEach((notification, index) => {
+        try {
+          const params = notifications[index];
+          emitToUserDirect(params.recipientId, 'notification:new', {
+            notification: {
+              _id: notification._id,
+              type: notification.type,
+              title: notification.title,
+              message: notification.message,
+              isRead: notification.isRead,
+              createdAt: notification.createdAt,
+              actionUrl: notification.actionUrl,
+              sender: notification.sender,
+              priority: notification.priority
+            }
+          });
+        } catch (socketError) {
+          console.error('Error sending socket notification:', socketError);
+          // Continue processing other notifications
+        }
+      });
+
+      return createdNotifications;
     } catch (error) {
       console.error('Error creating bulk notifications:', error);
       throw error;

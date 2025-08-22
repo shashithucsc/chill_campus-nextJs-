@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  UserIcon,
   UsersIcon,
   Cog6ToothIcon,
   ExclamationTriangleIcon,
@@ -11,8 +10,6 @@ import {
   ShieldCheckIcon,
   ChevronRightIcon,
   DocumentDuplicateIcon,
-  PaintBrushIcon,
-  CreditCardIcon,
   CheckCircleIcon,
   ArrowTopRightOnSquareIcon,
   PhotoIcon,

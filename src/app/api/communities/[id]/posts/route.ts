@@ -144,7 +144,7 @@ export async function POST(
     const form = await req.formData();
     const content = form.get('content') as string;
     const mediaType = form.get('mediaType') as string | null;
-    let media: string[] = [];
+    const media: string[] = [];
 
     // Handle file upload
     const file = form.get('media');

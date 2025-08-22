@@ -1,6 +1,24 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 
-const communitySchema = new mongoose.Schema({
+// Define interface for Community document
+export interface ICommunity extends Document {
+  name: string;
+  description: string;
+  category: 'Tech' | 'Arts' | 'Clubs' | 'Events' | 'Others';
+  visibility: 'Public' | 'Private';
+  status: 'Active' | 'Disabled';
+  coverImage?: string;
+  tags?: string[];
+  createdBy: mongoose.Types.ObjectId;
+  members?: mongoose.Types.ObjectId[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Explicit model name constant
+export const COMMUNITY_MODEL_NAME = 'Community';
+
+const communitySchema = new Schema<ICommunity>({
   name: {
     type: String,
     required: [true, 'Community name is required'],
@@ -45,12 +63,12 @@ const communitySchema = new mongoose.Schema({
     trim: true
   }],
   createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
   members: [{
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: 'User'
   }]
 }, {
@@ -60,14 +78,18 @@ const communitySchema = new mongoose.Schema({
 // Create a text index on the name field for better search
 communitySchema.index({ name: 'text' });
 
-// Ensure indexes are created
-communitySchema.pre('save', async function(next) {
-  try {
-    await mongoose.model('Community').init();
-    next();
-  } catch (error) {
-    next(error as Error);
-  }
-});
+// Check if the model exists before creating it
+let CommunityModel: mongoose.Model<ICommunity>;
 
-export default mongoose.models.Community || mongoose.model('Community', communitySchema);
+try {
+  // Try to get the existing model
+  CommunityModel = mongoose.model<ICommunity>(COMMUNITY_MODEL_NAME);
+  console.log('Community model already exists');
+} catch (error) {
+  // Model doesn't exist, create it
+  CommunityModel = mongoose.model<ICommunity>(COMMUNITY_MODEL_NAME, communitySchema);
+  console.log('Community model created');
+}
+
+// Export the model
+export default CommunityModel;

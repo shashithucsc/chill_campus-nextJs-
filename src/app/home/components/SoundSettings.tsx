@@ -6,7 +6,7 @@ import { useSoundManager } from '@/lib/SoundManager';
 import {
   SpeakerWaveIcon,
   SpeakerXMarkIcon,
-  Cog6ToothIcon,
+  // Cog6ToothIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
 

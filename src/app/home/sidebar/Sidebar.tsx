@@ -46,7 +46,7 @@ export default function Sidebar() {
             >
               {/* Main Navigation */}
               <div className="p-6">
-                <nav className="space-y-3">
+                <nav className="space-y-4">
                   {navigation.map((item, index) => {
                     const IconComponent = item.icon;
                     return (
@@ -98,21 +98,6 @@ export default function Sidebar() {
                   Messages
                   {/* Notification badge could go here if needed */}
                 </motion.button>
-              </div>
-
-              {/* App Logo/Branding */}
-              <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.4 }}
-                  className="text-center"
-                >
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/20 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-lg">
-                    <span className="text-white text-xl font-bold">CC</span>
-                  </div>
-                  <p className="text-xs text-white/60 font-medium">Chill Campus</p>
-                </motion.div>
               </div>
             </motion.div>
           )}

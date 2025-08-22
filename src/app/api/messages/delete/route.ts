@@ -44,7 +44,7 @@ export async function DELETE(req: NextRequest) {
     const community = await Community.findById(message.community._id);
     const isMessageOwner = message.sender.toString() === userId;
     const isAdmin = community?.admin?.toString() === userId;
-    const isModerator = community?.moderators?.includes(userId);
+    const _isModerator = community?.moderators?.includes(userId);
 
     if (!isMessageOwner && !isAdmin && !isModerator) {
       return NextResponse.json(
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
     }
 
     const isAdmin = community.admin?.toString() === userId;
-    const isModerator = community.moderators?.includes(userId);
+    const _isModerator = community.moderators?.includes(userId);
 
     if (deleteType === 'all') {
       // Only admins can delete all messages in a community
