@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
+import { registerAllModels } from '@/lib/registerModels';
 import Post from '@/models/Post';
 import User from '@/models/User';
 import { getSession } from '@/lib/session';
@@ -7,29 +8,115 @@ import path from 'path';
 import fs from 'fs/promises';
 
 export async function GET(req: NextRequest) {
-  await dbConnect();
-  
-  // Get query parameters
-  const url = new URL(req.url);
-  const userId = url.searchParams.get('userId');
-  
-  // Build query filter
-  const filter: any = {};
-  if (userId) {
-    filter.user = userId;
+  try {
+    console.log('🔍 GET /api/posts - Starting request');
+    const conn = await dbConnect();
+    if (!conn) {
+      console.error('❌ Database connection failed');
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+    }
+    console.log('✅ Database connected');
+    
+    // Ensure all models are registered
+    registerAllModels();
+    
+    // Get query parameters
+    const url = new URL(req.url);
+    const userId = url.searchParams.get('userId');
+    console.log('🧩 Query params:', { userId });
+    
+    // Build query filter
+    const filter: any = {};
+    if (userId) {
+      filter.user = userId;
+    }
+    
+    console.log('🔎 Finding posts with filter:', filter);
+    
+    try {
+      // First check if any posts exist to avoid population errors
+      const postsExist = await Post.exists(filter);
+      console.log(`📊 Posts exist check:`, postsExist);
+      
+      if (!postsExist) {
+        console.log('📊 No posts found');
+        return NextResponse.json({ posts: [] });
+      }
+      
+      // Create a query and add population steps one by one to isolate any issues
+      let query = Post.find(filter).sort({ createdAt: -1 });
+      
+      // First try to populate just the user
+      try {
+        query = query.populate({
+          path: 'user',
+          select: 'fullName email avatar role',
+          match: { _id: { $exists: true } }
+        });
+      } catch (userPopulateError) {
+        console.error('❌ Error populating user:', userPopulateError);
+        // Continue without user population
+      }
+      
+      // Then try to populate community separately
+      try {
+        query = query.populate({
+          path: 'community',
+          select: '_id name avatar coverImage',
+          match: { _id: { $exists: true } }
+        });
+      } catch (communityPopulateError) {
+        console.error('❌ Error populating community:', communityPopulateError);
+        // Continue without community population
+      }
+      
+      // Execute the query
+      const posts = await query.exec();
+      console.log(`📊 Found ${posts.length} posts`);
+      
+      // Sanitize the posts before sending (in case of missing references)
+      const sanitizedPosts = posts.map(post => {
+        const postObj = post.toObject();
+        
+        // If user wasn't populated, set a default
+        if (!postObj.user) {
+          postObj.user = {
+            _id: 'deleted',
+            fullName: 'Deleted User',
+            email: '',
+            avatar: '',
+            role: 'student'
+          };
+        }
+        
+        // If community wasn't populated but exists as an ID, set a default
+        if (postObj.community && typeof postObj.community === 'string') {
+          postObj.community = {
+            _id: postObj.community,
+            name: 'Unknown Community',
+            avatar: '/images/default-community-banner.jpg'
+          };
+        }
+        
+        return postObj;
+      });
+      
+      return NextResponse.json({ posts: sanitizedPosts });
+    } catch (queryError) {
+      console.error('❌ Error querying posts:', queryError);
+      return NextResponse.json({ error: 'Error querying posts', message: (queryError as Error).message }, { status: 500 });
+    }
+  } catch (error) {
+    console.error('❌ Error in GET /api/posts:', error);
+    return NextResponse.json({ error: 'Internal Server Error', message: (error as Error).message }, { status: 500 });
   }
-  
-  // Populate fullName, email, avatar, and role for the user
-  const posts = await Post.find(filter)
-    .populate('user', 'fullName email avatar role')
-    .populate('community', '_id name avatar') // Include _id in populated community
-    .sort({ createdAt: -1 });
-  
-  return NextResponse.json({ posts });
 }
 
 export async function POST(req: NextRequest) {
   await dbConnect();
+  
+  // Ensure all models are registered
+  registerAllModels();
   
   // Try to get session from custom session system
   let session = await getSession();
@@ -68,7 +155,7 @@ export async function POST(req: NextRequest) {
   const form = await req.formData();
   const content = form.get('content') as string;
   const mediaType = form.get('mediaType') as string | null;
-  let media: string[] = [];
+  const media: string[] = [];
 
   // Handle file upload
   const file = form.get('media');

@@ -4,6 +4,7 @@ import Post from '@/models/Post';
 import { getSession } from '@/lib/session';
 import path from 'path';
 import fs from 'fs/promises';
+import { registerAllModels } from '@/lib/registerModels';
 
 interface LeanPostDoc {
   _id: any;
@@ -14,8 +15,11 @@ interface LeanPostDoc {
 export async function GET(req: NextRequest, context: any) {
   try {
     await dbConnect();
+    
+    // Register all models
+    registerAllModels();
 
-  const { id } = context?.params || {};
+    const { id } = context?.params || {};
 
     // Find the post by ID and populate the user and community data
     const post = await Post.findById(id)
@@ -32,14 +36,14 @@ export async function GET(req: NextRequest, context: any) {
     }
 
     // Check if post is disabled
-  if ((post as any).disabled) { // retain any cast for populated dynamic shape
+    if ((post as any).disabled) { // retain any cast for populated dynamic shape
       return NextResponse.json(
         { error: 'This post has been disabled' },
         { status: 403 }
       );
     }
 
-    return NextResponse.json(post);
+    return NextResponse.json({ post });
   } catch (error) {
     console.error('Error fetching post:', error);
     return NextResponse.json(

@@ -11,7 +11,9 @@ import {
   FaceFrownIcon,
   ExclamationCircleIcon,
   ChatBubbleOvalLeftIcon,
-  PaperAirplaneIcon
+  PaperAirplaneIcon,
+  TrashIcon,
+  EllipsisHorizontalIcon
 } from '@heroicons/react/24/outline';
 import {
   HeartIcon as HeartSolid,
@@ -65,6 +67,7 @@ interface CommentItemProps {
   onReact: (commentId: string, type: ReactionType, replyId?: string) => void;
   onReply: (commentId: string, content: string) => void;
   onStartChat?: (userId: string) => void;
+  postOwnerId?: string;
 }
 
 const reactionEmojis = {
@@ -76,7 +79,7 @@ const reactionEmojis = {
   angry: '😠'
 };
 
-const reactionIcons = {
+const _reactionIcons = {
   like: { outline: HandThumbUpIcon, solid: HandThumbUpSolid },
   love: { outline: HeartIcon, solid: HeartSolid },
   laugh: { outline: FaceSmileIcon, solid: FaceSmileSolid },
@@ -85,12 +88,14 @@ const reactionIcons = {
   angry: { outline: FaceFrownIcon, solid: FaceFrownSolid }
 };
 
-export default function CommentItem({ comment, onReact, onReply, onStartChat }: CommentItemProps) {
+export default function CommentItem({ comment, onReact, onReply, onStartChat, postOwnerId }: CommentItemProps) {
   const { data: session } = useSession();
   const [showReactions, setShowReactions] = useState(false);
   const [showReplies, setShowReplies] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [showReplyInput, setShowReplyInput] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   // Profile modal state
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
@@ -114,7 +119,7 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
     return reactions.find(r => r.user.id === userId);
   };
 
-  const getReactionCount = (reactions: Reaction[], type: ReactionType) => {
+  const _getReactionCount = (reactions: Reaction[], type: ReactionType) => {
     return reactions.filter(r => r.type === type).length;
   };
 
@@ -161,10 +166,42 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
     onStartChat?.(userId);
   };
 
+  const handleDeleteComment = async () => {
+    if (isDeleting) return;
+    
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/comments/${comment._id}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        // Remove comment from DOM
+        const commentElement = document.getElementById(`comment-${comment._id}`);
+        if (commentElement) {
+          commentElement.style.opacity = '0';
+          setTimeout(() => {
+            commentElement.remove();
+          }, 300);
+        }
+        
+        // Close delete confirmation
+        setShowDeleteConfirm(false);
+      } else {
+        console.error('Failed to delete comment');
+      }
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const userReaction = getUserReaction(comment.reactions, session?.user?.id || '');
 
   return (
     <motion.div
+      id={`comment-${comment._id}`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="bg-white/8 backdrop-blur-sm rounded-xl p-5 border border-white/15"
@@ -187,12 +224,25 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
         <div className="flex-1">
           {/* User info and content */}
           <div className="bg-white/12 rounded-2xl px-5 py-4">
-            <button
-              onClick={() => handleProfileClick(comment.user.id)}
-              className="text-blue-900 font-semibold text-base hover:text-blue-300 transition-colors cursor-pointer"
-            >
-              {comment.user.name}
-            </button>
+            <div className="flex justify-between items-start">
+              <button
+                onClick={() => handleProfileClick(comment.user.id)}
+                className="text-blue-900 font-semibold text-base hover:text-blue-300 transition-colors cursor-pointer"
+              >
+                {comment.user.name}
+              </button>
+              
+              {/* Delete option - Only show if user is comment author or post owner */}
+              {session?.user?.id && (session.user.id === comment.user.id || session.user.id === postOwnerId) && (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="text-white/40 hover:text-red-400 transition-colors p-1"
+                  title="Delete comment"
+                >
+                  <TrashIcon className="w-4 h-4" />
+                </button>
+              )}
+            </div>
             <p className="text-white/95 text-base mt-2 leading-relaxed">{comment.content}</p>
           </div>
 
@@ -336,6 +386,7 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
                         commentId={comment._id}
                         onReact={onReact}
                         onStartChat={onStartChat || (() => {})}
+                        postOwnerId={postOwnerId}
                       />
                     ))}
                   </motion.div>
@@ -345,6 +396,53 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
           )}
         </div>
       </div>
+
+      {/* Delete confirmation dialog */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"
+            onClick={() => setShowDeleteConfirm(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-gray-900 rounded-xl border border-gray-700 p-6 w-full max-w-md mx-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xl font-bold text-white mb-3">Delete Comment</h3>
+              <p className="text-white/80 mb-6">Are you sure you want to delete this comment? This action cannot be undone.</p>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 rounded-lg bg-gray-800 text-white font-medium hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteComment}
+                  disabled={isDeleting}
+                  className="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition-colors flex items-center"
+                >
+                  {isDeleting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    <>Delete</>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Profile View Modal - now uses createPortal internally */}
       {showProfileModal && selectedUserId && (
@@ -365,13 +463,16 @@ interface ReplyItemProps {
   commentId: string;
   onReact: (commentId: string, type: ReactionType, replyId?: string) => void;
   onStartChat: (userId: string) => void;
+  postOwnerId?: string;
 }
 
-function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
+function ReplyItem({ reply, commentId, onReact, onStartChat, postOwnerId }: ReplyItemProps) {
   const { data: session } = useSession();
   const [showReactions, setShowReactions] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Profile modal handlers
   const handleProfileClick = (userId: string) => {
@@ -382,6 +483,37 @@ function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
   const handleStartChat = (userId: string) => {
     setShowProfileModal(false);
     onStartChat(userId);
+  };
+
+  const handleDeleteReply = async () => {
+    if (isDeleting) return;
+    
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/comments/${reply._id}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        // Remove reply from DOM
+        const replyElement = document.getElementById(`reply-${reply._id}`);
+        if (replyElement) {
+          replyElement.style.opacity = '0';
+          setTimeout(() => {
+            replyElement.remove();
+          }, 300);
+        }
+        
+        // Close delete confirmation
+        setShowDeleteConfirm(false);
+      } else {
+        console.error('Failed to delete reply');
+      }
+    } catch (error) {
+      console.error('Error deleting reply:', error);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const formatTimeAgo = (dateString: string) => {
@@ -429,7 +561,7 @@ function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
   const userReaction = getUserReaction(reply.reactions, session?.user?.id || '');
 
   return (
-    <div className="flex items-start space-x-3">
+    <div className="flex items-start space-x-3" id={`reply-${reply._id}`}>
       <button
         onClick={() => handleProfileClick(reply.user.id)}
         className="relative w-9 h-9 rounded-full overflow-hidden border border-white/20 hover:ring-2 hover:ring-blue-500/50 transition-all duration-200"        
@@ -444,12 +576,25 @@ function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
 
       <div className="flex-1">
         <div className="bg-white/8 rounded-xl px-4 py-3">
-          <button
-            onClick={() => handleProfileClick(reply.user.id)}
-            className="text-blue-900 font-semibold text-sm hover:text-blue-300 transition-colors duration-200"
-          >
-            {reply.user.name}
-          </button>
+          <div className="flex justify-between items-start">
+            <button
+              onClick={() => handleProfileClick(reply.user.id)}
+              className="text-blue-900 font-semibold text-sm hover:text-blue-300 transition-colors duration-200"
+            >
+              {reply.user.name}
+            </button>
+            
+            {/* Delete option - Only show if user is reply author or post owner */}
+            {session?.user?.id && (session.user.id === reply.user.id || session.user.id === postOwnerId) && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="text-white/40 hover:text-red-400 transition-colors p-0.5"
+                title="Delete reply"
+              >
+                <TrashIcon className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
           <p className="text-white/95 text-sm mt-1.5 leading-relaxed">{reply.content}</p>
         </div>
 
@@ -526,6 +671,53 @@ function ReplyItem({ reply, commentId, onReact, onStartChat }: ReplyItemProps) {
           onStartChat={handleStartChat}
         />
       )}
+      
+      {/* Delete confirmation dialog */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"
+            onClick={() => setShowDeleteConfirm(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-gray-900 rounded-xl border border-gray-700 p-6 w-full max-w-md mx-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xl font-bold text-white mb-3">Delete Reply</h3>
+              <p className="text-white/80 mb-6">Are you sure you want to delete this reply? This action cannot be undone.</p>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 rounded-lg bg-gray-800 text-white font-medium hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteReply}
+                  disabled={isDeleting}
+                  className="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition-colors flex items-center"
+                >
+                  {isDeleting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    <>Delete</>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

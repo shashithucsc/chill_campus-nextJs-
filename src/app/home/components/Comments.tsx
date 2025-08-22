@@ -52,9 +52,10 @@ interface CommentsProps {
   isVisible: boolean;
   onCommentUpdate?: () => void;
   onStartChat?: (userId: string) => void;
+  postOwnerId?: string;
 }
 
-export default function Comments({ postId, isVisible, onCommentUpdate, onStartChat }: CommentsProps) {
+export default function Comments({ postId, isVisible, onCommentUpdate, onStartChat, postOwnerId }: CommentsProps) {
   const { data: session } = useSession();
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentInput, setCommentInput] = useState('');
@@ -274,6 +275,7 @@ export default function Comments({ postId, isVisible, onCommentUpdate, onStartCh
                 onReact={handleReaction}
                 onReply={handleReply}
                 onStartChat={onStartChat}
+                postOwnerId={postOwnerId}
               />
             ))}
           </AnimatePresence>

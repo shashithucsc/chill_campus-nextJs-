@@ -3,7 +3,7 @@ import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import Community from '@/models/Community';
 import Post from '@/models/Post';
-import Comment from '@/models/Comment';
+// import Comment from '@/models/Comment';
 import Report from '@/models/Report';
 
 export async function GET() {

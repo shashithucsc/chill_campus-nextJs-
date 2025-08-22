@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, KeyboardEvent, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSession } from 'next-auth/react';
-import { useSocket } from '@/contexts/SocketContext';
+// import { useSocket } from '@/contexts/SocketContext';
 import Image from 'next/image';
 import { 
   PaperAirplaneIcon,

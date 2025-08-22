@@ -7,6 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import Navbar from "../navbar/Navbar";
 import Sidebar from "../sidebar/Sidebar";
+import ProfileViewModal from "../components/ProfileViewModal";
 import {
   MagnifyingGlassIcon,
   UserIcon,
@@ -59,6 +60,8 @@ function SearchPageContent() {
   const [searchResults, setSearchResults] = useState<SearchResponse | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [activeFilter, setActiveFilter] = useState<'all' | 'posts' | 'users' | 'communities' | 'messages'>('all');
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
 
   useEffect(() => {
     if (initialQuery) {
@@ -206,7 +209,7 @@ function SearchPageContent() {
                 <div key={result._id} className="bg-gray-900/60 backdrop-blur-md rounded-2xl p-6 border border-gray-700 shadow-xl">
                   {/* Render result based on type */}
                   {result.type === "post" && (
-                    <Link href={`/home/posts/${result._id}`}>
+                    <Link href={`/post/${result._id}`}>
                       <div className="flex items-start space-x-4 hover:bg-gray-800/40 rounded-xl p-4 -m-4 transition-colors">
                         <DocumentTextIcon className="w-6 h-6 text-blue-400 mt-1 flex-shrink-0" />
                         <div className="flex-1">
@@ -235,28 +238,32 @@ function SearchPageContent() {
                     </Link>
                   )}
                   {result.type === "user" && (
-                    <Link href={`/home/profile/${result._id}`}>
-                      <div className="flex items-center space-x-4 hover:bg-gray-800/40 rounded-xl p-4 -m-4 transition-colors">
-                        <div className="w-12 h-12 rounded-full overflow-hidden">
-                          {result.avatar ? (
-                            <Image src={result.avatar} alt={result.fullName || "User"} width={48} height={48} className="object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-white font-semibold border border-gray-600 bg-gray-800/80">
-                              {(result.fullName || "U").charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="text-white font-semibold text-lg">{result.fullName || "Unknown User"}</h3>
-                          <p className="text-gray-400">{result.email || ""}</p>
-                          {result.bio && (
-                            <p className="text-gray-400 text-sm mt-1 line-clamp-2">{result.bio}</p>
-                          )}
-                          <div className="mt-2 text-xs text-green-400">Click to view profile page</div>
-                        </div>
-                        <UserIcon className="w-6 h-6 text-blue-400" />
+                    <div
+                      onClick={() => {
+                        setSelectedUserId(result._id);
+                        setShowProfileModal(true);
+                      }}
+                      className="flex items-center space-x-4 hover:bg-gray-800/40 rounded-xl p-4 -m-4 transition-colors cursor-pointer"
+                    >
+                      <div className="w-12 h-12 rounded-full overflow-hidden">
+                        {result.avatar ? (
+                          <Image src={result.avatar} alt={result.fullName || "User"} width={48} height={48} className="object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-white font-semibold border border-gray-600 bg-gray-800/80">
+                            {(result.fullName || "U").charAt(0).toUpperCase()}
+                          </div>
+                        )}
                       </div>
-                    </Link>
+                      <div className="flex-1">
+                        <h3 className="text-white font-semibold text-lg">{result.fullName || "Unknown User"}</h3>
+                        <p className="text-gray-400">{result.email || ""}</p>
+                        {result.bio && (
+                          <p className="text-gray-400 text-sm mt-1 line-clamp-2">{result.bio}</p>
+                        )}
+                        <div className="mt-2 text-xs text-green-400">Click to view profile</div>
+                      </div>
+                      <UserIcon className="w-6 h-6 text-blue-400" />
+                    </div>
                   )}
                   {result.type === "community" && (
                     <Link href={`/home/communities/${result._id}`}>
@@ -320,6 +327,16 @@ function SearchPageContent() {
           </div>
         </div>
       </div>
+
+      {/* Profile View Modal */}
+      {showProfileModal && selectedUserId && (
+        <ProfileViewModal
+          isOpen={showProfileModal}
+          userId={selectedUserId}
+          onClose={() => setShowProfileModal(false)}
+          onStartChat={() => {}}
+        />
+      )}
     </div>
   );
 }

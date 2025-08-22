@@ -14,7 +14,7 @@ import { useSidebar } from '../context/SidebarContext';
 import { useChat } from '../context/ChatContext';
 import { 
   ChatBubbleLeftIcon,
-  XMarkIcon,
+  _XMarkIcon,
   ArrowLeftIcon
 } from '@heroicons/react/24/outline';
 
@@ -71,23 +71,53 @@ export default function HomePage() {
     setLoading(true);
     try {
       console.log('🔄 Fetching posts...');
-      const res = await fetch('/api/posts');
+      const res = await fetch('/api/posts', {
+        cache: 'no-store', // Disable caching to always get fresh data
+        next: { revalidate: 0 }, // Ensure we don't use any stale data
+      });
       console.log('📡 Posts API response status:', res.status);
       
       if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        // Get the error details from the response if possible
+        let errorMessage = `HTTP error! status: ${res.status}`;
+        try {
+          const errorData = await res.json();
+          if (errorData.error || errorData.message) {
+            errorMessage = `Error: ${errorData.error || ''} ${errorData.message || ''}`;
+          }
+        } catch (_e) {
+          // If we can't parse the error JSON, just use the status
+        }
+        
+        console.error('❌ Error response from posts API:', errorMessage);
+        throw new Error(errorMessage);
       }
       
       const data = await res.json();
       console.log('📊 Posts data received:', data);
       console.log('📰 Number of posts:', data.posts?.length || 0);
       
+      if (!data.posts || !Array.isArray(data.posts)) {
+        console.warn('⚠️ Received invalid posts data structure:', data);
+        setPosts([]);
+        return;
+      }
+      
       setPosts(data.posts || []);
     } catch (err) {
       console.error('❌ Error fetching posts:', err);
       setPosts([]);
+      
+      // Show a retry button or message
+      // This would be better with a toast notification
+      setTimeout(() => {
+        if (confirm('Could not load posts. Would you like to try again?')) {
+          fetchPosts();
+        }
+      }, 1000);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {

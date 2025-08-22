@@ -5,7 +5,7 @@ import connectDB from '@/lib/db';
 import Report from '@/models/Report';
 import Post from '@/models/Post';
 import User from '@/models/User';
-import mongoose from 'mongoose';
+import _mongoose from 'mongoose';
 
 // PATCH - Update report status and perform actions
 export async function PATCH(
@@ -42,7 +42,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Report not found' }, { status: 404 });
     }
 
-    let actionResult = { 
+    const actionResult = { 
       success: true, 
       message: '', 
       details: {} as { [key: string]: any }

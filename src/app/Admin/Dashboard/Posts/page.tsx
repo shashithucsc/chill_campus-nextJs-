@@ -4,11 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   UserIcon,
-  UsersIcon,
   ChatBubbleLeftRightIcon,
-  ExclamationTriangleIcon,
-  Cog6ToothIcon,
-  HomeIcon,
   RectangleGroupIcon,
   MagnifyingGlassIcon,
   DocumentTextIcon,
@@ -28,8 +24,6 @@ import {
   Squares2X2Icon,
   PlayIcon,
   NoSymbolIcon,
-  ExclamationCircleIcon,
-  ShieldCheckIcon,
   PhotoIcon,
   VideoCameraIcon,
   XMarkIcon,

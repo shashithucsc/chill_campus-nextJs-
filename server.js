@@ -3,11 +3,15 @@ const { parse } = require('url');
 const next = require('next');
 
 const dev = process.env.NODE_ENV !== 'production';
-const hostname = 'localhost';
+const hostname = dev ? 'localhost' : '0.0.0.0'; // Use 0.0.0.0 in production
 const port = parseInt(process.env.PORT || '3000', 10);
 
 // When using middleware `hostname` and `port` must be provided below
-const app = next({ dev, hostname, port });
+const app = next({ 
+  dev, 
+  hostname: dev ? hostname : undefined, // Only specify hostname in dev
+  port 
+});
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {

@@ -8,7 +8,7 @@ import {
   DocumentIcon,
   SpeakerWaveIcon,
   VideoCameraIcon,
-  XMarkIcon,
+  // XMarkIcon,
   TrashIcon
 } from '@heroicons/react/24/outline';
 

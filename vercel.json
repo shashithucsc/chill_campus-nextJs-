@@ -1,12 +1,21 @@
 {
   "build": {
     "env": {
-      "SKIP_ENV_VALIDATION": "true"
+      "SKIP_ENV_VALIDATION": "true",
+      "NODE_ENV": "production"
     }
   },
   "functions": {
     "src/app/api/**/*.ts": {
       "maxDuration": 30
     }
+  },
+  "env": {
+    "MONGODB_URI": "mongodb+srv://chillcampus:1234@chillcampuscluster.xryax7f.mongodb.net/?retryWrites=true&w=majority&appName=chillCampusCluster",
+    "NODE_ENV": "production"
+  },
+  "images": {
+    "sizes": [640, 750, 828, 1080, 1200, 1920],
+    "domains": ["*.vercel.app"]
   }
 }

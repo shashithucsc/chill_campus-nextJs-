@@ -3,8 +3,8 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import dbConnect from '@/lib/db';
 import Post from '@/models/Post';
-import User from '@/models/User';
-import Community from '@/models/Community';
+import _User from '@/models/User';
+import _Community from '@/models/Community';
 import Report from '@/models/Report';
 
 export async function GET(

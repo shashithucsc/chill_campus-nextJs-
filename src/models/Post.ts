@@ -1,5 +1,9 @@
 import mongoose, { Document, Schema, models, model } from 'mongoose';
 
+// Import models to ensure they're registered before being referenced
+import './User'; // This ensures User model is registered
+import './Community'; // This ensures Community model is registered
+
 export interface IComment {
   _id: string;
   user: mongoose.Types.ObjectId;

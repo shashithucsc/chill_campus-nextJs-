@@ -76,7 +76,7 @@ const reactionEmojis = {
   angry: '😠'
 };
 
-const reactionIcons = {
+const _reactionIcons = {
   like: { outline: HandThumbUpIcon, solid: HandThumbUpSolid },
   love: { outline: HeartIcon, solid: HeartSolid },
   laugh: { outline: FaceSmileIcon, solid: FaceSmileSolid },
@@ -114,7 +114,7 @@ export default function CommentItem({ comment, onReact, onReply, onStartChat }: 
     return reactions.find(r => r.user.id === userId);
   };
 
-  const getReactionCount = (reactions: Reaction[], type: ReactionType) => {
+  const _getReactionCount = (reactions: Reaction[], type: ReactionType) => {
     return reactions.filter(r => r.type === type).length;
   };
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Message from '@/models/Message';
-import User from '@/models/User';
+// import User from '@/models/User';
 import Community from '@/models/Community';
 import { getSession } from '@/lib/session';
 import { getSocketIO, emitToCommunity } from '@/lib/socket';

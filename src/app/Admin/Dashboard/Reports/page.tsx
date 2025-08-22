@@ -5,18 +5,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   UserIcon,
   UsersIcon,
-  ChatBubbleLeftRightIcon,
   ExclamationTriangleIcon,
-  ChartBarIcon,
   Cog6ToothIcon,
-  ArrowRightOnRectangleIcon,
   HomeIcon,
   RectangleGroupIcon,
   MagnifyingGlassIcon,
   DocumentTextIcon,
   EyeIcon,
   TrashIcon,
-  XCircleIcon,
   CheckCircleIcon,
   FunnelIcon,
   CalendarIcon,
@@ -33,7 +29,7 @@ import {
   ExclamationCircleIcon,
 } from "@heroicons/react/24/outline";
 import Image from "next/image";
-import Link from "next/link";
+import _Link from "next/link";
 import { useSession } from "next-auth/react";
 
 // Define report types
@@ -90,7 +86,7 @@ interface ReportsResponse {
 }
 
 // Navigation links
-const navLinks = [
+const _navLinks = [
   { name: "Overview", icon: HomeIcon, href: "/Admin/Dashboard" },
   { name: "Users", icon: UsersIcon, href: "/Admin/Dashboard/Users" },
   { name: "Communities", icon: RectangleGroupIcon, href: "/Admin/Dashboard/Communities" },
@@ -746,7 +742,7 @@ export default function ReportsPage() {
   
   // Filter reports (local filtering on already fetched data)
   useEffect(() => {
-    let results = [...reports];
+    const results = [...reports];
     
     // Apply sorting
     results.sort((a, b) => {

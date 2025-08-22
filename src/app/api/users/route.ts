@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     
     // Build filter query
-    let filter: any = {};
+    const filter: any = {};
     
     if (search) {
       filter.$or = [

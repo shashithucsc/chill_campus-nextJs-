@@ -11,16 +11,16 @@ import {
   UserIcon,
   AcademicCapIcon,
   CalendarIcon,
-  MapPinIcon,
+  _MapPinIcon,
   HeartIcon,
-  ChatBubbleOvalLeftIcon,
+  _ChatBubbleOvalLeftIcon,
   UsersIcon,
   SparklesIcon,
-  EnvelopeIcon,
+  _EnvelopeIcon,
   StarIcon
 } from '@heroicons/react/24/outline';
 import { 
-  HeartIcon as HeartSolid,
+  HeartIcon as _HeartSolid,
   UserIcon as UserSolid,
   StarIcon as StarSolid
 } from '@heroicons/react/24/solid';

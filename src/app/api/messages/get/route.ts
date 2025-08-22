@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Message from '@/models/Message';
-import User from '@/models/User';
+// import User from '@/models/User';
 import Community from '@/models/Community';
 import { getSession } from '@/lib/session';
 import mongoose from 'mongoose';
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const communityId = searchParams.get('communityId');
-    const page = parseInt(searchParams.get('page') || '1');
+    const _page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
     const before = searchParams.get('before'); // For pagination
 
@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Build query for pagination
-    let query: any = { community: communityId };
+    const query: any = { community: communityId };
     if (before) {
       query.timestamp = { $lt: new Date(before) };
     }

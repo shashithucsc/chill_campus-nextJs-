@@ -1,5 +1,6 @@
 import mongoose, { Document, Schema, models, model } from 'mongoose';
 
+// User document shape
 export interface IUser extends Document {
   email: string;
   password: string;
@@ -7,33 +8,36 @@ export interface IUser extends Document {
   fullName: string;
   university: string;
   createdAt: Date;
-  avatar?: string; // Optional avatar field
-  bio?: string; // User bio/description
-  interests?: string[]; // User interests
-  followers?: mongoose.Types.ObjectId[]; // Users following this user
-  following?: mongoose.Types.ObjectId[]; // Users this user is following
-  favorites?: mongoose.Types.ObjectId[]; // Users this user has favorited
-  blockedUsers?: mongoose.Types.ObjectId[]; // Users blocked by this user
-  isActive: boolean; // Indicates if the user's email is confirmed
-  activationToken: string; // Token for email confirmation
-  status: 'Active' | 'Suspended'; // User status for admin management
-  isSuspended?: boolean; // Suspension status
-  suspendedAt?: Date; // Suspension date
-  suspendedBy?: mongoose.Types.ObjectId; // Admin who suspended
-  suspensionReason?: string; // Reason for suspension
-  suspensionEnd?: Date; // When suspension ends
-  isBlocked?: boolean; // Block status
-  blockedAt?: Date; // Block date
-  blockedBy?: mongoose.Types.ObjectId; // Admin who blocked
-  blockReason?: string; // Reason for blocking
+  avatar?: string; // profile picture URL
+  bio?: string; // short about text
+  interests?: string[]; // list of interests
+  followers?: mongoose.Types.ObjectId[]; // users who follow this user
+  following?: mongoose.Types.ObjectId[]; // users this user follows
+  favorites?: mongoose.Types.ObjectId[]; // saved users
+  blockedUsers?: mongoose.Types.ObjectId[]; // blocked users
+  isActive: boolean; // email verified
+  activationToken: string; // email verify token
+  resetPasswordToken?: string; // password reset token
+  resetPasswordExpires?: Date; // password reset token expiry
+  status: 'Active' | 'Suspended'; // account state
+  isSuspended?: boolean; // suspension flag
+  suspendedAt?: Date; // when suspended
+  suspendedBy?: mongoose.Types.ObjectId; // admin who suspended
+  suspensionReason?: string; // why suspended
+  suspensionEnd?: Date; // when it ends
+  isBlocked?: boolean; // blocked flag
+  blockedAt?: Date; // when blocked
+  blockedBy?: mongoose.Types.ObjectId; // admin who blocked
+  blockReason?: string; // why blocked
   warnings?: Array<{
     reason: string;
     warnedBy: mongoose.Types.ObjectId;
     warnedAt: Date;
     postId?: mongoose.Types.ObjectId;
-  }>; // Warning history
+  }>; // warning history
 }
 
+// MongoDB schema for users
 const UserSchema = new Schema<IUser>(
   {
     email: {
@@ -99,6 +103,12 @@ const UserSchema = new Schema<IUser>(
       type: String,
       default: '',
     },
+    resetPasswordToken: {
+      type: String,
+    },
+    resetPasswordExpires: {
+      type: Date,
+    },
     status: {
       type: String,
       enum: ['Active', 'Suspended'],
@@ -147,4 +157,5 @@ const UserSchema = new Schema<IUser>(
   }
 );
 
+// Reuse model if already compiled (Next.js hot reload)
 export default models.User || model<IUser>('User', UserSchema);

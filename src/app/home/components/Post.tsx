@@ -4,16 +4,16 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { _motion, AnimatePresence } from 'framer-motion';
 import { 
-  HeartIcon as HeartOutline,
-  ChatBubbleOvalLeftIcon,
-  ShareIcon,
-  EllipsisHorizontalIcon,
-  PencilIcon,
-  TrashIcon,
-  XMarkIcon,
-  PaperAirplaneIcon,
+  HeartIcon as _HeartOutline,
+  _ChatBubbleOvalLeftIcon,
+  _ShareIcon,
+  _EllipsisHorizontalIcon,
+  _PencilIcon,
+  _TrashIcon,
+  _XMarkIcon,
+  _PaperAirplaneIcon,
   FlagIcon
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolid } from '@heroicons/react/24/solid';
@@ -435,7 +435,7 @@ export default function Post({
           </div>
           
           {/* Enhanced Comments Section */}
-          <Comments postId={id} isVisible={showComments} onCommentUpdate={fetchCommentCount} onStartChat={handleStartChat} />
+          <Comments postId={id} isVisible={showComments} onCommentUpdate={fetchCommentCount} onStartChat={handleStartChat} postOwnerId={author.id} />
         </div>
       </div>
       

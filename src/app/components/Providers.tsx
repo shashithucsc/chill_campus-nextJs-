@@ -2,6 +2,7 @@
 
 import { SessionProvider } from 'next-auth/react';
 import { SocketProvider } from '@/contexts/SocketContext';
+import { Toaster } from 'react-hot-toast';
 
 export default function Providers({ 
   children 
@@ -14,6 +15,7 @@ export default function Providers({
       refetchOnWindowFocus={true}  // Refresh session when window is focused
     >
       <SocketProvider>
+        <Toaster position="top-right" />
         {children}
       </SocketProvider>
     </SessionProvider>

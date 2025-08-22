@@ -3,7 +3,11 @@ import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import { getSession } from '@/lib/session';
 
-export async function GET(req: NextRequest, { params }: { params: { userId: string } }) {
+export async function GET(
+  req: NextRequest, 
+  context: { params: { userId: string } }
+) {
+  const { params } = context;
   await dbConnect();
 
   // Get session

@@ -36,6 +36,11 @@ export interface ServerToClientEvents {
     conversationId?: string;
   }) => void;
   
+  // Notification events
+  'notification:new': (data: {
+    notification: any;
+  }) => void;
+  
   // User presence events
   'user-online': (data: { userId: string; timestamp: number }) => void;
   'user-offline': (data: { userId: string; timestamp: number }) => void;
@@ -276,5 +281,15 @@ export const emitToConversation = (io: ServerIO, conversationId: string, event: 
 
 // Helper function to emit to specific user
 export const emitToUser = (io: ServerIO, userId: string, event: keyof ServerToClientEvents, data: any) => {
+  io.to(`user:${userId}`).emit(event as any, data);
+};
+
+// Helper function to emit to specific user without requiring io parameter
+export const emitToUserDirect = (userId: string, event: keyof ServerToClientEvents, data: any, req?: any) => {
+  const io = req?.socket?.server?.io;
+  if (!io) {
+    console.warn('Socket.IO not initialized, cannot emit event:', event);
+    return;
+  }
   io.to(`user:${userId}`).emit(event as any, data);
 };

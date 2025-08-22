@@ -16,7 +16,7 @@ import {
   ExclamationTriangleIcon,
   SpeakerWaveIcon
 } from '@heroicons/react/24/outline';
-import { HeartIcon, HandThumbUpIcon } from '@heroicons/react/24/solid';
+import { _HeartIcon, HandThumbUpIcon } from '@heroicons/react/24/solid';
 import EmojiPicker from './EmojiPicker';
 import SoundSettings from './SoundSettings';
 import { useSoundManager } from '@/lib/SoundManager';

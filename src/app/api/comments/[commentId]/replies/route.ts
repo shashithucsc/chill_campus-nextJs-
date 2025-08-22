@@ -2,12 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Comment from '@/models/Comment';
 import User from '@/models/User';
+import Post from '@/models/Post';
 import { getSession } from '@/lib/session';
+import { registerAllModels } from '@/lib/registerModels';
+import NotificationService from '@/lib/notificationService';
 
 // POST: add a reply to a comment
 export async function POST(req: NextRequest, { params }: { params: Promise<{ commentId: string }> }) {
   try {
     await dbConnect();
+    
+    // Register all models
+    registerAllModels();
     
     const session = await getSession();
     if (!session || !session.user || !(session.user as any).id) {
@@ -45,6 +51,27 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ com
     comment.replies.push(reply);
     comment.replyCount = comment.replies.length;
     await comment.save();
+    
+    // Send notification to comment owner if it's not their own reply
+    if (comment.user.toString() !== userId) {
+      try {
+        // Get the post for the actionUrl
+        const post = await Post.findById(comment.post);
+        if (post) {
+          await NotificationService.notifyCommentReply(
+            comment.user.toString(),
+            userId,
+            comment._id.toString(),
+            post._id.toString(),
+            user.fullName
+          );
+          console.log(`✅ Sent reply notification to ${comment.user.toString()} from ${user.fullName}`);
+        }
+      } catch (notificationError) {
+        console.error('Error sending reply notification:', notificationError);
+        // Continue even if notification fails
+      }
+    }
     
     // Get the saved reply with its generated _id
     const savedReply = comment.replies[comment.replies.length - 1];

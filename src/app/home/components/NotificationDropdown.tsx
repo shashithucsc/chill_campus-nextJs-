@@ -68,10 +68,10 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isOpen, onC
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -10, scale: 0.95 }}
         transition={{ duration: 0.2 }}
-        className="absolute right-0 mt-2 w-96 bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 z-50 max-h-[80vh] flex flex-col"
+        className="absolute right-0 mt-2 w-96 bg-gray-900/80 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-700/50 z-50 max-h-[80vh] flex flex-col"
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-white/20 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-gray-700/50 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <h3 className="text-sm font-semibold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
               Notifications
@@ -131,13 +131,13 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isOpen, onC
               {notifications.map((notification) => (
                 <motion.div
                   key={notification._id}
-                  whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }}
+                  whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.08)" }}
                   onClick={() => handleNotificationClick(notification)}
                   className={`px-6 py-4 cursor-pointer transition-all duration-200 border-l-4 ${
                     notification.isRead
                       ? 'border-transparent'
                       : `border-gradient-to-b ${getPriorityColor(notification.priority)}`
-                  } ${!notification.isRead ? 'bg-white/5' : ''}`}
+                  } ${!notification.isRead ? 'bg-gray-800/50' : ''}`}
                 >
                   <div className="flex items-start space-x-3">
                     {/* Icon/Avatar */}
@@ -221,7 +221,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isOpen, onC
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3 border-t border-white/20">
+        <div className="px-6 py-3 border-t border-gray-700/50">
           <motion.button 
             whileHover={{ scale: 1.05 }}
             onClick={() => {
