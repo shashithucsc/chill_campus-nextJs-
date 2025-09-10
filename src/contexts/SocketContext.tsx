@@ -29,6 +29,7 @@ interface SocketContextType {
   onlineUsers: Set<string>;
   typingUsers: Map<string, { userId: string; userName: string; timestamp: number }>;
   latestNotification: Notification | null;
+  isUsingFallback: boolean;
   
   // Helper functions
   joinCommunity: (communityId: string) => void;
@@ -46,6 +47,7 @@ const SocketContext = createContext<SocketContextType>({
   onlineUsers: new Set(),
   typingUsers: new Map(),
   latestNotification: null,
+  isUsingFallback: false,
   joinCommunity: () => {},
   leaveCommunity: () => {},
   joinConversation: () => {},
@@ -75,166 +77,197 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   const [typingUsers, setTypingUsers] = useState<Map<string, { userId: string; userName: string; timestamp: number }>>(new Map());
   const [soundManager] = useState(() => SoundManager.getInstance());
   const [latestNotification, setLatestNotification] = useState<Notification | null>(null);
+  const [isUsingFallback, setIsUsingFallback] = useState(false);
+
+  // Check if we're on Vercel or if Socket.IO is available
+  const checkSocketAvailability = async () => {
+    try {
+      const response = await fetch('/api/socket/io');
+      const data = await response.json();
+      return !data.fallback;
+    } catch {
+      return false;
+    }
+  };
 
   useEffect(() => {
     if (status === 'authenticated' && session?.user) {
-      // Create a simple auth token from session user data
-      const authToken = btoa(JSON.stringify({
-        sub: session.user.id || session.user.email,
-        name: session.user.name,
-        email: session.user.email,
-        iat: Math.floor(Date.now() / 1000),
-        exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
-      }));
-
-      // Initialize Socket.IO connection
-      const socketInstance = io(process.env.NODE_ENV === 'production' 
-        ? process.env.NEXTAUTH_URL! 
-        : 'http://localhost:3000', {
-        path: '/api/socket/io',
-        auth: {
-          token: authToken
-        },
-        transports: ['polling', 'websocket'], // Try polling first, then websocket
-        timeout: 20000,
-        forceNew: true,
-        autoConnect: true,
-        reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-      });
-
-      // Connection event handlers
-      socketInstance.on('connect', () => {
-        console.log('Socket.IO connected successfully');
-        setIsConnected(true);
-        soundManager.playConnectSound();
-      });
-
-      socketInstance.on('disconnect', (reason) => {
-        console.log('Socket.IO disconnected:', reason);
-        setIsConnected(false);
-        soundManager.playDisconnectSound();
-      });
-
-      socketInstance.on('connect_error', (error) => {
-        console.error('Socket.IO connection error:', error.message);
-        setIsConnected(false);
-        
-        // Don't play error sound for initial connection attempts
-        if (socketInstance.connected) {
-          soundManager.playErrorSound();
+      checkSocketAvailability().then(async (socketAvailable) => {
+        if (!socketAvailable) {
+          console.log('Socket.IO not available, using fallback mode');
+          setIsUsingFallback(true);
+          return;
         }
-        
-        // Log detailed error info for debugging
-        console.error('Error details:', {
-          message: error.message,
-          stack: error.stack,
-          name: error.name
+
+        // Create a simple auth token from session user data
+        const authToken = btoa(JSON.stringify({
+          sub: session.user.id || session.user.email,
+          name: session.user.name,
+          email: session.user.email,
+          iat: Math.floor(Date.now() / 1000),
+          exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
+        }));
+
+        // Initialize Socket.IO connection
+        const socketInstance = io(process.env.NODE_ENV === 'production' 
+          ? process.env.NEXTAUTH_URL! 
+          : 'http://localhost:3000', {
+          path: '/api/socket/io',
+          auth: {
+            token: authToken
+          },
+          transports: ['polling', 'websocket'], // Try polling first, then websocket
+          timeout: 20000,
+          forceNew: true,
+          autoConnect: true,
+          reconnection: true,
+          reconnectionAttempts: 3, // Reduced for Vercel
+          reconnectionDelay: 2000, // Increased delay for Vercel
+          reconnectionDelayMax: 10000,
+          // Add upgrade timeout for better Vercel compatibility
+          upgrade: true,
+          rememberUpgrade: false,
         });
-      });
 
-      socketInstance.on('reconnect', (attemptNumber) => {
-        console.log('Socket.IO reconnected after', attemptNumber, 'attempts');
-        setIsConnected(true);
-        soundManager.playConnectSound();
-      });
-
-      socketInstance.on('reconnect_error', (error) => {
-        console.error('Socket.IO reconnection error:', error.message);
-      });
-
-      socketInstance.on('reconnect_failed', () => {
-        console.error('Socket.IO failed to reconnect');
-        setIsConnected(false);
-        soundManager.playErrorSound();
-      });
-
-      // User presence handlers
-      socketInstance.on('user-online', (data) => {
-        setOnlineUsers(prev => new Set([...prev, data.userId]));
-      });
-
-      socketInstance.on('user-offline', (data) => {
-        setOnlineUsers(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(data.userId);
-          return newSet;
+        // Connection event handlers
+        socketInstance.on('connect', () => {
+          console.log('Socket.IO connected successfully');
+          setIsConnected(true);
+          soundManager.playConnectSound();
         });
-      });
 
-      // Message event handlers with sound effects
-      socketInstance.on('new-message', (data) => {
-        soundManager.playNewMessageSound();
-      });
-
-      socketInstance.on('new-direct-message', (data) => {
-        soundManager.playDirectMessageSound();
-      });
-
-      // Notification handler
-      socketInstance.on('notification:new', (data) => {
-        console.log('New notification received:', data);
-        setLatestNotification(data.notification);
-        soundManager.playNewMessageSound();
-        
-        // Show toast notification
-        toast.custom((t) => (
-          <NotificationToast notification={data.notification} t={t} />
-        ), {
-          duration: 5000,
-          position: 'top-right',
+        socketInstance.on('disconnect', (reason) => {
+          console.log('Socket.IO disconnected:', reason);
+          setIsConnected(false);
+          soundManager.playDisconnectSound();
         });
-      });
 
-      // Typing indicators
-      socketInstance.on('user-typing', (data) => {
-        setTypingUsers(prev => {
-          const newMap = new Map(prev);
-          const key = data.communityId || data.conversationId || 'unknown';
-          newMap.set(`${key}-${data.userId}`, {
-            userId: data.userId,
-            userName: data.userName,
-            timestamp: Date.now()
-          });
-          return newMap;
-        });
-      });
-
-      socketInstance.on('user-stopped-typing', (data) => {
-        setTypingUsers(prev => {
-          const newMap = new Map(prev);
-          const key = data.communityId || data.conversationId || 'unknown';
-          newMap.delete(`${key}-${data.userId}`);
-          return newMap;
-        });
-      });
-
-      // Cleanup typing indicators older than 3 seconds
-      const typingCleanup = setInterval(() => {
-        setTypingUsers(prev => {
-          const newMap = new Map(prev);
-          const now = Date.now();
-          for (const [key, value] of newMap.entries()) {
-            if (now - value.timestamp > 3000) {
-              newMap.delete(key);
-            }
+        socketInstance.on('connect_error', (error) => {
+          console.error('Socket.IO connection error:', error.message);
+          setIsConnected(false);
+          
+          // If Socket.IO fails, fall back to polling mode
+          if (error.message.includes('xhr poll error') || error.message.includes('transport error')) {
+            console.log('Falling back to polling mode due to connection errors');
+            setIsUsingFallback(true);
+            socketInstance.disconnect();
+            return;
           }
-          return newMap;
+          
+          // Don't play error sound for initial connection attempts
+          if (socketInstance.connected) {
+            soundManager.playErrorSound();
+          }
+          
+          // Log detailed error info for debugging
+          console.error('Error details:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+          });
         });
-      }, 1000);
 
-      setSocket(socketInstance);
+        socketInstance.on('reconnect', (attemptNumber) => {
+          console.log('Socket.IO reconnected after', attemptNumber, 'attempts');
+          setIsConnected(true);
+          soundManager.playConnectSound();
+        });
 
-      return () => {
-        clearInterval(typingCleanup);
-        socketInstance.disconnect();
-        setSocket(null);
-        setIsConnected(false);
-        setOnlineUsers(new Set());
-        setTypingUsers(new Map());
-      };
+        socketInstance.on('reconnect_error', (error) => {
+          console.error('Socket.IO reconnection error:', error.message);
+        });
+
+        socketInstance.on('reconnect_failed', () => {
+          console.error('Socket.IO failed to reconnect');
+          setIsConnected(false);
+          soundManager.playErrorSound();
+        });
+
+        // User presence handlers
+        socketInstance.on('user-online', (data) => {
+          setOnlineUsers(prev => new Set([...prev, data.userId]));
+        });
+
+        socketInstance.on('user-offline', (data) => {
+          setOnlineUsers(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(data.userId);
+            return newSet;
+          });
+        });
+
+        // Message event handlers with sound effects
+        socketInstance.on('new-message', (data) => {
+          soundManager.playNewMessageSound();
+        });
+
+        socketInstance.on('new-direct-message', (data) => {
+          soundManager.playDirectMessageSound();
+        });
+
+        // Notification handler
+        socketInstance.on('notification:new', (data) => {
+          console.log('New notification received:', data);
+          setLatestNotification(data.notification);
+          soundManager.playNewMessageSound();
+          
+          // Show toast notification
+          toast.custom((t) => (
+            <NotificationToast notification={data.notification} t={t} />
+          ), {
+            duration: 5000,
+            position: 'top-right',
+          });
+        });
+
+        // Typing indicators
+        socketInstance.on('user-typing', (data) => {
+          setTypingUsers(prev => {
+            const newMap = new Map(prev);
+            const key = data.communityId || data.conversationId || 'unknown';
+            newMap.set(`${key}-${data.userId}`, {
+              userId: data.userId,
+              userName: data.userName,
+              timestamp: Date.now()
+            });
+            return newMap;
+          });
+        });
+
+        socketInstance.on('user-stopped-typing', (data) => {
+          setTypingUsers(prev => {
+            const newMap = new Map(prev);
+            const key = data.communityId || data.conversationId || 'unknown';
+            newMap.delete(`${key}-${data.userId}`);
+            return newMap;
+          });
+        });
+
+        // Cleanup typing indicators older than 3 seconds
+        const typingCleanup = setInterval(() => {
+          setTypingUsers(prev => {
+            const newMap = new Map(prev);
+            const now = Date.now();
+            for (const [key, value] of newMap.entries()) {
+              if (now - value.timestamp > 3000) {
+                newMap.delete(key);
+              }
+            }
+            return newMap;
+          });
+        }, 1000);
+
+        setSocket(socketInstance);
+
+        return () => {
+          clearInterval(typingCleanup);
+          socketInstance.disconnect();
+          setSocket(null);
+          setIsConnected(false);
+          setOnlineUsers(new Set());
+          setTypingUsers(new Map());
+        };
+      });
     }
   }, [session, status]);
 
@@ -273,6 +306,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     onlineUsers,
     typingUsers,
     latestNotification,
+    isUsingFallback,
     joinCommunity,
     leaveCommunity,
     joinConversation,
