@@ -4,112 +4,170 @@ import { registerAllModels } from '@/lib/registerModels';
 import Post from '@/models/Post';
 import User from '@/models/User';
 import { getSession } from '@/lib/session';
-import path from 'path';
-import fs from 'fs/promises';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 
 export async function GET(req: NextRequest) {
-  try {
-    console.log('🔍 GET /api/posts - Starting request');
-    const conn = await dbConnect();
-    if (!conn) {
-      console.error('❌ Database connection failed');
-      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
-    }
-    console.log('✅ Database connected');
-    
-    // Ensure all models are registered
-    registerAllModels();
-    
-    // Get query parameters
-    const url = new URL(req.url);
-    const userId = url.searchParams.get('userId');
-    console.log('🧩 Query params:', { userId });
-    
-    // Build query filter
-    const filter: any = {};
-    if (userId) {
-      filter.user = userId;
-    }
-    
-    console.log('🔎 Finding posts with filter:', filter);
-    
+  let retryCount = 0;
+  const maxRetries = 3;
+  
+  while (retryCount < maxRetries) {
     try {
-      // First check if any posts exist to avoid population errors
-      const postsExist = await Post.exists(filter);
-      console.log(`📊 Posts exist check:`, postsExist);
+      console.log(`🔍 GET /api/posts - Starting request (attempt ${retryCount + 1}/${maxRetries})`);
+      const conn = await dbConnect();
+      if (!conn) {
+        console.error('❌ Database connection failed');
+        if (retryCount === maxRetries - 1) {
+          return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+        }
+        retryCount++;
+        console.log(`🔄 Retrying database connection... (${retryCount}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // Progressive delay
+        continue;
+      }
+      console.log('✅ Database connected');
       
-      if (!postsExist) {
-        console.log('📊 No posts found');
-        return NextResponse.json({ posts: [] });
+      // Ensure all models are registered
+      registerAllModels();
+      
+      // Get query parameters
+      const url = new URL(req.url);
+      const userId = url.searchParams.get('userId');
+      console.log('🧩 Query params:', { userId });
+      
+      // Build query filter
+      const filter: any = {};
+      if (userId) {
+        filter.user = userId;
       }
       
-      // Create a query and add population steps one by one to isolate any issues
-      let query = Post.find(filter).sort({ createdAt: -1 });
+      console.log('🔎 Finding posts with filter:', filter);
       
-      // First try to populate just the user
       try {
-        query = query.populate({
-          path: 'user',
-          select: 'fullName email avatar role',
-          match: { _id: { $exists: true } }
-        });
-      } catch (userPopulateError) {
-        console.error('❌ Error populating user:', userPopulateError);
-        // Continue without user population
-      }
-      
-      // Then try to populate community separately
-      try {
-        query = query.populate({
-          path: 'community',
-          select: '_id name avatar coverImage',
-          match: { _id: { $exists: true } }
-        });
-      } catch (communityPopulateError) {
-        console.error('❌ Error populating community:', communityPopulateError);
-        // Continue without community population
-      }
-      
-      // Execute the query
-      const posts = await query.exec();
-      console.log(`📊 Found ${posts.length} posts`);
-      
-      // Sanitize the posts before sending (in case of missing references)
-      const sanitizedPosts = posts.map(post => {
-        const postObj = post.toObject();
+        // First check if any posts exist to avoid population errors
+        const postsExist = await Post.exists(filter);
+        console.log(`📊 Posts exist check:`, postsExist);
         
-        // If user wasn't populated, set a default
-        if (!postObj.user) {
-          postObj.user = {
-            _id: 'deleted',
-            fullName: 'Deleted User',
-            email: '',
-            avatar: '',
-            role: 'student'
-          };
+        if (!postsExist) {
+          console.log('📊 No posts found');
+          return NextResponse.json({ posts: [] });
         }
         
-        // If community wasn't populated but exists as an ID, set a default
-        if (postObj.community && typeof postObj.community === 'string') {
-          postObj.community = {
-            _id: postObj.community,
-            name: 'Unknown Community',
-            avatar: '/images/default-community-banner.jpg'
-          };
+        // Create a query and add population steps one by one to isolate any issues
+        let query = Post.find(filter).sort({ createdAt: -1 });
+        
+        // First try to populate just the user
+        try {
+          query = query.populate({
+            path: 'user',
+            select: 'fullName email avatar role',
+            match: { _id: { $exists: true } }
+          });
+        } catch (userPopulateError) {
+          console.error('❌ Error populating user:', userPopulateError);
+          // Continue without user population
         }
         
-        return postObj;
-      });
+        // Then try to populate community separately
+        try {
+          query = query.populate({
+            path: 'community',
+            select: '_id name avatar coverImage',
+            match: { _id: { $exists: true } }
+          });
+        } catch (communityPopulateError) {
+          console.error('❌ Error populating community:', communityPopulateError);
+          // Continue without community population
+        }
+        
+        // Execute the query with timeout
+        const posts = await Promise.race([
+          query.exec(),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Query timeout')), 30000) // 30 second timeout
+          )
+        ]) as any[];
+        
+        console.log(`📊 Found ${posts.length} posts`);
+        
+        // Sanitize the posts before sending (in case of missing references)
+        const sanitizedPosts = posts.map(post => {
+          const postObj = post.toObject();
+          
+          // If user wasn't populated, set a default
+          if (!postObj.user) {
+            postObj.user = {
+              _id: 'deleted',
+              fullName: 'Deleted User',
+              email: '',
+              avatar: '',
+              role: 'student'
+            };
+          }
+          
+          // If community wasn't populated but exists as an ID, set a default
+          if (postObj.community && typeof postObj.community === 'string') {
+            postObj.community = {
+              _id: postObj.community,
+              name: 'Unknown Community',
+              avatar: '/images/default-community-banner.jpg'
+            };
+          }
+          
+          return postObj;
+        });
+        
+        return NextResponse.json({ posts: sanitizedPosts });
+      } catch (queryError) {
+        console.error('❌ Error querying posts:', queryError);
+        
+        // Check if it's a connection reset error
+        if (queryError instanceof Error && 
+            (queryError.message.includes('ECONNRESET') || 
+             queryError.message.includes('connection was forcibly closed') ||
+             queryError.message.includes('Query timeout'))) {
+          
+          if (retryCount < maxRetries - 1) {
+            retryCount++;
+            console.log(`🔄 Connection error, retrying... (${retryCount}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // Progressive delay
+            continue;
+          }
+        }
+        
+        return NextResponse.json({ 
+          error: 'Error querying posts', 
+          message: (queryError as Error).message 
+        }, { status: 500 });
+      }
+    } catch (error) {
+      console.error(`❌ Error in GET /api/posts (attempt ${retryCount + 1}):`, error);
       
-      return NextResponse.json({ posts: sanitizedPosts });
-    } catch (queryError) {
-      console.error('❌ Error querying posts:', queryError);
-      return NextResponse.json({ error: 'Error querying posts', message: (queryError as Error).message }, { status: 500 });
+      // Check if it's a connection error that we should retry
+      if (error instanceof Error && 
+          (error.message.includes('ECONNRESET') || 
+           error.message.includes('connection was forcibly closed') ||
+           error.message.includes('MongoServerSelectionError'))) {
+        
+        if (retryCount < maxRetries - 1) {
+          retryCount++;
+          console.log(`🔄 Server error, retrying... (${retryCount}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // Progressive delay
+          continue;
+        }
+      }
+      
+      return NextResponse.json({ 
+        error: 'Internal Server Error', 
+        message: (error as Error).message 
+      }, { status: 500 });
     }
-  } catch (error) {
-    console.error('❌ Error in GET /api/posts:', error);
-    return NextResponse.json({ error: 'Internal Server Error', message: (error as Error).message }, { status: 500 });
   }
+  
+  // If we get here, all retries failed
+  return NextResponse.json({ 
+    error: 'Service temporarily unavailable', 
+    message: 'Please try again later' 
+  }, { status: 503 });
 }
 
 export async function POST(req: NextRequest) {
@@ -161,11 +219,27 @@ export async function POST(req: NextRequest) {
   const file = form.get('media');
   if (file && typeof file === 'object' && 'arrayBuffer' in file) {
     const buffer = Buffer.from(await file.arrayBuffer());
-    const ext = (file as any).name?.split('.').pop() || 'jpg';
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
-    const uploadPath = path.join(process.cwd(), 'public', 'uploads', fileName);
-    await fs.writeFile(uploadPath, buffer);
-    media.push(`/uploads/${fileName}`);
+    
+    // Determine folder and resource type based on media type
+    let folder = 'chill-campus/posts';
+    let resourceType: 'image' | 'video' | 'raw' | 'auto' = 'auto';
+    
+    if (mediaType === 'image' || (file as any).type?.startsWith('image/')) {
+      folder = 'chill-campus/posts/images';
+      resourceType = 'image';
+    } else if (mediaType === 'video' || (file as any).type?.startsWith('video/')) {
+      folder = 'chill-campus/posts/videos';
+      resourceType = 'video';
+    }
+    
+    const uploadResult = await uploadToCloudinary(buffer, {
+      folder,
+      originalName: (file as any).name,
+      resourceType,
+      maxFileSize: 50 * 1024 * 1024, // 50MB limit
+    });
+    
+    media.push(uploadResult.url);
   } else if (file && typeof file === 'string') {
     media.push(file);
   }

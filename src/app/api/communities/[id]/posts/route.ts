@@ -5,8 +5,7 @@ import User from "@/models/User";
 import Community from "@/models/Community";
 import { getSession } from '@/lib/session';
 import mongoose from "mongoose";
-import path from 'path';
-import fs from 'fs/promises';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 
 // GET: Fetch all posts for a specific community
 export async function GET(
@@ -150,11 +149,27 @@ export async function POST(
     const file = form.get('media');
     if (file && typeof file === 'object' && 'arrayBuffer' in file) {
       const buffer = Buffer.from(await file.arrayBuffer());
-      const ext = (file as any).name?.split('.').pop() || 'jpg';
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
-      const uploadPath = path.join(process.cwd(), 'public', 'uploads', fileName);
-      await fs.writeFile(uploadPath, buffer);
-      media.push(`/uploads/${fileName}`);
+      
+      // Determine folder and resource type based on media type
+      let folder = 'chill-campus/community-posts';
+      let resourceType: 'image' | 'video' | 'raw' | 'auto' = 'auto';
+      
+      if (mediaType === 'image' || (file as any).type?.startsWith('image/')) {
+        folder = 'chill-campus/community-posts/images';
+        resourceType = 'image';
+      } else if (mediaType === 'video' || (file as any).type?.startsWith('video/')) {
+        folder = 'chill-campus/community-posts/videos';
+        resourceType = 'video';
+      }
+      
+      const uploadResult = await uploadToCloudinary(buffer, {
+        folder,
+        originalName: (file as any).name,
+        resourceType,
+        maxFileSize: 50 * 1024 * 1024, // 50MB limit
+      });
+      
+      media.push(uploadResult.url);
     } else if (file && typeof file === 'string') {
       media.push(file);
     }
