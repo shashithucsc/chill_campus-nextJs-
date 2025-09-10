@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]';
-import dbConnect from '@/lib/mongodb';
+import { authOptions } from '@/lib/auth';
+import dbConnect from '@/lib/db';
 import Message from '@/models/Message';
 import DirectMessage from '@/models/DirectMessage';
 import Notification from '@/models/Notification';
