@@ -3,8 +3,7 @@ import { getSession } from '@/lib/session';
 import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import mongoose from 'mongoose';
-import path from 'path';
-import fs from 'fs/promises';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 
 interface SessionUser {
   id: string;
@@ -98,11 +97,17 @@ export async function PUT(req: NextRequest) {
     const avatarFile = form.get('avatar');
     if (avatarFile && typeof avatarFile === 'object' && 'arrayBuffer' in avatarFile) {
       const buffer = Buffer.from(await avatarFile.arrayBuffer());
-      const ext = (avatarFile as any).name?.split('.').pop() || 'jpg';
-      const fileName = `${userId}-avatar.${ext}`;
-      const uploadPath = path.join(process.cwd(), 'public', 'uploads', fileName);
-      await fs.writeFile(uploadPath, buffer);
-      avatarUrl = `/uploads/${fileName}`;
+      
+      // Upload to Cloudinary
+      const uploadResult = await uploadToCloudinary(buffer, {
+        folder: 'chill-campus/avatars',
+        originalName: (avatarFile as any).name,
+        resourceType: 'image',
+        allowedFormats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+        maxFileSize: 5 * 1024 * 1024, // 5MB limit for avatars
+      });
+      
+      avatarUrl = uploadResult.url;
     }
     const update: any = {};
     if (fullName) update.fullName = fullName;

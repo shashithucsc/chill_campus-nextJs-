@@ -9,7 +9,6 @@ const nextConfig: NextConfig = {
   
   // Image optimization
   images: {
-    domains: ['localhost'],
     remotePatterns: [
       {
         protocol: 'http',
@@ -20,6 +19,11 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: '*.vercel.app',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
         pathname: '/**',
       }
     ],

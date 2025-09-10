@@ -3,8 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import User from '@/models/User';
 import dbConnect from '@/lib/db';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,33 +43,24 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Generate unique filename
-    const timestamp = Date.now();
-    const fileExtension = path.extname(file.name);
-    const filename = `logo-${timestamp}${fileExtension}`;
-
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
-    try {
-      await mkdir(uploadsDir, { recursive: true });
-    } catch (error) {
-      // Directory might already exist
-    }
-
-    // Save file
-    const filePath = path.join(uploadsDir, filename);
+    // Upload to Cloudinary
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
-
-    // Return the public URL
-    const publicUrl = `/uploads/${filename}`;
+    
+    const uploadResult = await uploadToCloudinary(buffer, {
+      folder: 'chill-campus/logos',
+      originalName: file.name,
+      resourceType: 'image',
+      allowedFormats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+      maxFileSize: 5 * 1024 * 1024,
+    });
 
     return NextResponse.json({
       success: true,
       message: 'Logo uploaded successfully',
-      url: publicUrl,
-      filename: filename
+      url: uploadResult.url,
+      publicId: uploadResult.publicId,
+      filename: uploadResult.publicId
     });
 
   } catch (error) {

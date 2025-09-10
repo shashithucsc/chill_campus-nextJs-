@@ -67,14 +67,24 @@ export default function HomePage() {
     }
   };
 
-  const fetchPosts = async () => {
+  const fetchPosts = async (retryCount = 0) => {
+    const maxRetries = 3;
     setLoading(true);
+    
     try {
-      console.log('🔄 Fetching posts...');
+      console.log(`🔄 Fetching posts... (attempt ${retryCount + 1}/${maxRetries + 1})`);
+      
+      // Add timeout to prevent hanging requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
       const res = await fetch('/api/posts', {
         cache: 'no-store', // Disable caching to always get fresh data
         next: { revalidate: 0 }, // Ensure we don't use any stale data
+        signal: controller.signal,
       });
+      
+      clearTimeout(timeoutId);
       console.log('📡 Posts API response status:', res.status);
       
       if (!res.ok) {
@@ -90,6 +100,16 @@ export default function HomePage() {
         }
         
         console.error('❌ Error response from posts API:', errorMessage);
+        
+        // Check if this is a retryable error
+        if ((res.status === 500 || res.status === 503) && retryCount < maxRetries) {
+          console.log(`🔄 Retryable error, attempting retry ${retryCount + 1}/${maxRetries}...`);
+          setTimeout(() => {
+            fetchPosts(retryCount + 1);
+          }, 1000 * (retryCount + 1)); // Progressive delay
+          return;
+        }
+        
         throw new Error(errorMessage);
       }
       
@@ -104,17 +124,37 @@ export default function HomePage() {
       }
       
       setPosts(data.posts || []);
+      
     } catch (err) {
       console.error('❌ Error fetching posts:', err);
+      
+      // Check if this is a network/connection error and we should retry
+      if (err instanceof Error && 
+          (err.name === 'AbortError' || 
+           err.message.includes('ECONNRESET') || 
+           err.message.includes('Failed to fetch') ||
+           err.message.includes('Network request failed')) && 
+          retryCount < maxRetries) {
+        
+        console.log(`🔄 Network error, attempting retry ${retryCount + 1}/${maxRetries}...`);
+        setTimeout(() => {
+          fetchPosts(retryCount + 1);
+        }, 2000 * (retryCount + 1)); // Progressive delay for network errors
+        return;
+      }
+      
       setPosts([]);
       
-      // Show a retry button or message
-      // This would be better with a toast notification
-      setTimeout(() => {
-        if (confirm('Could not load posts. Would you like to try again?')) {
-          fetchPosts();
-        }
-      }, 1000);
+      // Only show the retry dialog if all retries have failed
+      if (retryCount >= maxRetries) {
+        // Show a retry button or message
+        // This would be better with a toast notification
+        setTimeout(() => {
+          if (confirm('Could not load posts after multiple attempts. Would you like to try again?')) {
+            fetchPosts(0); // Reset retry count
+          }
+        }, 1000);
+      }
     } finally {
       setLoading(false);
     }

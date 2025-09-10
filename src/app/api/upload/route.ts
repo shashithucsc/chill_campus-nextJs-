@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
 import { getSession } from '@/lib/session';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 const ALLOWED_FILE_TYPES = [
@@ -78,49 +77,53 @@ export async function POST(req: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Generate unique filename
-    const timestamp = Date.now();
-    const randomString = Math.random().toString(36).substring(2);
-    const fileExtension = file.name.split('.').pop() || '';
-    const fileName = `${timestamp}-${randomString}.${fileExtension}`;
-
-    // Create upload directory if it doesn't exist
-    const uploadDir = join(process.cwd(), 'public', 'uploads');
-    try {
-      await mkdir(uploadDir, { recursive: true });
-    } catch (error) {
-      // Directory might already exist, ignore error
-    }
-
-    // Save file
-    const filePath = join(uploadDir, fileName);
-    await writeFile(filePath, buffer);
-
-    // Determine file category for frontend
+    // Determine file category and folder for Cloudinary
     let fileCategory = 'file';
+    let cloudinaryFolder = 'chill-campus/files';
+    let resourceType: 'image' | 'video' | 'raw' | 'auto' = 'auto';
+
     if (file.type.startsWith('image/')) {
       fileCategory = 'image';
+      cloudinaryFolder = 'chill-campus/images';
+      resourceType = 'image';
     } else if (file.type.startsWith('audio/')) {
       fileCategory = 'audio';
+      cloudinaryFolder = 'chill-campus/audio';
+      resourceType = 'raw';
     } else if (file.type.startsWith('video/')) {
       fileCategory = 'video';
+      cloudinaryFolder = 'chill-campus/videos';
+      resourceType = 'video';
     } else if (file.type === 'application/pdf') {
       fileCategory = 'pdf';
+      cloudinaryFolder = 'chill-campus/documents';
+      resourceType = 'raw';
+    } else {
+      cloudinaryFolder = 'chill-campus/documents';
+      resourceType = 'raw';
     }
 
-    const fileUrl = `/uploads/${fileName}`;
+    // Upload to Cloudinary
+    const uploadResult = await uploadToCloudinary(buffer, {
+      folder: cloudinaryFolder,
+      originalName: file.name,
+      resourceType,
+      maxFileSize: MAX_FILE_SIZE,
+    });
     
     return NextResponse.json({ 
       success: true, 
       message: 'File uploaded successfully',
-      url: fileUrl,
-      filePath: fileUrl,
+      url: uploadResult.url,
+      filePath: uploadResult.url,
       file: {
-        url: fileUrl,
+        url: uploadResult.url,
+        publicId: uploadResult.publicId,
         originalName: file.name,
         size: file.size,
         type: file.type,
-        category: fileCategory
+        category: fileCategory,
+        format: uploadResult.format
       }
     });
   } catch (error) {

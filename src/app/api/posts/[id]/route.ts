@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Post from '@/models/Post';
 import { getSession } from '@/lib/session';
-import path from 'path';
-import fs from 'fs/promises';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 import { registerAllModels } from '@/lib/registerModels';
 
 interface LeanPostDoc {
@@ -96,11 +95,27 @@ export async function PUT(req: NextRequest, context: any) {
   const file = form.get('media');
   if (file && typeof file === 'object' && 'arrayBuffer' in file) {
     const buffer = Buffer.from(await file.arrayBuffer());
-    const ext = (file as any).name?.split('.').pop() || 'jpg';
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
-    const uploadPath = path.join(process.cwd(), 'public', 'uploads', fileName);
-    await fs.writeFile(uploadPath, buffer);
-    media.push(`/uploads/${fileName}`);
+    
+    // Determine folder and resource type based on media type
+    let folder = 'chill-campus/posts';
+    let resourceType: 'image' | 'video' | 'raw' | 'auto' = 'auto';
+    
+    if (mediaType === 'image' || (file as any).type?.startsWith('image/')) {
+      folder = 'chill-campus/posts/images';
+      resourceType = 'image';
+    } else if (mediaType === 'video' || (file as any).type?.startsWith('video/')) {
+      folder = 'chill-campus/posts/videos';
+      resourceType = 'video';
+    }
+    
+    const uploadResult = await uploadToCloudinary(buffer, {
+      folder,
+      originalName: (file as any).name,
+      resourceType,
+      maxFileSize: 50 * 1024 * 1024, // 50MB limit
+    });
+    
+    media.push(uploadResult.url);
   } else if (file && typeof file === 'string') {
     // If the frontend sends the existing media URL as a string, keep it
     media.push(file);
