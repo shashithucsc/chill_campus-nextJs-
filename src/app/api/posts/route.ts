@@ -171,87 +171,152 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  await dbConnect();
-  
-  // Ensure all models are registered
-  registerAllModels();
-  
-  // Try to get session from custom session system
-  let session = await getSession();
-  
-  // If that fails, check for session sync headers from middleware
-  if (!session || !session.user || !(session.user as any).id) {
-    // Check if the middleware indicated we have NextAuth session but need to sync
-    const needsSync = req.headers.get('X-Needs-Session-Sync') === 'true';
-    if (needsSync) {
-      const userId = req.headers.get('X-User-Id');
-      const userEmail = req.headers.get('X-User-Email');
-      const userName = req.headers.get('X-User-Name');
-      
-      if (userId && userEmail) {
-        // Get the user from the database to have complete data
-        const user = await User.findById(userId).select('-password');
-        if (user) {
-          // Create a mock session that matches our custom session format
-          session = {
-            user: {
-              id: userId,
-              email: userEmail,
-              fullName: user.fullName || userName || 'User',
-              role: user.role || 'user'
-            }
-          };
+  try {
+    console.log('🚀 POST /api/posts - Starting request');
+    
+    // Connect to database first
+    const conn = await dbConnect();
+    if (!conn) {
+      console.error('❌ Database connection failed');
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
+    }
+    console.log('✅ Database connected');
+    
+    // Ensure all models are registered
+    registerAllModels();
+    console.log('✅ Models registered');
+    
+    // Try to get session from custom session system
+    let session = await getSession();
+    
+    // If that fails, check for session sync headers from middleware
+    if (!session || !session.user || !(session.user as any).id) {
+      // Check if the middleware indicated we have NextAuth session but need to sync
+      const needsSync = req.headers.get('X-Needs-Session-Sync') === 'true';
+      if (needsSync) {
+        const userId = req.headers.get('X-User-Id');
+        const userEmail = req.headers.get('X-User-Email');
+        const userName = req.headers.get('X-User-Name');
+        
+        if (userId && userEmail) {
+          // Get the user from the database to have complete data
+          const user = await User.findById(userId).select('-password');
+          if (user) {
+            // Create a mock session that matches our custom session format
+            session = {
+              user: {
+                id: userId,
+                email: userEmail,
+                fullName: user.fullName || userName || 'User',
+                role: user.role || 'user'
+              }
+            };
+          }
         }
       }
     }
-  }
-  
-  // If we still don't have a session, return unauthorized
-  if (!session || !session.user || !(session.user as any).id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-  const form = await req.formData();
-  const content = form.get('content') as string;
-  const mediaType = form.get('mediaType') as string | null;
-  const media: string[] = [];
-
-  // Handle file upload
-  const file = form.get('media');
-  if (file && typeof file === 'object' && 'arrayBuffer' in file) {
-    const buffer = Buffer.from(await file.arrayBuffer());
     
-    // Determine folder and resource type based on media type
-    let folder = 'chill-campus/posts';
-    let resourceType: 'image' | 'video' | 'raw' | 'auto' = 'auto';
-    
-    if (mediaType === 'image' || (file as any).type?.startsWith('image/')) {
-      folder = 'chill-campus/posts/images';
-      resourceType = 'image';
-    } else if (mediaType === 'video' || (file as any).type?.startsWith('video/')) {
-      folder = 'chill-campus/posts/videos';
-      resourceType = 'video';
+    // If we still don't have a session, return unauthorized
+    if (!session || !session.user || !(session.user as any).id) {
+      console.error('❌ No valid session found');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const uploadResult = await uploadToCloudinary(buffer, {
-      folder,
-      originalName: (file as any).name,
-      resourceType,
-      maxFileSize: 50 * 1024 * 1024, // 50MB limit
-    });
+    console.log('✅ Session validated for user:', (session.user as any).id);
     
-    media.push(uploadResult.url);
-  } else if (file && typeof file === 'string') {
-    media.push(file);
-  }
+    // Parse form data
+    let form;
+    try {
+      form = await req.formData();
+      console.log('✅ Form data parsed');
+    } catch (formError) {
+      console.error('❌ Error parsing form data:', formError);
+      return NextResponse.json({ error: 'Invalid form data' }, { status: 400 });
+    }
+    
+    const content = form.get('content') as string;
+    const mediaType = form.get('mediaType') as string | null;
+    const media: string[] = [];
+    
+    console.log('📝 Post data:', { content: content?.length, mediaType });
 
-  if (!content && media.length === 0) {
-    return NextResponse.json({ error: 'Post content or media required' }, { status: 400 });
+    // Handle file upload
+    const file = form.get('media');
+    if (file && typeof file === 'object' && 'arrayBuffer' in file) {
+      console.log('📁 Processing file upload:', {
+        name: (file as any).name,
+        type: (file as any).type,
+        size: (file as any).size
+      });
+      
+      try {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        console.log('✅ File buffer created, size:', buffer.length);
+        
+        // Determine folder and resource type based on media type
+        let folder = 'chill-campus/posts';
+        let resourceType: 'image' | 'video' | 'raw' | 'auto' = 'auto';
+        
+        if (mediaType === 'image' || (file as any).type?.startsWith('image/')) {
+          folder = 'chill-campus/posts/images';
+          resourceType = 'image';
+        } else if (mediaType === 'video' || (file as any).type?.startsWith('video/')) {
+          folder = 'chill-campus/posts/videos';
+          resourceType = 'video';
+        }
+        
+        console.log('☁️ Uploading to Cloudinary:', { folder, resourceType });
+        
+        const uploadResult = await uploadToCloudinary(buffer, {
+          folder,
+          originalName: (file as any).name,
+          resourceType,
+          maxFileSize: 50 * 1024 * 1024, // 50MB limit
+        });
+        
+        console.log('✅ Cloudinary upload successful:', uploadResult.url);
+        media.push(uploadResult.url);
+      } catch (uploadError) {
+        console.error('❌ Cloudinary upload error:', uploadError);
+        return NextResponse.json({ 
+          error: 'File upload failed', 
+          details: (uploadError as Error).message 
+        }, { status: 500 });
+      }
+    } else if (file && typeof file === 'string') {
+      media.push(file);
+      console.log('✅ Using existing media URL:', file);
+    }
+
+    if (!content && media.length === 0) {
+      console.error('❌ No content or media provided');
+      return NextResponse.json({ error: 'Post content or media required' }, { status: 400 });
+    }
+    
+    try {
+      console.log('💾 Creating post in database');
+      const post = await Post.create({
+        user: (session.user as any).id,
+        content,
+        media,
+        mediaType: mediaType || null,
+      });
+      console.log('✅ Post created successfully:', post._id);
+      
+      return NextResponse.json({ post });
+    } catch (dbError) {
+      console.error('❌ Database error creating post:', dbError);
+      return NextResponse.json({ 
+        error: 'Failed to create post', 
+        details: (dbError as Error).message 
+      }, { status: 500 });
+    }
+  } catch (error) {
+    console.error('❌ Unexpected error in POST /api/posts:', error);
+    return NextResponse.json({ 
+      error: 'Internal Server Error', 
+      details: (error as Error).message,
+      stack: process.env.NODE_ENV === 'development' ? (error as Error).stack : undefined
+    }, { status: 500 });
   }
-  const post = await Post.create({
-    user: (session.user as any).id,
-    content,
-    media,
-    mediaType: mediaType || null,
-  });
-  return NextResponse.json({ post });
 }
