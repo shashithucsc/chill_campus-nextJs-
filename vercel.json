@@ -16,9 +16,11 @@
   "env": {
     "MONGODB_URI": "mongodb+srv://chillcampus:1234@chillcampuscluster.xryax7f.mongodb.net/?retryWrites=true&w=majority&appName=chillCampusCluster",
     "NODE_ENV": "production",
-    "CLOUDINARY_CLOUD_NAME": "your-cloudinary-cloud-name",
-    "CLOUDINARY_API_KEY": "your-cloudinary-api-key",
-    "CLOUDINARY_API_SECRET": "your-cloudinary-api-secret"
+    "CLOUDINARY_CLOUD_NAME": "duwxqkwwk",
+    "CLOUDINARY_API_KEY": "341231227825153",
+    "CLOUDINARY_API_SECRET": "G2FqgYbEeXq97jRd0rK7MwvsdVo",
+    "NEXTAUTH_SECRET": "/VFlm6MWGU+zI7YQ4hbsE10JP0r9QoNAKCGyRGN3v5Y=",
+    "JWT_SECRET": "07b0ccf96901bb53d9fa59e0914131fe0d6ca6f4e6015702eda475e6c50f5544ba6207a32890a94dcb98ad11686b81b9978fa7222f5032d9b9f07ca8a1d4bae5"
   },
   "images": {
     "sizes": [640, 750, 828, 1080, 1200, 1920],
