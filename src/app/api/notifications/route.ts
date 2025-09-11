@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
+import { registerAllModels } from '@/lib/registerModels';
 import Notification from '@/models/Notification';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -8,16 +9,31 @@ import mongoose from 'mongoose';
 // GET /api/notifications - Get user's notifications
 export async function GET(request: NextRequest) {
   try {
+    console.log('🔔 GET /api/notifications - Starting request');
+    
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.id) {
+      console.error('❌ No session found');
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    await dbConnect();
+    console.log('✅ Session validated for user:', session.user.id);
+
+    const conn = await dbConnect();
+    if (!conn) {
+      console.error('❌ Database connection failed');
+      return NextResponse.json(
+        { error: 'Database connection failed' },
+        { status: 500 }
+      );
+    }
+    
+    // Ensure all models are registered
+    registerAllModels();
 
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1');
@@ -27,7 +43,7 @@ export async function GET(request: NextRequest) {
 
     // Build query
     const query: any = {
-  recipient: (session.user as any).id,
+      recipient: (session.user as any).id,
       isArchived: false
     };
 
@@ -42,39 +58,53 @@ export async function GET(request: NextRequest) {
     // Calculate pagination
     const skip = (page - 1) * limit;
 
-    // Get notifications with population
-    const notifications = await Notification.find(query)
-      .populate('sender', 'name username profilePicture')
-      .populate('relatedUser', 'name username profilePicture')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean();
+    try {
+      // Get notifications with population
+      const notifications = await Notification.find(query)
+        .populate('sender', 'name username profilePicture')
+        .populate('relatedUser', 'name username profilePicture')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean();
 
-    // Get total count for pagination
-    const total = await Notification.countDocuments(query);
+      // Get total count for pagination
+      const total = await Notification.countDocuments(query);
 
-    // Get unread count
-  const unreadCount = await Notification.getUnreadCount((session.user as any).id);
+      // Get unread count
+      const unreadCount = await Notification.countDocuments({
+        recipient: (session.user as any).id,
+        isRead: false,
+        isArchived: false
+      });
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        notifications,
-        pagination: {
-          page,
-          limit,
-          total,
-          pages: Math.ceil(total / limit)
-        },
-        unreadCount
-      }
-    });
+      console.log('✅ Notifications retrieved:', { count: notifications.length, total, unreadCount });
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          notifications,
+          pagination: {
+            page,
+            limit,
+            total,
+            pages: Math.ceil(total / limit)
+          },
+          unreadCount
+        }
+      });
+    } catch (dbError) {
+      console.error('❌ Database query error:', dbError);
+      return NextResponse.json(
+        { error: 'Database query failed', details: (dbError as Error).message },
+        { status: 500 }
+      );
+    }
 
   } catch (error) {
-    console.error('Error fetching notifications:', error);
+    console.error('❌ Error fetching notifications:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch notifications' },
+      { error: 'Failed to fetch notifications', details: (error as Error).message },
       { status: 500 }
     );
   }
@@ -118,9 +148,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Create notification
-    const notification = await Notification.createNotification({
+    const notification = await Notification.create({
       recipient: new mongoose.Types.ObjectId(recipient),
-  sender: (session.user as any).id ? new mongoose.Types.ObjectId((session.user as any).id) : undefined,
+      sender: (session.user as any).id ? new mongoose.Types.ObjectId((session.user as any).id) : undefined,
       type,
       title,
       message,
