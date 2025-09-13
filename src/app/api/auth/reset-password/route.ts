@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   try {
     const { token: rawToken, password } = await req.json();
     
-    // Clean the token: decode URL components and trim whitespace
+    // Clean the token: decode URL and remove spaces
     const token = rawToken ? decodeURIComponent(rawToken).trim() : null;
     
     console.log('Reset password request received with token:', token);
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Token and password are required' }, { status: 400 });
     }
     
-    // Password validation
+    // Check password
     if (password.length < 8) {
       console.log('Password too short');
       return NextResponse.json({ message: 'Password must be at least 8 characters long' }, { status: 400 });
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     
     await dbConnect();
     
-    // Hash the token to compare with stored hash
+    // Hash the token to check against stored hash
     const hashedToken = crypto
       .createHash('sha256')
       .update(token)

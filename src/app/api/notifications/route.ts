@@ -6,7 +6,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import mongoose from 'mongoose';
 
-// GET /api/notifications - Get user's notifications
+// GET /api/notifications - Get user notifications
 export async function GET(request: NextRequest) {
   try {
     console.log('🔔 GET /api/notifications - Starting request');
@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/notifications - Create a new notification (for testing/admin)
+// POST /api/notifications - Create a new notification (for testing)
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);

@@ -6,7 +6,7 @@ export async function GET() {
   try {
     console.log('🧪 Testing posts API prerequisites...');
 
-    // Test 1: Database connection
+    // Test 1: Connect to database
     console.log('1️⃣ Testing database connection...');
     const conn = await dbConnect();
     if (!conn) {
@@ -14,12 +14,12 @@ export async function GET() {
     }
     console.log('✅ Database connected');
 
-    // Test 2: Model registration
+    // Test 2: Load models
     console.log('2️⃣ Testing model registration...');
     registerAllModels();
     console.log('✅ Models registered');
 
-    // Test 3: Environment variables
+    // Test 3: Check settings
     console.log('3️⃣ Testing environment variables...');
     const envVars = {
       MONGODB_URI: !!process.env.MONGODB_URI,
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
   try {
     console.log('🧪 Testing POST form data handling...');
 
-    // Test form data parsing
+    // Test form data
     const form = await req.formData();
     const content = form.get('content') as string;
     const mediaType = form.get('mediaType') as string | null;

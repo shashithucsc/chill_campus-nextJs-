@@ -217,7 +217,7 @@ const SettingCard = ({
   const [isExpanded, setIsExpanded] = useState(false);
 
   const getSettingValue = (settingId: string) => {
-    // Map UI setting IDs to backend setting keys
+    // Change UI names to server names
     const keyMap: Record<string, string> = {
       'maintenance': 'maintenance_mode',
       'theme': 'theme_mode',
@@ -243,7 +243,7 @@ const SettingCard = ({
   };
 
   const handleSettingChange = (settingId: string, value: any) => {
-    // Map UI setting IDs to backend setting keys
+    // Change UI names to server names
     const keyMap: Record<string, string> = {
       'maintenance': 'maintenance_mode',
       'theme': 'theme_mode',
@@ -440,14 +440,14 @@ export default function SettingsPage() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Fetch settings on component mount
+  // Load settings when page opens
   useEffect(() => {
     if (session?.user) {
       fetchSettings();
     }
   }, [session]);
 
-  // Check for changes
+  // See if anything changed
   useEffect(() => {
     const changed = JSON.stringify(settings) !== JSON.stringify(originalSettings);
     setHasChanges(changed);
@@ -496,7 +496,7 @@ export default function SettingsPage() {
     try {
       setSaving(true);
       
-      // Only send changed settings
+      // Only send what changed
       const changedSettings: Record<string, any> = {};
       Object.keys(settings).forEach(key => {
         if (settings[key] !== originalSettings[key]) {

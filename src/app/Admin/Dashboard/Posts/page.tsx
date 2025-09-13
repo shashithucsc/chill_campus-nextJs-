@@ -50,7 +50,7 @@ interface Post {
   reportReasons?: string[];
   reportsCount: number;
   hasMedia: boolean;
-  media?: string[]; // Array of media URLs
+  media?: string[]; // List of media URLs
   mediaUrl?: string | null;
   mediaType?: string;
   disabled?: boolean;

@@ -198,8 +198,7 @@ export default function LandingPage() {
                 variants={itemVariants}
                 className="text-xl md:text-2xl text-white/90 max-w-4xl mx-auto leading-relaxed"
               >
-                Join the ultimate university social platform where students connect, 
-                collaborate, and build lifelong friendships across campuses worldwide.
+               ලංකාව පුරාම කැම්පස් යාලුවො හදා ගන්න සෙට් වෙන්න .
               </motion.p>
             </motion.div>
 
@@ -250,10 +249,10 @@ export default function LandingPage() {
               className="pt-16 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto"
             >
               {[
-                { number: '50K+', label: 'Active Students' },
-                { number: '200+', label: 'Universities' },
-                { number: '1M+', label: 'Connections' },
-                { number: '10K+', label: 'Communities' }
+                { number: '1K+', label: 'Active Students' },
+                { number: '15+', label: 'Universities' },
+                { number: '1000', label: 'Connections' },
+                { number: '100+', label: 'Communities' }
               ].map((stat, index) => (
                 <motion.div
                   key={stat.label}

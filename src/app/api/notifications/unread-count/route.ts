@@ -5,7 +5,7 @@ import Notification from '@/models/Notification';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
-// GET /api/notifications/unread-count - Get unread notifications count
+// GET /api/notifications/unread-count - Get unread count
 export async function GET() {
   try {
     console.log('🔔 GET /api/notifications/unread-count - Starting request');
@@ -31,7 +31,7 @@ export async function GET() {
       );
     }
     
-    // Ensure all models are registered
+    // Load all models
     registerAllModels();
 
     try {

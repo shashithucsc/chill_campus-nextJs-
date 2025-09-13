@@ -27,12 +27,11 @@ export async function DELETE(
     
     const userId = (session.user as any).id;
     
-    // First, check if it's a direct reply in a parent comment's replies array
-    // We need to identify if we're deleting a top-level comment or a reply
+    // Check if this is a reply to another comment or a main comment
     let isReply = false;
     let parentComment = null;
     
-    // Try to find a comment that contains this reply ID in its replies array
+    // Look for the parent comment that has this reply
     const parentWithReply = await Comment.findOne({
       'replies._id': commentId
     });
@@ -41,7 +40,7 @@ export async function DELETE(
       isReply = true;
       parentComment = parentWithReply;
       
-      // Find the specific reply
+      // Get the reply details
       const reply = parentWithReply.replies.find(
         (r: any) => r._id.toString() === commentId
       );
@@ -50,21 +49,21 @@ export async function DELETE(
         return NextResponse.json({ error: 'Reply not found' }, { status: 404 });
       }
       
-      // Check if user is the reply author
+      // Check if user wrote this reply
       const _isReplyAuthor = reply.user.toString() === userId;
       
-      // Get the post to check if user is post owner
+      // Check if user owns the post
       const post = await Post.findById(parentWithReply.post);
       const isPostOwner = post && post.user.toString() === userId;
       
-      // Check authorization
+      // Make sure user can delete this reply
       if (!isReplyAuthor && !isPostOwner) {
         return NextResponse.json({ 
           error: 'You are not authorized to delete this reply' 
         }, { status: 403 });
       }
       
-      // Remove the reply from the parent comment's replies array
+      // Delete the reply from the parent comment
       await Comment.updateOne(
         { _id: parentWithReply._id },
         { 
@@ -76,14 +75,14 @@ export async function DELETE(
       return NextResponse.json({ success: true });
     } 
     
-    // If it's not a reply, handle it as a regular comment
+    // Handle as a main comment
     const comment = await Comment.findById(commentId).populate('post');
     
     if (!comment) {
       return NextResponse.json({ error: 'Comment not found' }, { status: 404 });
     }
     
-    // Check if user is the comment author or the post owner
+    // Check if user wrote the comment or owns the post
     const post = await Post.findById(comment.post);
     const isCommentAuthor = comment.user.toString() === userId;
     const isPostOwner = post && post.user.toString() === userId;
@@ -94,19 +93,19 @@ export async function DELETE(
       }, { status: 403 });
     }
     
-    // If it's a parent comment, delete all its replies first
+    // If this is a main comment, delete all replies first
     if (!comment.parentComment) {
-      // Find and delete all replies to this comment
+      // Delete all replies to this comment
       await Comment.deleteMany({ parentComment: commentId });
     } else {
-      // If it's a reply, decrement the parent comment's replyCount
+      // If this is a reply, reduce the parent's reply count
       await Comment.findByIdAndUpdate(
         comment.parentComment,
         { $inc: { replyCount: -1 } }
       );
     }
     
-    // Delete the comment
+    // Remove the comment
     await Comment.findByIdAndDelete(commentId);
     
     return NextResponse.json({ success: true });
