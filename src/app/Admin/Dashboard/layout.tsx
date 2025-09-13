@@ -18,7 +18,8 @@ import {
 } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
 
 const navLinks = [
    { name: "Home", icon: UsersIcon, href: "/Admin/Dashboard/" },
@@ -45,6 +46,21 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: session } = useSession();
+
+  const handleLogout = async () => {
+    try {
+      await signOut({ 
+        callbackUrl: '/auth/login',
+        redirect: true 
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Fallback: force redirect
+      router.push('/auth/login');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 font-sans">
@@ -75,7 +91,10 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
                     <button className="w-full flex items-center px-4 py-3 text-white/90 hover:bg-white/10 transition-all">
                       <Cog6ToothIcon className="h-5 w-5 mr-2" /> Settings
                     </button>
-                    <button className="w-full flex items-center px-4 py-3 text-red-400 hover:bg-red-500/20 transition-all">
+                    <button 
+                      onClick={handleLogout}
+                      className="w-full flex items-center px-4 py-3 text-red-400 hover:bg-red-500/20 transition-all"
+                    >
                       <ArrowRightOnRectangleIcon className="h-5 w-5 mr-2" /> Logout
                     </button>
                   </motion.div>
