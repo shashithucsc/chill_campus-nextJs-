@@ -693,7 +693,7 @@ export default function ReportsPage() {
   const resolvedCount = stats.resolved;
   const ignoredCount = stats.ignored;
 
-  // Fetch reports from API
+  // Get reports from server
   const fetchReports = async () => {
     try {
       setLoading(true);
@@ -733,18 +733,18 @@ export default function ReportsPage() {
     }
   };
 
-  // Initial fetch
+  // Load reports when page opens
   useEffect(() => {
     if (session?.user?.id) {
       fetchReports();
     }
   }, [session, statusFilter, typeFilter, search, pagination.currentPage]);
   
-  // Filter reports (local filtering on already fetched data)
+  // Sort reports by date
   useEffect(() => {
     const results = [...reports];
     
-    // Apply sorting
+    // Sort by newest or oldest
     results.sort((a, b) => {
       const dateA = new Date(a.createdAt).getTime();
       const dateB = new Date(b.createdAt).getTime();
@@ -759,7 +759,7 @@ export default function ReportsPage() {
     setFilteredReports(results);
   }, [reports, sortOrder]);
   
-  // Handle report actions
+  // Handle what happens when admin clicks buttons
   const handleActionClick = async (action: string, report: Report) => {
     if (action === 'view') {
       setSelectedReport(report);
@@ -772,7 +772,7 @@ export default function ReportsPage() {
       let apiAction = action;
       let adminNotes = '';
 
-      // Map UI actions to API actions
+      // Change button names to API names
       switch (action) {
         case 'resolve':
           apiAction = 'resolve';
@@ -822,7 +822,7 @@ export default function ReportsPage() {
       if (data.success) {
         console.log(`${action} successful:`, data);
         
-        // Update local state
+        // Update the list on screen
         setReports(prevReports => 
           prevReports.map(r => 
             r.id === report.id 
@@ -831,10 +831,10 @@ export default function ReportsPage() {
           )
         );
 
-        // Show success message (you can implement a toast notification here)
+        // Show success message
         alert(`Report ${action} successful: ${data.message}`);
 
-        // Refresh data from server
+        // Get fresh data from server
         await fetchReports();
       } else {
         throw new Error('Action failed');

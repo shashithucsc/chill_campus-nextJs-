@@ -79,7 +79,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   const [latestNotification, setLatestNotification] = useState<Notification | null>(null);
   const [isUsingFallback, setIsUsingFallback] = useState(false);
 
-  // Check if we're on Vercel or if Socket.IO is available
+  // Check if Socket.IO is working
   const checkSocketAvailability = async () => {
     try {
       const response = await fetch('/api/socket/io');
@@ -99,7 +99,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
           return;
         }
 
-        // Create a simple auth token from session user data
+        // Make a simple login token from user info
         const authToken = btoa(JSON.stringify({
           sub: session.user.id || session.user.email,
           name: session.user.name,
@@ -108,7 +108,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
           exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
         }));
 
-        // Initialize Socket.IO connection
+        // Start Socket.IO connection
         const socketInstance = io(process.env.NODE_ENV === 'production' 
           ? process.env.NEXTAUTH_URL! 
           : 'http://localhost:3000', {
@@ -121,15 +121,15 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
           forceNew: true,
           autoConnect: true,
           reconnection: true,
-          reconnectionAttempts: 3, // Reduced for Vercel
-          reconnectionDelay: 2000, // Increased delay for Vercel
+          reconnectionAttempts: 3, // Try 3 times
+          reconnectionDelay: 2000, // Wait 2 seconds between tries
           reconnectionDelayMax: 10000,
-          // Add upgrade timeout for better Vercel compatibility
+          // Better connection handling
           upgrade: true,
           rememberUpgrade: false,
         });
 
-        // Connection event handlers
+        // Handle connection events
         socketInstance.on('connect', () => {
           console.log('Socket.IO connected successfully');
           setIsConnected(true);
@@ -146,7 +146,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
           console.error('Socket.IO connection error:', error.message);
           setIsConnected(false);
           
-          // If Socket.IO fails, fall back to polling mode
+          // If Socket.IO fails, use polling instead
           if (error.message.includes('xhr poll error') || error.message.includes('transport error')) {
             console.log('Falling back to polling mode due to connection errors');
             setIsUsingFallback(true);
@@ -154,12 +154,12 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
             return;
           }
           
-          // Don't play error sound for initial connection attempts
+          // Don't play error sound on first try
           if (socketInstance.connected) {
             soundManager.playErrorSound();
           }
           
-          // Log detailed error info for debugging
+          // Log error details for fixing
           console.error('Error details:', {
             message: error.message,
             stack: error.stack,
@@ -183,7 +183,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
           soundManager.playErrorSound();
         });
 
-        // User presence handlers
+        // Handle when users come online/offline
         socketInstance.on('user-online', (data) => {
           setOnlineUsers(prev => new Set([...prev, data.userId]));
         });
@@ -196,7 +196,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
           });
         });
 
-        // Message event handlers with sound effects
+        // Handle new messages with sounds
         socketInstance.on('new-message', (data) => {
           soundManager.playNewMessageSound();
         });
@@ -205,13 +205,13 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
           soundManager.playDirectMessageSound();
         });
 
-        // Notification handler
+        // Handle new notifications
         socketInstance.on('notification:new', (data) => {
           console.log('New notification received:', data);
           setLatestNotification(data.notification);
           soundManager.playNewMessageSound();
           
-          // Show toast notification
+          // Show popup notification
           toast.custom((t) => (
             <NotificationToast notification={data.notification} t={t} />
           ), {
@@ -220,7 +220,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
           });
         });
 
-        // Typing indicators
+        // Handle typing status
         socketInstance.on('user-typing', (data) => {
           setTypingUsers(prev => {
             const newMap = new Map(prev);
@@ -243,7 +243,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
           });
         });
 
-        // Cleanup typing indicators older than 3 seconds
+        // Remove old typing status after 3 seconds
         const typingCleanup = setInterval(() => {
           setTypingUsers(prev => {
             const newMap = new Map(prev);

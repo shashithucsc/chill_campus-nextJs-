@@ -25,7 +25,7 @@ interface CreateNotificationParams {
 }
 
 export class NotificationService {
-  // Create a new notification
+  // Make a new notification
   static async createNotification(params: CreateNotificationParams) {
     try {
       await dbConnect();
@@ -52,7 +52,7 @@ export class NotificationService {
         }
       });
 
-      // Emit socket event for real-time notification
+      // Send notification instantly to user
       try {
         emitToUserDirect(params.recipientId, 'notification:new', {
           notification: {
@@ -69,7 +69,7 @@ export class NotificationService {
         });
       } catch (socketError) {
         console.error('Error sending socket notification:', socketError);
-        // Don't throw the error as the notification was still created successfully
+        // Keep going - the notification was saved even if sending failed
       }
 
       return notification;
@@ -79,7 +79,7 @@ export class NotificationService {
     }
   }
 
-  // Post-related notifications
+  // Notifications about posts
   static async notifyPostLike(recipientId: string, senderId: string, postId: string, senderName: string) {
     return this.createNotification({
       recipientId,
@@ -137,7 +137,7 @@ export class NotificationService {
     });
   }
 
-  // Follow notifications
+  // Notifications about following
   static async notifyFollow(recipientId: string, senderId: string, senderName: string) {
     return this.createNotification({
       recipientId,
@@ -151,7 +151,7 @@ export class NotificationService {
     });
   }
 
-  // Message notifications
+  // Notifications about messages
   static async notifyMessage(recipientId: string, senderId: string, senderName: string, messagePreview: string) {
     return this.createNotification({
       recipientId,
@@ -165,7 +165,7 @@ export class NotificationService {
     });
   }
 
-  // Community notifications
+  // Notifications about communities
   static async notifyCommunityJoin(recipientId: string, senderId: string, communityId: string, communityName: string, senderName: string) {
     return this.createNotification({
       recipientId,
@@ -209,7 +209,7 @@ export class NotificationService {
     });
   }
 
-  // Admin notifications
+  // Notifications from admins
   static async notifyAdminWarning(recipientId: string, reason: string, details?: string) {
     return this.createNotification({
       recipientId,
@@ -234,7 +234,7 @@ export class NotificationService {
     });
   }
 
-  // System notifications
+  // Notifications from the system
   static async notifySystemAnnouncement(recipientId: string, title: string, message: string, actionUrl?: string) {
     return this.createNotification({
       recipientId,
@@ -258,7 +258,7 @@ export class NotificationService {
     });
   }
 
-  // Bulk notifications
+  // Send many notifications at once
   static async createBulkNotifications(notifications: CreateNotificationParams[]) {
     try {
       await dbConnect();
@@ -287,7 +287,7 @@ export class NotificationService {
 
       const createdNotifications = await Notification.insertMany(notificationDocs);
 
-      // Emit socket events for real-time notifications
+      // Send notifications instantly to users
       createdNotifications.forEach((notification, index) => {
         try {
           const params = notifications[index];
@@ -306,7 +306,7 @@ export class NotificationService {
           });
         } catch (socketError) {
           console.error('Error sending socket notification:', socketError);
-          // Continue processing other notifications
+          // Keep sending other notifications
         }
       });
 

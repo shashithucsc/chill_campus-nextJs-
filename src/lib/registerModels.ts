@@ -1,30 +1,29 @@
 import mongoose from 'mongoose';
 
 /**
- * Registers all models in the correct order to avoid circular dependencies
- * This function ensures all models are loaded and registered with Mongoose
- * before they're used in the application
+ * Load all models in the right order to prevent problems
+ * This makes sure all models are ready before we use them
  */
 export function registerAllModels() {
   try {
-    // Log what models are already registered
+    // See what models are already loaded
     const registeredBefore = mongoose.modelNames();
     console.log('📋 Models registered before:', registeredBefore);
     
-    // Import models in dependency order
-    // Core models first
+    // Load models in the right order
+    // Main models first
     import('../models/User');
     import('../models/Community');
     
-    // Models that depend on core models
+    // Models that need the main models first
     import('../models/Post');
     import('../models/Notification');
     
-    // Log what models are registered after
+    // See what models are loaded now
     const registeredAfter = mongoose.modelNames();
     console.log('✅ Models registered after:', registeredAfter);
     
-    // Check for missing models
+    // See if any models are missing
     const expectedModels = ['User', 'Community', 'Post', 'Notification'];
     const missingModels = expectedModels.filter(model => !registeredAfter.includes(model));
     
@@ -42,21 +41,21 @@ export function registerAllModels() {
 }
 
 /**
- * Helper function to ensure a specific model is registered
- * @param modelName The name of the model to register
- * @returns The registered model
+ * Make sure a model is loaded
+ * @param modelName The name of the model to load
+ * @returns The loaded model
  */
 export function ensureModelRegistered(modelName: string) {
   try {
-    // Try to get the model first
+    // Try to get the model
     return mongoose.model(modelName);
   } catch (error) {
-    // If model isn't registered, register all models
+    // If model isn't loaded, load all models
     registerAllModels();
     // Try to get the model again
     return mongoose.model(modelName);
   }
 }
 
-// Export as default for convenience
+// Export as default to make it easier to use
 export default registerAllModels;
