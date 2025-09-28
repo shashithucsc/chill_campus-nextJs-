@@ -186,31 +186,63 @@ export async function POST(req: NextRequest) {
     registerAllModels();
     console.log('✅ Models registered');
     
-    // Try to get session from custom session system
+    // Try to get session from custom session system first
     let session = await getSession();
+    console.log('🔐 Custom session check:', !!session);
     
-    // If that fails, check for session sync headers from middleware
+    // If that fails, try NextAuth session as fallback
     if (!session || !session.user || !(session.user as any).id) {
-      // Check if the middleware indicated we have NextAuth session but need to sync
-      const needsSync = req.headers.get('X-Needs-Session-Sync') === 'true';
-      if (needsSync) {
-        const userId = req.headers.get('X-User-Id');
-        const userEmail = req.headers.get('X-User-Email');
-        const userName = req.headers.get('X-User-Name');
+      try {
+        const { getServerSession } = await import('next-auth');
+        const { authOptions } = await import('@/lib/auth');
+        const nextAuthSession = await getServerSession(authOptions);
+        console.log('🔐 NextAuth session check:', !!nextAuthSession);
         
-        if (userId && userEmail) {
-          // Get the user from the database to have complete data
-          const user = await User.findById(userId).select('-password');
-          if (user) {
-            // Create a mock session that matches our custom session format
-            session = {
-              user: {
-                id: userId,
-                email: userEmail,
-                fullName: user.fullName || userName || 'User',
-                role: user.role || 'user'
+        if (nextAuthSession && nextAuthSession.user) {
+          // Convert NextAuth session to our format
+          session = {
+            user: {
+              id: (nextAuthSession.user as any).id,
+              email: nextAuthSession.user.email || '',
+              fullName: nextAuthSession.user.name || 'User',
+              role: (nextAuthSession.user as any).role || 'user'
+            }
+          };
+          console.log('✅ Using NextAuth session for user:', session.user.id);
+        }
+      } catch (nextAuthError) {
+        console.warn('⚠️ NextAuth session check failed:', nextAuthError);
+      }
+      
+      // If still no session, check middleware headers
+      if (!session || !session.user || !(session.user as any).id) {
+        const needsSync = req.headers.get('X-Needs-Session-Sync') === 'true';
+        if (needsSync) {
+          const userId = req.headers.get('X-User-Id');
+          const userEmail = req.headers.get('X-User-Email');
+          const userName = req.headers.get('X-User-Name');
+          
+          console.log('🔐 Middleware session data:', { userId, userEmail, userName });
+          
+          if (userId && userEmail) {
+            try {
+              // Get the user from the database to have complete data
+              const user = await User.findById(userId).select('-password');
+              if (user) {
+                // Create a session that matches our custom session format
+                session = {
+                  user: {
+                    id: userId,
+                    email: userEmail,
+                    fullName: user.fullName || userName || 'User',
+                    role: user.role || 'user'
+                  }
+                };
+                console.log('✅ Using middleware session for user:', session.user.id);
               }
-            };
+            } catch (userFetchError) {
+              console.error('❌ Failed to fetch user from middleware data:', userFetchError);
+            }
           }
         }
       }
@@ -218,8 +250,16 @@ export async function POST(req: NextRequest) {
     
     // If we still don't have a session, return unauthorized
     if (!session || !session.user || !(session.user as any).id) {
-      console.error('❌ No valid session found');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      console.error('❌ No valid session found - all methods failed');
+      return NextResponse.json({ 
+        error: 'Unauthorized', 
+        message: 'Please log in to create posts',
+        debug: {
+          customSession: false,
+          nextAuthSession: false,
+          middlewareSession: false,
+        }
+      }, { status: 401 });
     }
     
     console.log('✅ Session validated for user:', (session.user as any).id);
@@ -243,44 +283,105 @@ export async function POST(req: NextRequest) {
     // Handle file upload
     const file = form.get('media');
     if (file && typeof file === 'object' && 'arrayBuffer' in file) {
-      console.log('📁 Processing file upload:', {
+      const fileInfo = {
         name: (file as any).name,
         type: (file as any).type,
         size: (file as any).size
-      });
+      };
+      
+      console.log('📁 Processing file upload:', fileInfo);
+      
+      // Validate file type
+      const allowedTypes = [
+        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+        'video/mp4', 'video/webm', 'video/ogg'
+      ];
+      
+      if (!allowedTypes.includes(fileInfo.type)) {
+        console.error('❌ Invalid file type:', fileInfo.type);
+        return NextResponse.json({ 
+          error: 'Invalid file type', 
+          message: 'Only images (JPEG, PNG, GIF, WebP) and videos (MP4, WebM, OGG) are allowed',
+          allowedTypes
+        }, { status: 400 });
+      }
+      
+      // Validate file size (4MB limit for Vercel)
+      const maxSize = 4 * 1024 * 1024; // 4MB
+      if (fileInfo.size > maxSize) {
+        console.error('❌ File too large:', fileInfo.size);
+        return NextResponse.json({ 
+          error: 'File too large', 
+          message: `File size must be less than ${maxSize / 1024 / 1024}MB`,
+          currentSize: `${(fileInfo.size / 1024 / 1024).toFixed(2)}MB`,
+          maxSize: `${maxSize / 1024 / 1024}MB`
+        }, { status: 400 });
+      }
       
       try {
+        console.log('🔄 Converting file to buffer...');
         const buffer = Buffer.from(await file.arrayBuffer());
         console.log('✅ File buffer created, size:', buffer.length);
+        
+        if (buffer.length === 0) {
+          throw new Error('File buffer is empty');
+        }
         
         // Determine folder and resource type based on media type
         let folder = 'chill-campus/posts';
         let resourceType: 'image' | 'video' | 'raw' | 'auto' = 'auto';
         
-        if (mediaType === 'image' || (file as any).type?.startsWith('image/')) {
+        if (mediaType === 'image' || fileInfo.type.startsWith('image/')) {
           folder = 'chill-campus/posts/images';
           resourceType = 'image';
-        } else if (mediaType === 'video' || (file as any).type?.startsWith('video/')) {
+        } else if (mediaType === 'video' || fileInfo.type.startsWith('video/')) {
           folder = 'chill-campus/posts/videos';
           resourceType = 'video';
         }
         
-        console.log('☁️ Uploading to Cloudinary:', { folder, resourceType });
+        console.log('☁️ Uploading to Cloudinary:', { folder, resourceType, bufferSize: buffer.length });
         
         const uploadResult = await uploadToCloudinary(buffer, {
           folder,
-          originalName: (file as any).name,
+          originalName: fileInfo.name,
           resourceType,
-          maxFileSize: 50 * 1024 * 1024, // 50MB limit
+          maxFileSize: maxSize,
         });
         
-        console.log('✅ Cloudinary upload successful:', uploadResult.url);
+        console.log('✅ Cloudinary upload successful:', {
+          url: uploadResult.url,
+          publicId: uploadResult.publicId,
+          format: uploadResult.format,
+          bytes: uploadResult.bytes
+        });
+        
         media.push(uploadResult.url);
       } catch (uploadError) {
-        console.error('❌ Cloudinary upload error:', uploadError);
+        console.error('❌ File upload process failed:', uploadError);
+        
+        // Provide specific error messages
+        let errorMessage = 'File upload failed';
+        let errorDetails = (uploadError as Error).message;
+        
+        if (errorDetails.includes('timeout')) {
+          errorMessage = 'Upload timeout - file may be too large';
+        } else if (errorDetails.includes('Invalid buffer')) {
+          errorMessage = 'Invalid file - file may be corrupted';
+        } else if (errorDetails.includes('quota')) {
+          errorMessage = 'Storage quota exceeded';
+        } else if (errorDetails.includes('Missing Cloudinary')) {
+          errorMessage = 'Server configuration error';
+          errorDetails = 'Please contact support';
+        }
+        
         return NextResponse.json({ 
-          error: 'File upload failed', 
-          details: (uploadError as Error).message 
+          error: errorMessage, 
+          details: errorDetails,
+          fileInfo: {
+            name: fileInfo.name,
+            type: fileInfo.type,
+            size: `${(fileInfo.size / 1024).toFixed(2)}KB`
+          }
         }, { status: 500 });
       }
     } else if (file && typeof file === 'string') {
