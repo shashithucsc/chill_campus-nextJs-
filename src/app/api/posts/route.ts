@@ -358,30 +358,56 @@ export async function POST(req: NextRequest) {
         media.push(uploadResult.url);
       } catch (uploadError) {
         console.error('❌ File upload process failed:', uploadError);
+        console.error('❌ Upload error name:', (uploadError as Error).name);
+        console.error('❌ Upload error stack:', (uploadError as Error).stack);
+        
+        // Log environment variables status for debugging
+        const envStatus = {
+          CLOUDINARY_CLOUD_NAME: !!process.env.CLOUDINARY_CLOUD_NAME,
+          CLOUDINARY_API_KEY: !!process.env.CLOUDINARY_API_KEY,
+          CLOUDINARY_API_SECRET: !!process.env.CLOUDINARY_API_SECRET,
+        };
+        console.error('❌ Environment status:', envStatus);
         
         // Provide specific error messages
         let errorMessage = 'File upload failed';
         let errorDetails = (uploadError as Error).message;
+        let errorCode = 'UPLOAD_ERROR';
         
         if (errorDetails.includes('timeout')) {
-          errorMessage = 'Upload timeout - file may be too large';
+          errorMessage = 'Upload timeout - file may be too large or connection slow';
+          errorCode = 'TIMEOUT_ERROR';
         } else if (errorDetails.includes('Invalid buffer')) {
           errorMessage = 'Invalid file - file may be corrupted';
-        } else if (errorDetails.includes('quota')) {
+          errorCode = 'BUFFER_ERROR';
+        } else if (errorDetails.includes('quota') || errorDetails.includes('limit')) {
           errorMessage = 'Storage quota exceeded';
-        } else if (errorDetails.includes('Missing Cloudinary')) {
+          errorCode = 'QUOTA_ERROR';
+        } else if (errorDetails.includes('Missing Cloudinary') || errorDetails.includes('configuration')) {
           errorMessage = 'Server configuration error';
-          errorDetails = 'Please contact support';
+          errorDetails = 'Cloudinary credentials missing or invalid';
+          errorCode = 'CONFIG_ERROR';
+        } else if (errorDetails.includes('unauthorized') || errorDetails.includes('401')) {
+          errorMessage = 'Invalid Cloudinary credentials';
+          errorCode = 'AUTH_ERROR';
+        } else if (errorDetails.includes('network') || errorDetails.includes('ECONNRESET')) {
+          errorMessage = 'Network connection error';
+          errorCode = 'NETWORK_ERROR';
         }
         
         return NextResponse.json({ 
           error: errorMessage, 
           details: errorDetails,
+          errorCode,
+          timestamp: new Date().toISOString(),
           fileInfo: {
             name: fileInfo.name,
             type: fileInfo.type,
-            size: `${(fileInfo.size / 1024).toFixed(2)}KB`
-          }
+            size: `${(fileInfo.size / 1024).toFixed(2)}KB`,
+            bufferCreated: true,
+          },
+          environment: envStatus,
+          debugUrl: `${process.env.NEXTAUTH_URL || 'https://chill-campus-2025.vercel.app'}/api/debug/upload`
         }, { status: 500 });
       }
     } else if (file && typeof file === 'string') {
